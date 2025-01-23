@@ -1,0 +1,5 @@
+/Users/cleiton.loiola/personal/mini-painel/build/CMakeFiles/edit_cache.dir
+/Users/cleiton.loiola/personal/mini-painel/build/CMakeFiles/rebuild_cache.dir
+/Users/cleiton.loiola/personal/mini-painel/build/src/CMakeFiles/panel.dir
+/Users/cleiton.loiola/personal/mini-painel/build/src/CMakeFiles/edit_cache.dir
+/Users/cleiton.loiola/personal/mini-painel/build/src/CMakeFiles/rebuild_cache.dir
