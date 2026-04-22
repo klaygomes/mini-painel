@@ -1,26 +1,55 @@
-#include <stdlib.h>  /* Standard library definitions */
-#include <stdio.h>   /* Standard input/output definitions */
-#include <string.h>  /* String function definitions */
-#include <unistd.h>  /* UNIX standard function definitions */
-#include <fcntl.h>   /* File control definitions */
-#include <errno.h>   /* Error number definitions */
-#include <termios.h> /* POSIX terminal control definitions */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "serial.h" /* Serial port definitions */
-#define USB_MODEM_DEVICE "/dev/tty.usbmodemUSB35INCHIPSV21"
+#include "panel.h"
 
-int main()
+int main(void)
 {
-    char buf[6] = {0x45, 0x45, 0x45, 0x45, 0x45, 0x45};
-    char buffer[255] = {0};
+    /* Auto-detect the XuanFang device */
+    xf_device_t *dev = panel_open_auto();
+    if (!dev) {
+        fprintf(stderr, "No XuanFang device found. "
+                        "Is it plugged in?\n");
+        return 1;
+    }
 
-    int fd = serial_open(USB_MODEM_DEVICE);
+    printf("Device opened — flagship: %s, brightness range: %s\n",
+           panel_is_flagship(dev)         ? "yes" : "no",
+           panel_is_brightness_range(dev) ? "yes" : "no");
 
-    serial_write(fd, buf, sizeof(buf));
-    serial_read(fd, buffer, sizeof(buffer));
+    /* Set portrait orientation at 50% brightness */
+    panel_set_orientation(dev, XF_ORIENT_PORTRAIT);
+    panel_set_brightness(dev, 50);
 
-    printf("buffer = %x %x %x %x %x %x \n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
+    /* Set backplate LED to blue (no-op on non-flagship) */
+    xf_color_t blue = {0, 0, 255};
+    panel_set_led(dev, blue);
 
-    close(fd);
+    /* Fill the screen with a solid red frame */
+    int w = 320, h = 480;
+    uint8_t *frame = (uint8_t *)malloc((size_t)(w * h * 3));
+    if (!frame) {
+        panel_close(dev);
+        return 1;
+    }
+    memset(frame, 0, (size_t)(w * h * 3));
+
+    int i;
+    for (i = 0; i < w * h; i++) {
+        frame[i * 3 + 0] = 0xFF; /* R */
+        frame[i * 3 + 1] = 0x00; /* G */
+        frame[i * 3 + 2] = 0x00; /* B */
+    }
+
+    printf("Displaying red frame...\n");
+    if (panel_display_bitmap(dev, 0, 0, w, h, frame) < 0) {
+        fprintf(stderr, "panel_display_bitmap failed\n");
+    } else {
+        printf("Done.\n");
+    }
+
+    free(frame);
+    panel_close(dev);
     return 0;
 }
