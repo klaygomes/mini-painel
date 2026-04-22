@@ -67,14 +67,60 @@ For each component, `dashboard_render()`:
 
 ## Testing rules
 
-- Tests import only `dashboard.h`. No `device_internal.h`, no `panel.h`.
-- Tests never inspect `row_t` or `xf_dashboard` fields directly.
-- Pixel behaviour is verified by having components fill their region with a
-  known solid colour, then reading the returned `const uint8_t *` at specific
-  `(x, y)` coordinates:
-  `fb[(y * W + x) * 3 + ch]`
-- Fetch/render ordering is verified with flag variables set in callbacks,
-  not by inspecting internal call state.
+Tests are in `tests/test_dashboard.c` and use Unity (vendored). No hardware,
+no serial, no `panel.h` dependency.
+
+**What to import**: `dashboard.h` and `vendor/unity.h` only.
+
+**What never to do**: access `row_t` or `xf_dashboard` fields directly;
+the internal layout is an implementation detail.
+
+### Pixel-colour pattern
+
+Create a component whose `render()` fills its entire region with a single
+known colour, add it to a dashboard, call `dashboard_render()`, and read
+specific pixel coordinates in the returned buffer:
+
+```c
+static void render_red(xf_component_t *self, uint8_t *buf, int w, int h)
+{
+    int i;
+    (void)self;
+    for (i = 0; i < w * h; i++) { buf[i*3]=0xFF; buf[i*3+1]=0x00; buf[i*3+2]=0x00; }
+}
+
+/* In the test: */
+xf_component_t comp = {NULL, render_red, NULL};
+dashboard_add_full_row(dash, &comp, H);
+const uint8_t *fb = dashboard_render(dash);
+
+/* pixel at (x, y), channel ch: fb[(y * W + x) * 3 + ch] */
+TEST_ASSERT_EQUAL_UINT8(0xFF, fb[0 * 3 + 0]); /* pixel (0,0) red channel */
+```
+
+Use multiple differently-coloured components to assert that each occupies
+the correct region (left vs right column, top vs bottom row).
+
+### Lifecycle flags
+
+Use module-level static variables to track callback invocation. Reset them
+in `setUp()`:
+
+```c
+static int fetch_ran = 0;
+static int render_saw_fetch = 0;
+
+static int fetch_set_flag(xf_component_t *self) { (void)self; fetch_ran = 1; return 0; }
+static void render_check_flag(xf_component_t *self, uint8_t *buf, int w, int h) {
+    (void)self; (void)buf; (void)w; (void)h;
+    render_saw_fetch = fetch_ran;
+}
+
+void setUp(void) { fetch_ran = 0; render_saw_fetch = 0; }
+```
+
+This lets you assert call order and that `render()` still runs when `fetch()`
+returns an error or is `NULL` — without any knowledge of internals.
 
 ## What not to do
 

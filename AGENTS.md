@@ -23,10 +23,27 @@ Tests run without hardware. Unity is vendored in `tests/vendor/` — no extra se
 
 ## Testing rules
 
-- Tests must exercise behavior through the public API only (`panel.h`).
+Tests live in `tests/`, use the Unity framework (vendored in `tests/vendor/`), and run without hardware.
+
+### Panel tests (`test_panel.c`)
+
+- Exercise behaviour through the public API only (`panel.h`).
 - Never test internal modules (`protocol.c`, `image.c`) directly.
-- Never access `xf_device_t` fields from test code — use the public capability functions.
-- Device-protocol byte values (command codes, orientation values) are acceptable as expected constants in tests; they are the observable contract between library and hardware, not internal implementation details.
+- Never access `xf_device_t` fields — use the public capability functions.
+- Use `fake_serial` to simulate the serial port. Call `fake_serial_reset()` in `setUp()` and `fake_serial_clear_writes()` after `panel_open()` so each test starts with an empty write buffer.
+- Assert on bytes written to the fake serial port to verify the correct protocol frames are sent. Device-protocol constants (command codes, orientation bytes) are part of the observable hardware contract and are acceptable in test assertions.
+
+### Dashboard tests (`test_dashboard.c`)
+
+- Import `dashboard.h` only — no `panel.h`, no serial, no device dependency.
+- Never access `row_t` or `xf_dashboard` internal fields.
+- **Pixel-colour pattern**: create small components whose `render()` fills their region with a known solid colour, then read the returned `const uint8_t *` framebuffer at specific `(x, y)` coordinates to verify placement:
+  ```c
+  /* fb[(y * W + x) * 3 + ch] */
+  TEST_ASSERT_EQUAL_UINT8(0xFF, fb[(y * W + x) * 3 + 0]); /* R */
+  ```
+- **Lifecycle flags**: use static flag variables set inside `fetch()` / `render()` callbacks to verify call order and that `render()` runs even when `fetch()` returns an error or is `NULL`.
+- Reset all static flag variables in `setUp()` so tests are isolated.
 
 ## Architecture
 
