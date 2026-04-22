@@ -15,7 +15,7 @@ typedef struct xf_component xf_component_t;
 struct xf_component {
     int  (*fetch)(xf_component_t *self);
     void (*render)(xf_component_t *self, uint8_t *buf, int width, int height);
-    void *payload;
+    void *ctx;
 };
 ```
 
@@ -23,9 +23,9 @@ A component is a plain struct — stack-allocate it or embed it inside a larger 
 
 | Field | Purpose |
 |---|---|
-| `fetch` | Called once per frame before `render` to refresh `payload` with live data. May be `NULL`. A non-zero return is non-fatal: `render` still runs. |
+| `fetch` | Called once per frame before `render` to refresh `ctx` with live data. May be `NULL`. A non-zero return is non-fatal: `render` still runs. |
 | `render` | Draws the component into `buf`. `buf` is a zeroed `width × height × 3` byte region; fill it with RGB888 pixels. Must not be `NULL`. |
-| `payload` | Anything you need — a struct with live sensor readings, an image pointer, etc. Not managed by the dashboard. |
+| `ctx` | Caller-owned context pointer passed into callbacks via `self->ctx`. The dashboard never reads or frees it. |
 
 ### `xf_dashboard_t`
 
@@ -40,8 +40,8 @@ Use these instead of bare struct literals — they make the component's role cle
 | Macro | When to use |
 |---|---|
 | `XF_COMPONENT(render_fn)` | Pure static rendering; no data, no fetch. Logos, separators, solid fills. |
-| `XF_COMPONENT_DATA(render_fn, payload_ptr)` | Pre-loaded data that the render function reads. Caller updates payload between frames as needed. |
-| `XF_COMPONENT_LIVE(fetch_fn, render_fn, payload_ptr)` | Live data: `fetch()` is called every frame to refresh payload before `render()`. Clock, sensor readings, CPU stats, etc. |
+| `XF_COMPONENT_DATA(render_fn, ctx)` | Caller-owned context the render function reads. Caller updates `ctx` between frames as needed. |
+| `XF_COMPONENT_LIVE(fetch_fn, render_fn, ctx)` | Live data: `fetch()` is called every frame to refresh `ctx` before `render()`. Clock, sensor readings, CPU stats, etc. |
 
 ```c
 /* Static visual — no data needed */
@@ -51,7 +51,7 @@ xf_component_t logo = XF_COMPONENT(render_logo);
 xf_component_t label = XF_COMPONENT_DATA(render_text, &my_text);
 
 /* Live data refreshed every frame */
-xf_component_t clock = XF_COMPONENT_LIVE(fetch_time, render_clock, &time_payload);
+xf_component_t clock = XF_COMPONENT_LIVE(fetch_time, render_clock, &time_ctx);
 ```
 
 ---
@@ -184,11 +184,11 @@ for (p = 0; p < pages; p++) {
 #include "dashboard.h"
 
 /* A component that draws a solid colour. */
-typedef struct { uint8_t r, g, b; } solid_payload_t;
+typedef struct { uint8_t r, g, b; } solid_ctx_t;
 
 static void render_solid(xf_component_t *self, uint8_t *buf, int w, int h)
 {
-    solid_payload_t *p = self->payload;
+    solid_ctx_t *p = self->ctx;
     int i;
     for (i = 0; i < w * h; i++) {
         buf[i*3+0] = p->r;
@@ -199,9 +199,9 @@ static void render_solid(xf_component_t *self, uint8_t *buf, int w, int h)
 
 int main(void)
 {
-    solid_payload_t header_data = {0x1A, 0x6B, 0xC8}; /* blue  */
-    solid_payload_t left_data   = {0xC0, 0x20, 0x20}; /* red   */
-    solid_payload_t right_data  = {0x20, 0xA0, 0x40}; /* green */
+    solid_ctx_t header_data = {0x1A, 0x6B, 0xC8}; /* blue  */
+    solid_ctx_t left_data   = {0xC0, 0x20, 0x20}; /* red   */
+    solid_ctx_t right_data  = {0x20, 0xA0, 0x40}; /* green */
 
     xf_component_t header = XF_COMPONENT_DATA(render_solid, &header_data);
     xf_component_t left   = XF_COMPONENT_DATA(render_solid, &left_data);
@@ -238,7 +238,7 @@ The `render()` callback receives a plain `uint8_t *buf` of `width × height × 3
 ```c
 static int fetch_image(xf_component_t *self)
 {
-    img_payload_t *p = self->payload;
+    img_ctx_t *p = self->ctx;
     int w, h, n;
     p->pixels = stbi_load(p->path, &w, &h, &n, 3); /* RGB888 */
     return p->pixels ? 0 : -1;

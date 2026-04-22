@@ -159,7 +159,7 @@ This helper is stateless — it reads only `dash->rows` and `dash->height`. No c
 - **Do not free component structs in `dashboard_destroy()`** — components are
   caller-owned; the dashboard only borrows pointers.
 - **Do not add a persistence layer** — this is immediate mode. If a component
-  needs state, it stores it in its own `payload`.
+  needs state, it stores it in its own `ctx`.
 - **Do not pre-allocate a permanent sub-buffer** per component — components
   have varying sizes and the current per-render `calloc`/`free` keeps the API
   simple without measurable overhead at display frame rates.

@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /*
- * xf_component_t — a fetch/render pair with a caller-owned payload.
+ * xf_component_t — a fetch/render pair with a caller-owned context pointer.
  *
  * Transparent struct: stack-allocate or embed it. The dashboard stores
  * a pointer to it; the component lifetime is the caller's responsibility.
@@ -12,9 +12,9 @@
 typedef struct xf_component xf_component_t;
 struct xf_component {
     /*
-     * Called once per frame before render() to refresh payload with live data.
+     * Called once per frame before render() to refresh ctx with live data.
      * May be NULL if no data fetching is needed.
-     * A non-zero return is non-fatal: render() still runs with the existing payload.
+     * A non-zero return is non-fatal: render() still runs with the existing ctx.
      */
     int  (*fetch)(xf_component_t *self);
 
@@ -25,8 +25,9 @@ struct xf_component {
      */
     void (*render)(xf_component_t *self, uint8_t *buf, int width, int height);
 
-    /* Component-specific data. Not managed by the dashboard. */
-    void *payload;
+    /* Caller-owned context passed into fetch() and render() via self->ctx.
+     * The dashboard never reads or frees this pointer. */
+    void *ctx;
 };
 
 /*
@@ -35,22 +36,22 @@ struct xf_component {
  *   XF_COMPONENT(render_fn)
  *     Pure rendering, no data. Use for static visuals (logos, separators, etc.)
  *
- *   XF_COMPONENT_DATA(render_fn, payload_ptr)
- *     Rendering driven by a pre-loaded data pointer. fetch() is never called;
- *     the caller updates payload between frames as needed.
+ *   XF_COMPONENT_DATA(render_fn, ctx)
+ *     Rendering driven by a caller-owned context pointer. fetch() is never
+ *     called; the caller updates ctx between frames as needed.
  *
- *   XF_COMPONENT_LIVE(fetch_fn, render_fn, payload_ptr)
- *     fetch() is called every frame to refresh payload before render().
+ *   XF_COMPONENT_LIVE(fetch_fn, render_fn, ctx)
+ *     fetch() is called every frame to refresh ctx before render().
  *     Use for live data (clock, CPU stats, sensor readings, etc.)
  */
 #define XF_COMPONENT(render_fn) \
     { NULL, (render_fn), NULL }
 
-#define XF_COMPONENT_DATA(render_fn, payload_ptr) \
-    { NULL, (render_fn), (payload_ptr) }
+#define XF_COMPONENT_DATA(render_fn, ctx) \
+    { NULL, (render_fn), (ctx) }
 
-#define XF_COMPONENT_LIVE(fetch_fn, render_fn, payload_ptr) \
-    { (fetch_fn), (render_fn), (payload_ptr) }
+#define XF_COMPONENT_LIVE(fetch_fn, render_fn, ctx) \
+    { (fetch_fn), (render_fn), (ctx) }
 
 /* Opaque dashboard handle. */
 typedef struct xf_dashboard xf_dashboard_t;
