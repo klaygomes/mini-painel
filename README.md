@@ -14,6 +14,7 @@ Plug the display in, open it with one call, and start sending images. The librar
 
 - macOS
 - CMake 3.10+
+- Cairo (`brew install cairo`)
 - A XuanFang 3.5" display connected via USB
 
 ### Build
@@ -36,7 +37,8 @@ It auto-detects the device, sets brightness to 80%, and renders a two-row dashbo
 
 ### Run the tests
 
-Tests run without hardware — they use a fake serial backend.
+Tests run without hardware — they use a fake serial backend. Component tests
+also write a PPM image per widget to `bin/` so you can visually inspect them.
 
 ```sh
 cmake .. -DBUILD_TESTING=ON

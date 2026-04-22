@@ -33,3 +33,21 @@ target_include_directories(test_dashboard PRIVATE
 
 target_compile_options(test_dashboard PRIVATE -Wall -Wextra)
 add_test(NAME test_dashboard COMMAND test_dashboard)
+
+add_executable(test_components
+    test_components.c
+    vendor/unity.c
+    ${CMAKE_SOURCE_DIR}/src/dashboard.c
+)
+
+target_include_directories(test_components PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+target_compile_options(test_components PRIVATE -Wall -Wextra)
+target_link_libraries(test_components PRIVATE xf_components)
+add_test(NAME test_components COMMAND test_components)
+set_tests_properties(test_components PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

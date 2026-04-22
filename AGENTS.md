@@ -6,13 +6,22 @@ A C99 library that implements the serial communication protocol for XuanFang 3.5
 
 ## Build
 
+Cairo must be installed before the first `cmake` configure:
+
+```sh
+brew install cairo        # macOS
+sudo apt-get install libcairo2-dev  # Debian/Ubuntu
+```
+
 ```sh
 mkdir -p build && cd build
-cmake .. && make          # main binary
-cmake .. -DBUILD_TESTING=ON && make && ctest  # with tests
+cmake .. && make                          # main binary
+cmake .. -DBUILD_TESTING=ON && make       # with tests
+ctest --output-on-failure                 # run tests (from build/)
 ```
 
 Tests run without hardware. Unity is vendored in `tests/vendor/` — no extra setup needed.
+After running `test_components`, visual PPM dumps of every component appear in `bin/`.
 
 ## Code conventions
 
@@ -57,11 +66,16 @@ Tests live in `tests/`, use the Unity framework (vendored in `tests/vendor/`), a
 | `src/types.h` | Public types: `xf_orientation_t`, `xf_color_t`, `xf_device_t` (opaque) |
 | `src/device_internal.h` | Internal: `xf_sub_revision_t` enum + `struct xf_device` fields |
 | `src/dashboard.h/.c` | Row-based immediate-mode layout engine; produces RGB888 framebuffer |
+| `src/components/draw.h` | Engine-agnostic draw + theme API (no Cairo types) |
+| `src/components/draw.c` | Cairo backend — the only file that includes cairo.h |
+| `src/components/comp_*.h/.c` | 17 pre-built Cairo-rendered dashboard widgets |
 | `tests/fake_serial.c` | Serial mock for offline testing |
 | `tests/test_panel.c` | Unit tests for the panel module |
 | `tests/test_dashboard.c` | Unit tests for the dashboard module |
+| `tests/test_components.c` | Unit tests for all components; writes PPMs to `bin/` |
 
 See `doc/dashboard-agents.md` for dashboard module internals and testing conventions.
+See `doc/components-agents.md` for the component library, draw API, theming, and all Cairo build gotchas.
 
 ## Adding a new device revision
 

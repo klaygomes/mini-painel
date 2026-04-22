@@ -1,2 +1,24 @@
-bin
-build
+bin/
+build/
+
+# Object files and compiled libraries that may end up outside the build tree
+*.o
+*.a
+*.so
+*.dylib
+
+# CMake/CTest files sometimes generated at the project root
+Testing/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+
+# macOS metadata
+.DS_Store
+
+# Editor swap/temp files
+*.swp
+*.swo
+*~
