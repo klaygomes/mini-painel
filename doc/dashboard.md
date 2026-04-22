@@ -33,6 +33,29 @@ An opaque handle. Create one with `dashboard_create()`, destroy it with `dashboa
 
 ---
 
+## Component initialiser macros
+
+Use these instead of bare struct literals — they make the component's role clear at a glance.
+
+| Macro | When to use |
+|---|---|
+| `XF_COMPONENT(render_fn)` | Pure static rendering; no data, no fetch. Logos, separators, solid fills. |
+| `XF_COMPONENT_DATA(render_fn, payload_ptr)` | Pre-loaded data that the render function reads. Caller updates payload between frames as needed. |
+| `XF_COMPONENT_LIVE(fetch_fn, render_fn, payload_ptr)` | Live data: `fetch()` is called every frame to refresh payload before `render()`. Clock, sensor readings, CPU stats, etc. |
+
+```c
+/* Static visual — no data needed */
+xf_component_t logo = XF_COMPONENT(render_logo);
+
+/* Static data loaded once before the dashboard loop */
+xf_component_t label = XF_COMPONENT_DATA(render_text, &my_text);
+
+/* Live data refreshed every frame */
+xf_component_t clock = XF_COMPONENT_LIVE(fetch_time, render_clock, &time_payload);
+```
+
+---
+
 ## Functions
 
 ### `dashboard_create`
@@ -180,9 +203,9 @@ int main(void)
     solid_payload_t left_data   = {0xC0, 0x20, 0x20}; /* red   */
     solid_payload_t right_data  = {0x20, 0xA0, 0x40}; /* green */
 
-    xf_component_t header = {NULL, render_solid, &header_data};
-    xf_component_t left   = {NULL, render_solid, &left_data};
-    xf_component_t right  = {NULL, render_solid, &right_data};
+    xf_component_t header = XF_COMPONENT_DATA(render_solid, &header_data);
+    xf_component_t left   = XF_COMPONENT_DATA(render_solid, &left_data);
+    xf_component_t right  = XF_COMPONENT_DATA(render_solid, &right_data);
 
     xf_component_t *body_comps[]  = {&left, &right};
     int             body_widths[] = {160, 160};

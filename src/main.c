@@ -51,9 +51,9 @@ static void render_right(xf_component_t *self, uint8_t *buf, int w, int h)
 int main(void)
 {
     xf_dashboard_t *dash;
-    xf_component_t  header = {NULL, render_header, NULL};
-    xf_component_t  left   = {NULL, render_left,   NULL};
-    xf_component_t  right  = {NULL, render_right,  NULL};
+    xf_component_t  header = XF_COMPONENT(render_header);
+    xf_component_t  left   = XF_COMPONENT(render_left);
+    xf_component_t  right  = XF_COMPONENT(render_right);
     xf_component_t *body_comps[] = {&left, &right};
     int             body_widths[] = {DISPLAY_W / 2, DISPLAY_W / 2};
     const uint8_t  *frame;

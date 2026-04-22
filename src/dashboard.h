@@ -29,6 +29,29 @@ struct xf_component {
     void *payload;
 };
 
+/*
+ * Component initialiser macros — use these instead of bare struct literals.
+ *
+ *   XF_COMPONENT(render_fn)
+ *     Pure rendering, no data. Use for static visuals (logos, separators, etc.)
+ *
+ *   XF_COMPONENT_DATA(render_fn, payload_ptr)
+ *     Rendering driven by a pre-loaded data pointer. fetch() is never called;
+ *     the caller updates payload between frames as needed.
+ *
+ *   XF_COMPONENT_LIVE(fetch_fn, render_fn, payload_ptr)
+ *     fetch() is called every frame to refresh payload before render().
+ *     Use for live data (clock, CPU stats, sensor readings, etc.)
+ */
+#define XF_COMPONENT(render_fn) \
+    { NULL, (render_fn), NULL }
+
+#define XF_COMPONENT_DATA(render_fn, payload_ptr) \
+    { NULL, (render_fn), (payload_ptr) }
+
+#define XF_COMPONENT_LIVE(fetch_fn, render_fn, payload_ptr) \
+    { (fetch_fn), (render_fn), (payload_ptr) }
+
 /* Opaque dashboard handle. */
 typedef struct xf_dashboard xf_dashboard_t;
 
