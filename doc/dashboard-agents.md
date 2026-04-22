@@ -122,6 +122,34 @@ void setUp(void) { fetch_ran = 0; render_saw_fetch = 0; }
 This lets you assert call order and that `render()` still runs when `fetch()`
 returns an error or is `NULL` — without any knowledge of internals.
 
+## Pagination
+
+### `page_layout` (internal, `dashboard.c` only)
+
+```c
+static int page_layout(const xf_dashboard_t *dash, int *page_of_row, int *y_of_row);
+```
+
+Single-pass walker that assigns each row to a page and returns the total page count. `page_of_row[r]` and `y_of_row[r]` are filled if the arrays are non-NULL. Both arrays must have at least `dash->row_count` elements.
+
+**Page-break rule**: a new page begins when `y > 0` and `y + row->height > dash->height`. A row at `y == 0` that is taller than the display sits on its own page (rendered but clipped by the framebuffer bounds).
+
+This helper is stateless — it reads only `dash->rows` and `dash->height`. No cached state exists, so `dashboard_move_row_*` and `dashboard_remove_row` need no post-mutation reindex.
+
+`page_layout` is called twice in `dashboard_render_page`: once to get the page count for the bounds check, then the same walk is done inline to avoid heap-allocating temporary arrays. If the row count ever becomes large enough that two passes matter, consolidate into a single heap-allocated walk.
+
+### `dashboard_page_count` / `dashboard_render_page`
+
+`dashboard_page_count(dash)` delegates to `page_layout(dash, NULL, NULL)`.
+
+`dashboard_render_page(dash, page)`:
+1. Returns `NULL` for NULL dash.
+2. Clears the framebuffer.
+3. Calls `page_layout(dash, NULL, NULL)` to bound-check `page`; out-of-range returns the cleared buffer.
+4. Walks rows inline (same logic as `page_layout`) to find rows belonging to `page` and their y-offsets, then renders them.
+
+`dashboard_render(dash)` is `dashboard_render_page(dash, 0)`.
+
 ## What not to do
 
 - **Do not add a `y` cache to `row_t`** — it would need reindexing on every

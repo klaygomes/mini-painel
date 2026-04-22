@@ -120,12 +120,37 @@ Returns `0` on success, `-1` if `index` is out of bounds.
 const uint8_t *dashboard_render(xf_dashboard_t *dash);
 ```
 
-Renders one frame:
+Renders page 0 into the internal framebuffer. Equivalent to `dashboard_render_page(dash, 0)`. Rows that overflow the display height are excluded and appear on subsequent pages.
 
-1. Clears the internal buffer to black.
-2. For each row, for each component: calls `fetch()` (if set), then `render()` into the correct region of the framebuffer.
+Returns a pointer to the internal RGB888 buffer (`width × height × 3` bytes). The pointer is valid until the next render call or `dashboard_destroy()`. Returns `NULL` if `dash` is `NULL`.
 
-Returns a pointer to the internal RGB888 buffer (`width × height × 3` bytes). The pointer is valid until the next `dashboard_render()` or `dashboard_destroy()` call. Returns `NULL` if `dash` is `NULL`.
+### `dashboard_page_count`
+
+```c
+int dashboard_page_count(xf_dashboard_t *dash);
+```
+
+Returns the number of pages the current row list produces. A new page begins whenever a row would overflow the bottom of the display. Always returns ≥ 1 for a valid dashboard. Returns 0 for `NULL`.
+
+### `dashboard_render_page`
+
+```c
+const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page);
+```
+
+Renders a specific page into the internal framebuffer. Rows on earlier pages are skipped; rows on later pages are excluded. An out-of-range `page` index clears the buffer to black and returns a non-`NULL` pointer. Returns `NULL` if `dash` is `NULL`.
+
+Typical usage for a multi-page dashboard:
+
+```c
+int pages = dashboard_page_count(dash);
+int p;
+for (p = 0; p < pages; p++) {
+    const uint8_t *frame = dashboard_render_page(dash, p);
+    panel_display_bitmap(dev, 0, 0, 320, 480, frame);
+    /* wait for user input to advance, or cycle automatically */
+}
+```
 
 ---
 

@@ -434,6 +434,171 @@ static void test_remove_row_out_of_bounds_returns_error(void)
     dashboard_destroy(dash);
 }
 
+/* ── pagination: dashboard_page_count ────────────────────────────────────── */
+
+static void test_page_count_returns_zero_for_null(void)
+{
+    TEST_ASSERT_EQUAL_INT(0, dashboard_page_count(NULL));
+}
+
+static void test_page_count_is_one_for_empty_dashboard(void)
+{
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    TEST_ASSERT_EQUAL_INT(1, dashboard_page_count(dash));
+    dashboard_destroy(dash);
+}
+
+static void test_page_count_is_one_when_rows_fit_within(void)
+{
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_component_t  comp = {NULL, render_red, NULL};
+    dashboard_add_full_row(dash, &comp, H / 2);
+    TEST_ASSERT_EQUAL_INT(1, dashboard_page_count(dash));
+    dashboard_destroy(dash);
+}
+
+static void test_page_count_is_one_when_rows_fit_exactly(void)
+{
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_component_t  a    = {NULL, render_red,  NULL};
+    xf_component_t  b    = {NULL, render_blue, NULL};
+    dashboard_add_full_row(dash, &a, H / 2);
+    dashboard_add_full_row(dash, &b, H / 2); /* total = H exactly */
+    TEST_ASSERT_EQUAL_INT(1, dashboard_page_count(dash));
+    dashboard_destroy(dash);
+}
+
+static void test_page_count_is_two_when_rows_overflow(void)
+{
+    /* Row A (40px) fits page 0. Row B (40px) would exceed H=60, goes to page 1. */
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_component_t  a    = {NULL, render_red,  NULL};
+    xf_component_t  b    = {NULL, render_blue, NULL};
+    dashboard_add_full_row(dash, &a, 40);
+    dashboard_add_full_row(dash, &b, 40);
+    TEST_ASSERT_EQUAL_INT(2, dashboard_page_count(dash));
+    dashboard_destroy(dash);
+}
+
+static void test_page_count_is_three_for_three_pages(void)
+{
+    /* Three rows of height 40 each: page 0, 1, 2. */
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_component_t  a    = {NULL, render_red,   NULL};
+    xf_component_t  b    = {NULL, render_blue,  NULL};
+    xf_component_t  c    = {NULL, render_green, NULL};
+    dashboard_add_full_row(dash, &a, 40);
+    dashboard_add_full_row(dash, &b, 40);
+    dashboard_add_full_row(dash, &c, 40);
+    TEST_ASSERT_EQUAL_INT(3, dashboard_page_count(dash));
+    dashboard_destroy(dash);
+}
+
+/* ── pagination: dashboard_render_page ───────────────────────────────────── */
+
+static void test_render_page_returns_null_for_null_dashboard(void)
+{
+    TEST_ASSERT_NULL(dashboard_render_page(NULL, 0));
+}
+
+static void test_render_page_0_shows_rows_fitting_display(void)
+{
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_component_t  comp = {NULL, render_red, NULL};
+    const uint8_t  *fb;
+
+    dashboard_add_full_row(dash, &comp, 40);
+    fb = dashboard_render_page(dash, 0);
+
+    TEST_ASSERT_EQUAL_UINT8(0xFF, PX(fb, 0, 0, 0)); /* red at top */
+    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 2));
+    dashboard_destroy(dash);
+}
+
+static void test_render_page_1_shows_overflow_row_at_top(void)
+{
+    /* Row A (40px, red) on page 0; row B (40px, blue) overflows to page 1. */
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_component_t  a    = {NULL, render_red,  NULL};
+    xf_component_t  b    = {NULL, render_blue, NULL};
+    const uint8_t  *fb;
+
+    dashboard_add_full_row(dash, &a, 40);
+    dashboard_add_full_row(dash, &b, 40);
+    fb = dashboard_render_page(dash, 1);
+
+    /* Row B starts at y=0 on page 1. */
+    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 0)); /* blue: R=0 */
+    TEST_ASSERT_EQUAL_UINT8(0xFF, PX(fb, 0, 0, 2)); /* blue: B=255 */
+    dashboard_destroy(dash);
+}
+
+static void test_render_page_0_excludes_overflow_row(void)
+{
+    /* After row A (40px), row B should not bleed into page 0 at y=40. */
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_component_t  a    = {NULL, render_red,  NULL};
+    xf_component_t  b    = {NULL, render_blue, NULL};
+    const uint8_t  *fb;
+
+    dashboard_add_full_row(dash, &a, 40);
+    dashboard_add_full_row(dash, &b, 40);
+    fb = dashboard_render_page(dash, 0);
+
+    /* y=40 must be black — row B is on page 1, not page 0. */
+    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 40, 0));
+    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 40, 2));
+    dashboard_destroy(dash);
+}
+
+static void test_render_out_of_bounds_page_returns_black_buffer(void)
+{
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_component_t  comp = {NULL, render_red, NULL};
+    const uint8_t  *fb;
+
+    dashboard_add_full_row(dash, &comp, 40);
+    fb = dashboard_render_page(dash, 99); /* only 1 page exists */
+
+    TEST_ASSERT_NOT_NULL(fb);
+    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 0));
+    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 1));
+    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 2));
+    dashboard_destroy(dash);
+}
+
+static void test_render_page_still_calls_fetch_and_render_callbacks(void)
+{
+    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_component_t  comp = {fetch_set_flag, render_check_flag, NULL};
+
+    dashboard_add_full_row(dash, &comp, 40);
+    dashboard_render_page(dash, 0);
+
+    TEST_ASSERT_TRUE(render_saw_fetch);
+    dashboard_destroy(dash);
+}
+
+static void test_dashboard_render_is_equivalent_to_render_page_0(void)
+{
+    xf_dashboard_t *dash  = dashboard_create(W, H);
+    xf_component_t  a     = {NULL, render_red,  NULL};
+    xf_component_t  b     = {NULL, render_blue, NULL};
+    const uint8_t  *fb0, *fb1;
+    /* Copy page-0 result since the internal buffer is reused. */
+    uint8_t page0_copy[W * H * 3];
+
+    dashboard_add_full_row(dash, &a, 40);
+    dashboard_add_full_row(dash, &b, 40); /* b overflows to page 1 */
+
+    fb0 = dashboard_render_page(dash, 0);
+    memcpy(page0_copy, fb0, sizeof(page0_copy));
+
+    fb1 = dashboard_render(dash);
+    TEST_ASSERT_EQUAL_MEMORY(page0_copy, fb1, sizeof(page0_copy));
+    dashboard_destroy(dash);
+}
+
 /* ── runner ──────────────────────────────────────────────────────────────── */
 
 int main(void)
@@ -474,6 +639,21 @@ int main(void)
     RUN_TEST(test_move_row_down_on_last_row_returns_error);
     RUN_TEST(test_remove_row_eliminates_pixels_from_next_render);
     RUN_TEST(test_remove_row_out_of_bounds_returns_error);
+
+    RUN_TEST(test_page_count_returns_zero_for_null);
+    RUN_TEST(test_page_count_is_one_for_empty_dashboard);
+    RUN_TEST(test_page_count_is_one_when_rows_fit_within);
+    RUN_TEST(test_page_count_is_one_when_rows_fit_exactly);
+    RUN_TEST(test_page_count_is_two_when_rows_overflow);
+    RUN_TEST(test_page_count_is_three_for_three_pages);
+
+    RUN_TEST(test_render_page_returns_null_for_null_dashboard);
+    RUN_TEST(test_render_page_0_shows_rows_fitting_display);
+    RUN_TEST(test_render_page_1_shows_overflow_row_at_top);
+    RUN_TEST(test_render_page_0_excludes_overflow_row);
+    RUN_TEST(test_render_out_of_bounds_page_returns_black_buffer);
+    RUN_TEST(test_render_page_still_calls_fetch_and_render_callbacks);
+    RUN_TEST(test_dashboard_render_is_equivalent_to_render_page_0);
 
     return UNITY_END();
 }

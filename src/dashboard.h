@@ -89,14 +89,29 @@ int dashboard_move_row_down(xf_dashboard_t *dash, int index);
 int dashboard_remove_row(xf_dashboard_t *dash, int index);
 
 /*
- * Render one frame into the internal framebuffer:
- *   1. Clears the buffer to black.
- *   2. For each row, for each component: calls fetch() then render().
+ * Render page 0 into the internal framebuffer. Equivalent to
+ * dashboard_render_page(dash, 0). Rows that overflow the display height are
+ * excluded and appear on subsequent pages instead.
  *
  * Returns a pointer to the internal RGB888 buffer (width * height * 3 bytes).
- * The pointer remains valid until the next dashboard_render() or dashboard_destroy().
+ * The pointer remains valid until the next render call or dashboard_destroy().
  * Returns NULL if dash is NULL.
  */
 const uint8_t *dashboard_render(xf_dashboard_t *dash);
+
+/*
+ * Returns the number of pages the current row list produces.
+ * A new page begins whenever a row would overflow the bottom of the display.
+ * Always returns >= 1 for a valid dashboard. Returns 0 for NULL.
+ */
+int dashboard_page_count(xf_dashboard_t *dash);
+
+/*
+ * Render a specific page into the internal framebuffer.
+ * Rows on earlier pages are skipped; rows on later pages are excluded.
+ * An out-of-range page index clears the buffer to black (returns non-NULL).
+ * Returns a pointer to the internal RGB888 buffer, or NULL if dash is NULL.
+ */
+const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page);
 
 #endif /* DASHBOARD_H */

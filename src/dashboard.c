@@ -161,52 +161,99 @@ int dashboard_remove_row(xf_dashboard_t *dash, int index)
     return 0;
 }
 
+/* ── pagination ──────────────────────────────────────────────────────────── */
+
+/*
+ * Single-pass page layout walker.
+ * Returns total page count. If page_of_row / y_of_row are non-NULL they must
+ * each hold at least dash->row_count elements and are filled with each row's
+ * page index and y-offset within that page.
+ */
+static int page_layout(const xf_dashboard_t *dash, int *page_of_row, int *y_of_row)
+{
+    int r, y = 0, page = 0;
+    for (r = 0; r < dash->row_count; r++) {
+        if (y > 0 && y + dash->rows[r].height > dash->height) {
+            page++;
+            y = 0;
+        }
+        if (page_of_row) page_of_row[r] = page;
+        if (y_of_row)    y_of_row[r]    = y;
+        y += dash->rows[r].height;
+    }
+    return dash->row_count == 0 ? 1 : page + 1;
+}
+
 /* ── rendering ───────────────────────────────────────────────────────────── */
 
-const uint8_t *dashboard_render(xf_dashboard_t *dash)
+const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page)
 {
     int r, c, ly;
-    int y;
+    int cur_page = 0, y = 0;
 
     if (!dash)
         return NULL;
 
     memset(dash->framebuffer, 0, (size_t)(dash->width * dash->height * 3));
 
-    y = 0;
+    /* Out-of-range page: return the cleared buffer without rendering. */
+    if (page < 0 || page >= page_layout(dash, NULL, NULL))
+        return dash->framebuffer;
+
     for (r = 0; r < dash->row_count; r++) {
-        row_t *row = &dash->rows[r];
-        int x = 0;
-
-        for (c = 0; c < row->count; c++) {
-            xf_component_t *comp = row->components[c];
-            int w = row->widths[c];
-            int h = row->height;
-            uint8_t *sub = calloc((size_t)(w * h * 3), 1);
-
-            if (!sub) {
-                x += w;
-                continue;
-            }
-
-            if (comp->fetch)
-                comp->fetch(comp);
-
-            comp->render(comp, sub, w, h);
-
-            /* Blit sub-buffer row by row into the framebuffer. */
-            for (ly = 0; ly < h; ly++) {
-                int fb_off  = ((y + ly) * dash->width + x) * 3;
-                int sub_off = (ly * w) * 3;
-                memcpy(dash->framebuffer + fb_off, sub + sub_off, (size_t)(w * 3));
-            }
-
-            free(sub);
-            x += w;
+        if (y > 0 && y + dash->rows[r].height > dash->height) {
+            cur_page++;
+            y = 0;
         }
 
-        y += row->height;
+        if (cur_page > page)
+            break;
+
+        if (cur_page == page) {
+            row_t *row = &dash->rows[r];
+            int x = 0;
+
+            for (c = 0; c < row->count; c++) {
+                xf_component_t *comp = row->components[c];
+                int w = row->widths[c];
+                int h = row->height;
+                uint8_t *sub = calloc((size_t)(w * h * 3), 1);
+
+                if (!sub) {
+                    x += w;
+                    continue;
+                }
+
+                if (comp->fetch)
+                    comp->fetch(comp);
+
+                comp->render(comp, sub, w, h);
+
+                for (ly = 0; ly < h; ly++) {
+                    int fb_off  = ((y + ly) * dash->width + x) * 3;
+                    int sub_off = (ly * w) * 3;
+                    memcpy(dash->framebuffer + fb_off, sub + sub_off, (size_t)(w * 3));
+                }
+
+                free(sub);
+                x += w;
+            }
+        }
+
+        y += dash->rows[r].height;
     }
 
     return dash->framebuffer;
+}
+
+const uint8_t *dashboard_render(xf_dashboard_t *dash)
+{
+    return dashboard_render_page(dash, 0);
+}
+
+int dashboard_page_count(xf_dashboard_t *dash)
+{
+    if (!dash)
+        return 0;
+    return page_layout(dash, NULL, NULL);
 }
