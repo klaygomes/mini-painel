@@ -12,7 +12,7 @@ cmake .. && make          # main binary
 cmake .. -DBUILD_TESTING=ON && make && ctest  # with tests
 ```
 
-Tests run without hardware. Unity must be in `tests/vendor/` — see README for the curl commands.
+Tests run without hardware. Unity is vendored in `tests/vendor/` — no extra setup needed.
 
 ## Code conventions
 

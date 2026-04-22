@@ -1,5 +1,7 @@
 # mini-painel
 
+[![CI](https://github.com/klaygomes/mini-painel/actions/workflows/ci.yml/badge.svg)](https://github.com/klaygomes/mini-painel/actions/workflows/ci.yml)
+
 A C99 library for controlling **XuanFang 3.5" USB displays** (Rev B and Flagship).
 
 Plug the display in, open it with one call, and start sending images. The library handles the serial protocol, pixel encoding, and orientation — you work with plain RGB bytes.
@@ -35,19 +37,6 @@ It auto-detects the device, sets brightness to 50%, and fills the screen red as 
 ### Run the tests
 
 Tests run without hardware — they use a fake serial backend.
-
-First, install Unity (one time only):
-
-```sh
-curl -sSfL https://raw.githubusercontent.com/ThrowTheSwitch/Unity/v2.6.0/src/unity.h \
-     -o tests/vendor/unity.h
-curl -sSfL https://raw.githubusercontent.com/ThrowTheSwitch/Unity/v2.6.0/src/unity_internals.h \
-     -o tests/vendor/unity_internals.h
-curl -sSfL https://raw.githubusercontent.com/ThrowTheSwitch/Unity/v2.6.0/src/unity.c \
-     -o tests/vendor/unity.c
-```
-
-Then build and run:
 
 ```sh
 cmake .. -DBUILD_TESTING=ON

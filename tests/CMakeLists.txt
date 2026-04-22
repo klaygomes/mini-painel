@@ -7,6 +7,7 @@ add_executable(test_panel
     ${CMAKE_SOURCE_DIR}/src/panel.c
     ${CMAKE_SOURCE_DIR}/src/protocol.c
     ${CMAKE_SOURCE_DIR}/src/image.c
+    ${CMAKE_SOURCE_DIR}/src/port_detect.c
 )
 
 target_include_directories(test_panel PRIVATE
