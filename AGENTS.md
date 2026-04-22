@@ -39,8 +39,12 @@ Tests run without hardware. Unity is vendored in `tests/vendor/` — no extra se
 | `src/port_detect.h/.c` | Auto-detect device via HELLO probe on `/dev/tty.usbmodem*` |
 | `src/types.h` | Public types: `xf_orientation_t`, `xf_color_t`, `xf_device_t` (opaque) |
 | `src/device_internal.h` | Internal: `xf_sub_revision_t` enum + `struct xf_device` fields |
+| `src/dashboard.h/.c` | Row-based immediate-mode layout engine; produces RGB888 framebuffer |
 | `tests/fake_serial.c` | Serial mock for offline testing |
-| `tests/test_panel.c` | All unit tests |
+| `tests/test_panel.c` | Unit tests for the panel module |
+| `tests/test_dashboard.c` | Unit tests for the dashboard module |
+
+See `doc/dashboard-agents.md` for dashboard module internals and testing conventions.
 
 ## Adding a new device revision
 

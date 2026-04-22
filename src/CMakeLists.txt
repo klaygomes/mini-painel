@@ -5,6 +5,7 @@ add_executable(panel
     image.c
     port_detect.c
     panel.c
+    dashboard.c
 )
 
 target_include_directories(panel PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

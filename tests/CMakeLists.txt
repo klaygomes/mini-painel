@@ -18,3 +18,18 @@ target_include_directories(test_panel PRIVATE
 
 target_compile_options(test_panel PRIVATE -Wall -Wextra)
 add_test(NAME test_panel COMMAND test_panel)
+
+add_executable(test_dashboard
+    test_dashboard.c
+    vendor/unity.c
+    ${CMAKE_SOURCE_DIR}/src/dashboard.c
+)
+
+target_include_directories(test_dashboard PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendor
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+target_compile_options(test_dashboard PRIVATE -Wall -Wextra)
+add_test(NAME test_dashboard COMMAND test_dashboard)
