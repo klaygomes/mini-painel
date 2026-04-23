@@ -5,10 +5,12 @@
 #include <string.h>
 #include <stddef.h>
 
-/* Helpers that expand the theme background to byte channels. */
-#define BG_R() ((uint8_t)(xf_get_theme()->background.r * 255.0f))
-#define BG_G() ((uint8_t)(xf_get_theme()->background.g * 255.0f))
-#define BG_B() ((uint8_t)(xf_get_theme()->background.b * 255.0f))
+static void rgba_to_rgb8(xf_rgba_t c, uint8_t *r, uint8_t *g, uint8_t *b)
+{
+    *r = (uint8_t)(c.r * 255.0f);
+    *g = (uint8_t)(c.g * 255.0f);
+    *b = (uint8_t)(c.b * 255.0f);
+}
 
 /* Display dimensions used across all tests. */
 #define W 100
@@ -344,9 +346,10 @@ static void test_framebuffer_is_cleared_between_renders(void)
     dashboard_remove_row(dash, 0);
     fb = dashboard_render(dash);
 
-    TEST_ASSERT_EQUAL_UINT8(BG_R(), PX(fb, 0, 0, 0));
-    TEST_ASSERT_EQUAL_UINT8(BG_G(), PX(fb, 0, 0, 1));
-    TEST_ASSERT_EQUAL_UINT8(BG_B(), PX(fb, 0, 0, 2));
+    { uint8_t r, g, b; rgba_to_rgb8(xf_get_theme()->background, &r, &g, &b);
+      TEST_ASSERT_EQUAL_UINT8(r, PX(fb, 0, 0, 0));
+      TEST_ASSERT_EQUAL_UINT8(g, PX(fb, 0, 0, 1));
+      TEST_ASSERT_EQUAL_UINT8(b, PX(fb, 0, 0, 2)); }
     dashboard_destroy(dash);
 }
 
@@ -552,8 +555,9 @@ static void test_render_page_0_excludes_overflow_row(void)
     fb = dashboard_render_page(dash, 0);
 
     /* y=40 must be background — row B is on page 1, not page 0. */
-    TEST_ASSERT_EQUAL_UINT8(BG_R(), PX(fb, 0, 40, 0));
-    TEST_ASSERT_EQUAL_UINT8(BG_B(), PX(fb, 0, 40, 2));
+    { uint8_t r, g, b; rgba_to_rgb8(xf_get_theme()->background, &r, &g, &b);
+      TEST_ASSERT_EQUAL_UINT8(r, PX(fb, 0, 40, 0));
+      TEST_ASSERT_EQUAL_UINT8(b, PX(fb, 0, 40, 2)); }
     dashboard_destroy(dash);
 }
 
@@ -567,9 +571,10 @@ static void test_render_out_of_bounds_page_returns_background_buffer(void)
     fb = dashboard_render_page(dash, 99); /* only 1 page exists */
 
     TEST_ASSERT_NOT_NULL(fb);
-    TEST_ASSERT_EQUAL_UINT8(BG_R(), PX(fb, 0, 0, 0));
-    TEST_ASSERT_EQUAL_UINT8(BG_G(), PX(fb, 0, 0, 1));
-    TEST_ASSERT_EQUAL_UINT8(BG_B(), PX(fb, 0, 0, 2));
+    { uint8_t r, g, b; rgba_to_rgb8(xf_get_theme()->background, &r, &g, &b);
+      TEST_ASSERT_EQUAL_UINT8(r, PX(fb, 0, 0, 0));
+      TEST_ASSERT_EQUAL_UINT8(g, PX(fb, 0, 0, 1));
+      TEST_ASSERT_EQUAL_UINT8(b, PX(fb, 0, 0, 2)); }
     dashboard_destroy(dash);
 }
 
