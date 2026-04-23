@@ -1,8 +1,14 @@
 #include "vendor/unity.h"
 #include "../src/dashboard.h"
+#include "../src/components/draw.h"
 
 #include <string.h>
 #include <stddef.h>
+
+/* Helpers that expand the theme background to byte channels. */
+#define BG_R() ((uint8_t)(xf_get_theme()->background.r * 255.0f))
+#define BG_G() ((uint8_t)(xf_get_theme()->background.g * 255.0f))
+#define BG_B() ((uint8_t)(xf_get_theme()->background.b * 255.0f))
 
 /* Display dimensions used across all tests. */
 #define W 100
@@ -327,20 +333,20 @@ static void test_right_column_pixels_appear_at_correct_x_offset(void)
 
 static void test_framebuffer_is_cleared_between_renders(void)
 {
-    /* Render with a red row, remove it, render again — area must be black. */
+    /* Render with a red row, remove it, render again — area is theme background. */
     xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  comp = {NULL, render_red, NULL};
     const uint8_t  *fb;
 
     dashboard_add_full_row(dash, &comp, H);
-    dashboard_render(dash); /* first render: area is red */
+    dashboard_render(dash);
 
     dashboard_remove_row(dash, 0);
-    fb = dashboard_render(dash); /* second render: no rows, area must be black */
+    fb = dashboard_render(dash);
 
-    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 0));
-    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 1));
-    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 2));
+    TEST_ASSERT_EQUAL_UINT8(BG_R(), PX(fb, 0, 0, 0));
+    TEST_ASSERT_EQUAL_UINT8(BG_G(), PX(fb, 0, 0, 1));
+    TEST_ASSERT_EQUAL_UINT8(BG_B(), PX(fb, 0, 0, 2));
     dashboard_destroy(dash);
 }
 
@@ -545,13 +551,13 @@ static void test_render_page_0_excludes_overflow_row(void)
     dashboard_add_full_row(dash, &b, 40);
     fb = dashboard_render_page(dash, 0);
 
-    /* y=40 must be black — row B is on page 1, not page 0. */
-    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 40, 0));
-    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 40, 2));
+    /* y=40 must be background — row B is on page 1, not page 0. */
+    TEST_ASSERT_EQUAL_UINT8(BG_R(), PX(fb, 0, 40, 0));
+    TEST_ASSERT_EQUAL_UINT8(BG_B(), PX(fb, 0, 40, 2));
     dashboard_destroy(dash);
 }
 
-static void test_render_out_of_bounds_page_returns_black_buffer(void)
+static void test_render_out_of_bounds_page_returns_background_buffer(void)
 {
     xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  comp = {NULL, render_red, NULL};
@@ -561,9 +567,9 @@ static void test_render_out_of_bounds_page_returns_black_buffer(void)
     fb = dashboard_render_page(dash, 99); /* only 1 page exists */
 
     TEST_ASSERT_NOT_NULL(fb);
-    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 0));
-    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 1));
-    TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 2));
+    TEST_ASSERT_EQUAL_UINT8(BG_R(), PX(fb, 0, 0, 0));
+    TEST_ASSERT_EQUAL_UINT8(BG_G(), PX(fb, 0, 0, 1));
+    TEST_ASSERT_EQUAL_UINT8(BG_B(), PX(fb, 0, 0, 2));
     dashboard_destroy(dash);
 }
 
@@ -770,7 +776,7 @@ int main(void)
     RUN_TEST(test_render_page_0_shows_rows_fitting_display);
     RUN_TEST(test_render_page_1_shows_overflow_row_at_top);
     RUN_TEST(test_render_page_0_excludes_overflow_row);
-    RUN_TEST(test_render_out_of_bounds_page_returns_black_buffer);
+    RUN_TEST(test_render_out_of_bounds_page_returns_background_buffer);
     RUN_TEST(test_render_page_still_calls_fetch_and_render_callbacks);
     RUN_TEST(test_dashboard_render_is_equivalent_to_render_page_0);
 

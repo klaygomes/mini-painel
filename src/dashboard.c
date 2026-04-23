@@ -184,11 +184,12 @@ const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page)
 {
     int r, c, ly;
     int cur_page = 0, y = 0;
-    int pad = dash->padding;
-    int content_h = dash->height - 2 * pad;
 
     if (!dash)
         return NULL;
+
+    int pad = dash->padding;
+    int content_h = dash->height - 2 * pad;
 
     xf_fill_rgb888(dash->framebuffer, dash->width, dash->height,
                    xf_get_theme()->background);
