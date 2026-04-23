@@ -32,6 +32,7 @@ target_include_directories(test_dashboard PRIVATE
 )
 
 target_compile_options(test_dashboard PRIVATE -Wall -Wextra)
+target_link_libraries(test_dashboard PRIVATE xf_components)
 add_test(NAME test_dashboard COMMAND test_dashboard)
 
 add_executable(test_components
