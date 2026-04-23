@@ -6,8 +6,9 @@
 #pragma once
 #include "../dashboard.h"
 #include "draw.h"
+#include "layout.h"
 
-#define COMP_ONCALL_HEIGHT 32
+#define COMP_ONCALL_HEIGHT 40
 
 /**
  * @brief Data for the on-call card component.

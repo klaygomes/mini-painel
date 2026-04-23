@@ -5,8 +5,9 @@
 
 #pragma once
 #include "../dashboard.h"
+#include "layout.h"
 
-#define COMP_CHECKLIST_HEIGHT    84
+#define COMP_CHECKLIST_HEIGHT    (LAY_HEADER_H + 4 * LAY_ROW_SM)
 #define COMP_CHECKLIST_MAX_ITEMS  4
 
 /**

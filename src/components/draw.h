@@ -80,6 +80,7 @@ typedef struct {
  * Font names are plain C strings understood by most 2-D text engines.
  */
 typedef struct {
+    xf_rgba_t background;     /**< Page and component background (#FFFFFF) */
     xf_rgba_t text_primary;   /**< Main content text           (#1a1a1a) */
     xf_rgba_t text_secondary; /**< Names, subtitles            (#444441) */
     xf_rgba_t text_muted;     /**< Section labels, headers     (#6b6b67) */
@@ -330,5 +331,8 @@ typedef void (*xf_draw_fn_t)(xf_draw_ctx_t *ctx, int w, int h,
  * @param user_data  Forwarded unchanged to @p fn.
  */
 void xf_render(uint8_t *buf, int w, int h, xf_draw_fn_t fn, void *user_data);
+
+/* Fill an RGB888 buffer with a solid color. */
+void xf_fill_rgb888(uint8_t *buf, int w, int h, xf_rgba_t color);
 
 #endif /* DRAW_H */

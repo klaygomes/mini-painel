@@ -6,8 +6,9 @@
 #pragma once
 #include "../dashboard.h"
 #include "draw.h"
+#include "layout.h"
 
-#define COMP_HEADER_HEIGHT 16
+#define COMP_HEADER_HEIGHT 20
 
 /**
  * @brief Data for the header bar component.

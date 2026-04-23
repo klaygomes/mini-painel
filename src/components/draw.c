@@ -12,6 +12,7 @@
 #endif
 
 const xf_theme_t xf_theme_default = {
+    .background     = XF_RGB(0xFFFFFF),
     .text_primary   = XF_RGB(0x1a1a1a),
     .text_secondary = XF_RGB(0x444441),
     .text_muted     = XF_RGB(0x6b6b67),
@@ -246,14 +247,26 @@ void xf_draw_stroke(xf_draw_ctx_t *ctx, xf_rgba_t color,
     cairo_stroke(ctx->cr);
 }
 
+void xf_fill_rgb888(uint8_t *buf, int w, int h, xf_rgba_t color)
+{
+    uint8_t r = (uint8_t)(color.r * 255.0);
+    uint8_t g = (uint8_t)(color.g * 255.0);
+    uint8_t b = (uint8_t)(color.b * 255.0);
+    int i, n = w * h;
+    for (i = 0; i < n; i++) {
+        buf[i * 3 + 0] = r;
+        buf[i * 3 + 1] = g;
+        buf[i * 3 + 2] = b;
+    }
+}
+
 void xf_render(uint8_t *buf, int w, int h, xf_draw_fn_t fn, void *user_data)
 {
     cairo_surface_t *surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
     cairo_t         *cr   = cairo_create(surf);
 
-    /* transparent background so components without full coverage composite
-     * correctly when composited onto a coloured dashboard background */
-    cairo_set_source_rgba(cr, 0, 0, 0, 0);
+    xf_rgba_t bg = xf_get_theme()->background;
+    cairo_set_source_rgba(cr, bg.r, bg.g, bg.b, bg.a);
     cairo_paint(cr);
 
     xf_draw_ctx_t ctx = { cr };

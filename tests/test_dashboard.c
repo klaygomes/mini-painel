@@ -95,7 +95,7 @@ void tearDown(void) {}
 
 static void test_create_returns_non_null_for_valid_dimensions(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     TEST_ASSERT_NOT_NULL(dash);
     dashboard_destroy(dash);
 }
@@ -118,7 +118,7 @@ static void test_add_row_rejects_null_dashboard(void)
 
 static void test_add_row_rejects_null_components(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     int widths[] = {W};
     TEST_ASSERT_EQUAL_INT(-1, dashboard_add_row(dash, NULL, widths, 1, 10));
     dashboard_destroy(dash);
@@ -126,7 +126,7 @@ static void test_add_row_rejects_null_components(void)
 
 static void test_add_row_rejects_null_widths(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {NULL, render_red, NULL};
     xf_component_t *comps[] = {&comp};
     TEST_ASSERT_EQUAL_INT(-1, dashboard_add_row(dash, comps, NULL, 1, 10));
@@ -135,7 +135,7 @@ static void test_add_row_rejects_null_widths(void)
 
 static void test_add_row_rejects_zero_count(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {NULL, render_red, NULL};
     xf_component_t *comps[] = {&comp};
     int widths[] = {W};
@@ -145,7 +145,7 @@ static void test_add_row_rejects_zero_count(void)
 
 static void test_add_row_rejects_zero_height(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {NULL, render_red, NULL};
     xf_component_t *comps[] = {&comp};
     int widths[] = {W};
@@ -155,7 +155,7 @@ static void test_add_row_rejects_zero_height(void)
 
 static void test_add_row_rejects_widths_that_dont_sum_to_display_width(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {NULL, render_red, NULL};
     xf_component_t *comps[] = {&comp};
     int widths[] = {W - 1}; /* intentionally wrong */
@@ -173,7 +173,7 @@ static void test_add_full_row_rejects_null_dashboard(void)
 
 static void test_add_full_row_rejects_null_component(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     TEST_ASSERT_EQUAL_INT(-1, dashboard_add_full_row(dash, NULL, 10));
     dashboard_destroy(dash);
 }
@@ -187,7 +187,7 @@ static void test_render_returns_null_for_null_dashboard(void)
 
 static void test_render_returns_non_null_for_valid_dashboard(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     TEST_ASSERT_NOT_NULL(dashboard_render(dash));
     dashboard_destroy(dash);
 }
@@ -196,7 +196,7 @@ static void test_render_returns_non_null_for_valid_dashboard(void)
 
 static void test_render_calls_fetch_before_render(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {fetch_set_flag, render_check_flag, NULL};
 
     dashboard_add_full_row(dash, &comp, H);
@@ -209,7 +209,7 @@ static void test_render_calls_fetch_before_render(void)
 static void test_render_skips_fetch_when_null(void)
 {
     /* Component with NULL fetch must still have render() called. */
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {NULL, render_set_called, NULL};
 
     dashboard_add_full_row(dash, &comp, H);
@@ -222,7 +222,7 @@ static void test_render_skips_fetch_when_null(void)
 static void test_render_proceeds_when_fetch_returns_error(void)
 {
     /* fetch returns -1 but render should still run. */
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {fetch_error, render_set_called, NULL};
 
     dashboard_add_full_row(dash, &comp, H);
@@ -236,7 +236,7 @@ static void test_render_proceeds_when_fetch_returns_error(void)
 
 static void test_render_passes_full_width_to_full_row_component(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {NULL, render_record_size, NULL};
 
     dashboard_add_full_row(dash, &comp, H);
@@ -249,7 +249,7 @@ static void test_render_passes_full_width_to_full_row_component(void)
 
 static void test_render_passes_half_width_to_split_row_component(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t left  = {NULL, render_record_size, NULL};
     xf_component_t right = {NULL, render_red,         NULL};
     xf_component_t *comps[] = {&left, &right};
@@ -267,7 +267,7 @@ static void test_render_passes_half_width_to_split_row_component(void)
 
 static void test_single_full_row_pixels_appear_at_top_left(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {NULL, render_red, NULL};
     const uint8_t *fb;
 
@@ -283,7 +283,7 @@ static void test_single_full_row_pixels_appear_at_top_left(void)
 static void test_second_row_pixels_appear_below_first_row(void)
 {
     /* Red row of height 10, blue row below it. */
-    xf_dashboard_t *dash  = dashboard_create(W, H);
+    xf_dashboard_t *dash  = dashboard_create(W, H, 0);
     xf_component_t  red   = {NULL, render_red,  NULL};
     xf_component_t  blue  = {NULL, render_blue, NULL};
     const uint8_t  *fb;
@@ -305,7 +305,7 @@ static void test_second_row_pixels_appear_below_first_row(void)
 static void test_right_column_pixels_appear_at_correct_x_offset(void)
 {
     /* Left half red, right half blue. */
-    xf_dashboard_t *dash  = dashboard_create(W, H);
+    xf_dashboard_t *dash  = dashboard_create(W, H, 0);
     xf_component_t  left  = {NULL, render_red,  NULL};
     xf_component_t  right = {NULL, render_blue, NULL};
     xf_component_t *comps[] = {&left, &right};
@@ -328,7 +328,7 @@ static void test_right_column_pixels_appear_at_correct_x_offset(void)
 static void test_framebuffer_is_cleared_between_renders(void)
 {
     /* Render with a red row, remove it, render again — area must be black. */
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  comp = {NULL, render_red, NULL};
     const uint8_t  *fb;
 
@@ -349,7 +349,7 @@ static void test_framebuffer_is_cleared_between_renders(void)
 static void test_move_row_up_swaps_visual_position(void)
 {
     /* Add red (top) then blue (bottom), move blue up → blue on top. */
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  red  = {NULL, render_red,  NULL};
     xf_component_t  blue = {NULL, render_blue, NULL};
     const uint8_t  *fb;
@@ -369,7 +369,7 @@ static void test_move_row_up_swaps_visual_position(void)
 static void test_move_row_down_swaps_visual_position(void)
 {
     /* Add red (top) then blue (bottom), move red down → blue on top. */
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  red  = {NULL, render_red,  NULL};
     xf_component_t  blue = {NULL, render_blue, NULL};
     const uint8_t  *fb;
@@ -388,7 +388,7 @@ static void test_move_row_down_swaps_visual_position(void)
 
 static void test_move_row_up_on_first_row_returns_error(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  comp = {NULL, render_red, NULL};
     dashboard_add_full_row(dash, &comp, H);
     TEST_ASSERT_EQUAL_INT(-1, dashboard_move_row_up(dash, 0));
@@ -397,7 +397,7 @@ static void test_move_row_up_on_first_row_returns_error(void)
 
 static void test_move_row_down_on_last_row_returns_error(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  comp = {NULL, render_red, NULL};
     dashboard_add_full_row(dash, &comp, H);
     TEST_ASSERT_EQUAL_INT(-1, dashboard_move_row_down(dash, 0));
@@ -406,7 +406,7 @@ static void test_move_row_down_on_last_row_returns_error(void)
 
 static void test_remove_row_eliminates_pixels_from_next_render(void)
 {
-    xf_dashboard_t *dash  = dashboard_create(W, H);
+    xf_dashboard_t *dash  = dashboard_create(W, H, 0);
     xf_component_t  red   = {NULL, render_red,   NULL};
     xf_component_t  green = {NULL, render_green, NULL};
     const uint8_t  *fb;
@@ -428,7 +428,7 @@ static void test_remove_row_eliminates_pixels_from_next_render(void)
 
 static void test_remove_row_out_of_bounds_returns_error(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     TEST_ASSERT_EQUAL_INT(-1, dashboard_remove_row(dash, 0));
     TEST_ASSERT_EQUAL_INT(-1, dashboard_remove_row(dash, -1));
     dashboard_destroy(dash);
@@ -443,14 +443,14 @@ static void test_page_count_returns_zero_for_null(void)
 
 static void test_page_count_is_one_for_empty_dashboard(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     TEST_ASSERT_EQUAL_INT(1, dashboard_page_count(dash));
     dashboard_destroy(dash);
 }
 
 static void test_page_count_is_one_when_rows_fit_within(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  comp = {NULL, render_red, NULL};
     dashboard_add_full_row(dash, &comp, H / 2);
     TEST_ASSERT_EQUAL_INT(1, dashboard_page_count(dash));
@@ -459,7 +459,7 @@ static void test_page_count_is_one_when_rows_fit_within(void)
 
 static void test_page_count_is_one_when_rows_fit_exactly(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  a    = {NULL, render_red,  NULL};
     xf_component_t  b    = {NULL, render_blue, NULL};
     dashboard_add_full_row(dash, &a, H / 2);
@@ -471,7 +471,7 @@ static void test_page_count_is_one_when_rows_fit_exactly(void)
 static void test_page_count_is_two_when_rows_overflow(void)
 {
     /* Row A (40px) fits page 0. Row B (40px) would exceed H=60, goes to page 1. */
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  a    = {NULL, render_red,  NULL};
     xf_component_t  b    = {NULL, render_blue, NULL};
     dashboard_add_full_row(dash, &a, 40);
@@ -483,7 +483,7 @@ static void test_page_count_is_two_when_rows_overflow(void)
 static void test_page_count_is_three_for_three_pages(void)
 {
     /* Three rows of height 40 each: page 0, 1, 2. */
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  a    = {NULL, render_red,   NULL};
     xf_component_t  b    = {NULL, render_blue,  NULL};
     xf_component_t  c    = {NULL, render_green, NULL};
@@ -503,7 +503,7 @@ static void test_render_page_returns_null_for_null_dashboard(void)
 
 static void test_render_page_0_shows_rows_fitting_display(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  comp = {NULL, render_red, NULL};
     const uint8_t  *fb;
 
@@ -518,7 +518,7 @@ static void test_render_page_0_shows_rows_fitting_display(void)
 static void test_render_page_1_shows_overflow_row_at_top(void)
 {
     /* Row A (40px, red) on page 0; row B (40px, blue) overflows to page 1. */
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  a    = {NULL, render_red,  NULL};
     xf_component_t  b    = {NULL, render_blue, NULL};
     const uint8_t  *fb;
@@ -536,7 +536,7 @@ static void test_render_page_1_shows_overflow_row_at_top(void)
 static void test_render_page_0_excludes_overflow_row(void)
 {
     /* After row A (40px), row B should not bleed into page 0 at y=40. */
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  a    = {NULL, render_red,  NULL};
     xf_component_t  b    = {NULL, render_blue, NULL};
     const uint8_t  *fb;
@@ -553,7 +553,7 @@ static void test_render_page_0_excludes_overflow_row(void)
 
 static void test_render_out_of_bounds_page_returns_black_buffer(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  comp = {NULL, render_red, NULL};
     const uint8_t  *fb;
 
@@ -569,7 +569,7 @@ static void test_render_out_of_bounds_page_returns_black_buffer(void)
 
 static void test_render_page_still_calls_fetch_and_render_callbacks(void)
 {
-    xf_dashboard_t *dash = dashboard_create(W, H);
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t  comp = {fetch_set_flag, render_check_flag, NULL};
 
     dashboard_add_full_row(dash, &comp, 40);
@@ -581,7 +581,7 @@ static void test_render_page_still_calls_fetch_and_render_callbacks(void)
 
 static void test_dashboard_render_is_equivalent_to_render_page_0(void)
 {
-    xf_dashboard_t *dash  = dashboard_create(W, H);
+    xf_dashboard_t *dash  = dashboard_create(W, H, 0);
     xf_component_t  a     = {NULL, render_red,  NULL};
     xf_component_t  b     = {NULL, render_blue, NULL};
     const uint8_t  *fb0, *fb1;
@@ -596,6 +596,125 @@ static void test_dashboard_render_is_equivalent_to_render_page_0(void)
 
     fb1 = dashboard_render(dash);
     TEST_ASSERT_EQUAL_MEMORY(page0_copy, fb1, sizeof(page0_copy));
+    dashboard_destroy(dash);
+}
+
+/* ── dashboard_dirty_rect ────────────────────────────────────────────────── */
+
+static void test_dirty_rect_returns_minus_one_for_null_dashboard(void)
+{
+    int x, y, w, h;
+    TEST_ASSERT_EQUAL_INT(-1, dashboard_dirty_rect(NULL, 0, &x, &y, &w, &h));
+}
+
+static void test_dirty_rect_returns_zero_when_nothing_dirty(void)
+{
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
+    xf_component_t  comp = {NULL, render_red, NULL, 0};
+    int x, y, w, h;
+
+    dashboard_add_full_row(dash, &comp, H);
+    TEST_ASSERT_EQUAL_INT(0, dashboard_dirty_rect(dash, 0, &x, &y, &w, &h));
+    dashboard_destroy(dash);
+}
+
+static void test_dirty_rect_returns_one_for_single_dirty_component(void)
+{
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
+    xf_component_t  comp = {NULL, render_red, NULL, 1};
+    int x, y, w, h;
+
+    dashboard_add_full_row(dash, &comp, H);
+    TEST_ASSERT_EQUAL_INT(1, dashboard_dirty_rect(dash, 0, &x, &y, &w, &h));
+    TEST_ASSERT_EQUAL_INT(0, x);
+    TEST_ASSERT_EQUAL_INT(0, y);
+    TEST_ASSERT_EQUAL_INT(W, w);
+    TEST_ASSERT_EQUAL_INT(H, h);
+    dashboard_destroy(dash);
+}
+
+static void test_dirty_rect_clears_flag_after_call(void)
+{
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
+    xf_component_t  comp = {NULL, render_red, NULL, 1};
+    int x, y, w, h;
+
+    dashboard_add_full_row(dash, &comp, H);
+    dashboard_dirty_rect(dash, 0, &x, &y, &w, &h);
+    TEST_ASSERT_EQUAL_INT(0, dashboard_dirty_rect(dash, 0, &x, &y, &w, &h));
+    dashboard_destroy(dash);
+}
+
+static void test_dirty_rect_merges_two_dirty_components(void)
+{
+    /* Red (top, 20px) not dirty; blue (bottom, 40px) dirty.
+     * Expected rect: x=0, y=20, w=W, h=40. */
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
+    xf_component_t  top  = {NULL, render_red,  NULL, 0};
+    xf_component_t  bot  = {NULL, render_blue, NULL, 1};
+    int x, y, w, h;
+
+    dashboard_add_full_row(dash, &top, 20);
+    dashboard_add_full_row(dash, &bot, 40);
+    TEST_ASSERT_EQUAL_INT(1, dashboard_dirty_rect(dash, 0, &x, &y, &w, &h));
+    TEST_ASSERT_EQUAL_INT(0,  x);
+    TEST_ASSERT_EQUAL_INT(20, y);
+    TEST_ASSERT_EQUAL_INT(W,  w);
+    TEST_ASSERT_EQUAL_INT(40, h);
+    dashboard_destroy(dash);
+}
+
+static void test_dirty_rect_union_covers_both_dirty_components(void)
+{
+    /* Red (20px) dirty, green (10px) not dirty, blue (30px) dirty.
+     * Union rect must span from y=0 to y=59. */
+    xf_dashboard_t *dash  = dashboard_create(W, H, 0);
+    xf_component_t  top   = {NULL, render_red,   NULL, 1};
+    xf_component_t  mid   = {NULL, render_green, NULL, 0};
+    xf_component_t  bot   = {NULL, render_blue,  NULL, 1};
+    int x, y, w, h;
+
+    dashboard_add_full_row(dash, &top, 20);
+    dashboard_add_full_row(dash, &mid, 10);
+    dashboard_add_full_row(dash, &bot, 30);
+    TEST_ASSERT_EQUAL_INT(1, dashboard_dirty_rect(dash, 0, &x, &y, &w, &h));
+    TEST_ASSERT_EQUAL_INT(0,  x);
+    TEST_ASSERT_EQUAL_INT(0,  y);
+    TEST_ASSERT_EQUAL_INT(W,  w);
+    TEST_ASSERT_EQUAL_INT(60, h); /* 20 + 10 + 30 */
+    dashboard_destroy(dash);
+}
+
+static void test_dirty_rect_accounts_for_padding(void)
+{
+    /* 10px padding on all sides; single dirty component.
+     * Component rect starts at (10,10) in framebuffer coords. */
+    xf_dashboard_t *dash = dashboard_create(W, H, 10);
+    xf_component_t  comp = {NULL, render_red, NULL, 1};
+    int x, y, w, h;
+
+    dashboard_add_full_row(dash, &comp, H - 20); /* content height */
+    TEST_ASSERT_EQUAL_INT(1, dashboard_dirty_rect(dash, 0, &x, &y, &w, &h));
+    TEST_ASSERT_EQUAL_INT(10,     x);
+    TEST_ASSERT_EQUAL_INT(10,     y);
+    TEST_ASSERT_EQUAL_INT(W - 20, w);
+    TEST_ASSERT_EQUAL_INT(H - 20, h);
+    dashboard_destroy(dash);
+}
+
+static void test_dirty_rect_ignores_components_on_other_page(void)
+{
+    /* Two 40px rows: first fits on page 0, second overflows to page 1.
+     * Only the page-1 component is dirty; querying page 0 must return 0. */
+    xf_dashboard_t *dash = dashboard_create(W, H, 0);
+    xf_component_t  a    = {NULL, render_red,  NULL, 0};
+    xf_component_t  b    = {NULL, render_blue, NULL, 1};
+    int x, y, w, h;
+
+    dashboard_add_full_row(dash, &a, 40);
+    dashboard_add_full_row(dash, &b, 40); /* overflows to page 1 */
+    TEST_ASSERT_EQUAL_INT(0, dashboard_dirty_rect(dash, 0, &x, &y, &w, &h));
+    TEST_ASSERT_EQUAL_INT(1, dashboard_dirty_rect(dash, 1, &x, &y, &w, &h));
     dashboard_destroy(dash);
 }
 
@@ -654,6 +773,15 @@ int main(void)
     RUN_TEST(test_render_out_of_bounds_page_returns_black_buffer);
     RUN_TEST(test_render_page_still_calls_fetch_and_render_callbacks);
     RUN_TEST(test_dashboard_render_is_equivalent_to_render_page_0);
+
+    RUN_TEST(test_dirty_rect_returns_minus_one_for_null_dashboard);
+    RUN_TEST(test_dirty_rect_returns_zero_when_nothing_dirty);
+    RUN_TEST(test_dirty_rect_returns_one_for_single_dirty_component);
+    RUN_TEST(test_dirty_rect_clears_flag_after_call);
+    RUN_TEST(test_dirty_rect_merges_two_dirty_components);
+    RUN_TEST(test_dirty_rect_union_covers_both_dirty_components);
+    RUN_TEST(test_dirty_rect_accounts_for_padding);
+    RUN_TEST(test_dirty_rect_ignores_components_on_other_page);
 
     return UNITY_END();
 }

@@ -22,8 +22,8 @@
 #include "components/comp_pr_review.h"
 #include "components/comp_checklist.h"
 
-#define DISPLAY_W       320
-#define DISPLAY_H       480
+#define DISPLAY_W       480
+#define DISPLAY_H       320
 #define PAGE_INTERVAL_S 10
 
 int main(void)
@@ -31,8 +31,6 @@ int main(void)
     xf_dashboard_t *dash;
     xf_device_t    *dev;
     int             page_count, page;
-
-    /* ── mocked data ───────────────────────────────────────────────────────── */
 
     comp_header_data_t header_data = {
         .date        = "Thu \xc2\xb7 Apr 23",
@@ -148,8 +146,6 @@ int main(void)
         .count = 5,
     };
 
-    /* ── page 2 data ───────────────────────────────────────────────────────── */
-
     comp_oncall_data_t oncall_data = {
         .initials     = "MR",
         .name         = "Maya Rodriguez",
@@ -200,86 +196,83 @@ int main(void)
         .count = 4,
     };
 
-    /* ── components ────────────────────────────────────────────────────────── */
-
     xf_component_t c_header     = comp_header_create(&header_data);
-    xf_component_t c_div_a      = comp_divider_create();
     xf_component_t c_deploy     = comp_deploy_create(&deploy_data);
-    xf_component_t c_div_b      = comp_divider_create();
     xf_component_t c_build      = comp_build_status_create(&build_data);
-    xf_component_t c_div_c      = comp_divider_create();
     xf_component_t c_metrics    = comp_metrics_create(&metrics_data);
     xf_component_t c_sparkline  = comp_sparkline_create(&sparkline_data);
     xf_component_t c_error_rate = comp_error_rate_create(&error_data);
-    xf_component_t c_div_d      = comp_divider_create();
     xf_component_t c_alerts     = comp_alerts_create(&alerts_data);
-    xf_component_t c_div_e      = comp_divider_create();
     xf_component_t c_outages    = comp_outages_create(&outages_data);
     xf_component_t c_sprint     = comp_sprint_create(&sprint_data);
-    xf_component_t c_spacer     = comp_spacer_create();
     xf_component_t c_team       = comp_team_status_create(&team_data);
-
     xf_component_t c_oncall     = comp_oncall_create(&oncall_data);
-    xf_component_t c_div_f      = comp_divider_create();
     xf_component_t c_sla        = comp_sla_gauge_create(&sla_data);
-    xf_component_t c_div_g      = comp_divider_create();
     xf_component_t c_schedule   = comp_schedule_create(&schedule_data);
-    xf_component_t c_div_h      = comp_divider_create();
     xf_component_t c_pr         = comp_pr_review_create(&pr_data);
-    xf_component_t c_div_i      = comp_divider_create();
     xf_component_t c_checklist  = comp_checklist_create(&checklist_data);
 
-    /* ── dashboard layout ──────────────────────────────────────────────────── */
-    /* Page 1: 477 px — leaves a 3 px gap so the next row overflows cleanly.  */
-    /* Page 2: remaining rows, 362 px total.                                   */
+    xf_component_t c_div_a  = comp_divider_create();
+    xf_component_t c_div_b  = comp_divider_create();
+    xf_component_t c_div_c  = comp_divider_create();
+    xf_component_t c_div_d  = comp_divider_create();
+    xf_component_t c_div_e  = comp_divider_create();
+    xf_component_t c_div_f  = comp_divider_create();
 
-    dash = dashboard_create(DISPLAY_W, DISPLAY_H);
+    xf_component_t c_sp_a   = comp_spacer_create();
+    xf_component_t c_sp_b   = comp_spacer_create();
+    xf_component_t c_sp_c   = comp_spacer_create();
+    xf_component_t c_sp_d   = comp_spacer_create();
+    xf_component_t c_sp_e   = comp_spacer_create();
+    xf_component_t c_sp_f   = comp_spacer_create();
+
+    dash = dashboard_create(DISPLAY_W, DISPLAY_H, 4);
     if (!dash) {
         fprintf(stderr, "dashboard_create failed\n");
         return 1;
     }
 
     dashboard_add_full_row(dash, &c_header,     COMP_HEADER_HEIGHT);
-    dashboard_add_full_row(dash, &c_div_a,      COMP_DIVIDER_HEIGHT);
+    dashboard_add_full_row(dash, &c_sp_a,       COMP_SPACER_HEIGHT);
     dashboard_add_full_row(dash, &c_deploy,     COMP_DEPLOY_HEIGHT);
-    dashboard_add_full_row(dash, &c_div_b,      COMP_DIVIDER_HEIGHT);
+    dashboard_add_full_row(dash, &c_div_a,      COMP_DIVIDER_HEIGHT);
     dashboard_add_full_row(dash, &c_build,      COMP_BUILD_STATUS_HEIGHT);
-    dashboard_add_full_row(dash, &c_div_c,      COMP_DIVIDER_HEIGHT);
+    dashboard_add_full_row(dash, &c_div_b,      COMP_DIVIDER_HEIGHT);
     dashboard_add_full_row(dash, &c_metrics,    COMP_METRICS_HEIGHT);
+    dashboard_add_full_row(dash, &c_sp_b,       COMP_SPACER_HEIGHT);
     dashboard_add_full_row(dash, &c_sparkline,  COMP_SPARKLINE_HEIGHT);
     dashboard_add_full_row(dash, &c_error_rate, COMP_ERROR_RATE_HEIGHT);
-    dashboard_add_full_row(dash, &c_div_d,      COMP_DIVIDER_HEIGHT);
-    dashboard_add_full_row(dash, &c_alerts,     COMP_ALERTS_HEIGHT);
-    dashboard_add_full_row(dash, &c_div_e,      COMP_DIVIDER_HEIGHT);
-    dashboard_add_full_row(dash, &c_outages,    COMP_OUTAGES_HEIGHT);
-    dashboard_add_full_row(dash, &c_sprint,     COMP_SPRINT_HEIGHT);
-    dashboard_add_full_row(dash, &c_spacer,     COMP_SPACER_HEIGHT);
-    dashboard_add_full_row(dash, &c_team,       COMP_TEAM_STATUS_HEIGHT);
 
+    dashboard_add_full_row(dash, &c_alerts,     COMP_ALERTS_HEIGHT);
+    dashboard_add_full_row(dash, &c_sp_c,       COMP_SPACER_HEIGHT);
+    dashboard_add_full_row(dash, &c_outages,    COMP_OUTAGES_HEIGHT);
+    dashboard_add_full_row(dash, &c_sp_d,       COMP_SPACER_HEIGHT);
+    dashboard_add_full_row(dash, &c_sprint,     COMP_SPRINT_HEIGHT);
+
+    dashboard_add_full_row(dash, &c_sp_e,       COMP_SPACER_HEIGHT);
+    dashboard_add_full_row(dash, &c_team,       COMP_TEAM_STATUS_HEIGHT);
+    dashboard_add_full_row(dash, &c_div_c,      COMP_DIVIDER_HEIGHT);
     dashboard_add_full_row(dash, &c_oncall,     COMP_ONCALL_HEIGHT);
-    dashboard_add_full_row(dash, &c_div_f,      COMP_DIVIDER_HEIGHT);
+    dashboard_add_full_row(dash, &c_div_d,      COMP_DIVIDER_HEIGHT);
     dashboard_add_full_row(dash, &c_sla,        COMP_SLA_GAUGE_HEIGHT);
-    dashboard_add_full_row(dash, &c_div_g,      COMP_DIVIDER_HEIGHT);
+    dashboard_add_full_row(dash, &c_div_e,      COMP_DIVIDER_HEIGHT);
     dashboard_add_full_row(dash, &c_schedule,   COMP_SCHEDULE_HEIGHT);
-    dashboard_add_full_row(dash, &c_div_h,      COMP_DIVIDER_HEIGHT);
+
+    dashboard_add_full_row(dash, &c_sp_f,       COMP_SPACER_HEIGHT);
     dashboard_add_full_row(dash, &c_pr,         COMP_PR_REVIEW_HEIGHT);
-    dashboard_add_full_row(dash, &c_div_i,      COMP_DIVIDER_HEIGHT);
+    dashboard_add_full_row(dash, &c_div_f,      COMP_DIVIDER_HEIGHT);
     dashboard_add_full_row(dash, &c_checklist,  COMP_CHECKLIST_HEIGHT);
 
     page_count = dashboard_page_count(dash);
     printf("Dashboard: %d pages\n", page_count);
 
-    /* ── device ────────────────────────────────────────────────────────────── */
-
     dev = panel_open_auto();
     if (!dev)
-        fprintf(stderr, "No XuanFang device found; running in headless mode.\n");
+        fprintf(stderr, "No device found; running in headless mode.\n");
     else {
-        panel_set_orientation(dev, XF_ORIENT_PORTRAIT);
+        panel_set_orientation(dev, XF_ORIENT_LANDSCAPE);
         panel_set_brightness(dev, 80);
     }
-
-    /* ── render loop ───────────────────────────────────────────────────────── */
 
     page = 0;
     while (1) {

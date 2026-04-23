@@ -6,8 +6,9 @@
 #pragma once
 #include "../dashboard.h"
 #include "draw.h"
+#include "layout.h"
 
-#define COMP_BUILD_STATUS_HEIGHT 34
+#define COMP_BUILD_STATUS_HEIGHT 40
 
 /**
  * @brief Data for the build status component.

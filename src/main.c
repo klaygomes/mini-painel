@@ -7,6 +7,7 @@
 
 #define DISPLAY_W 320
 #define DISPLAY_H 480
+#define PADDING     4
 
 static void render_header(xf_component_t *self, uint8_t *buf, int w, int h)
 {
@@ -48,15 +49,18 @@ int main(void)
     xf_component_t  left   = XF_COMPONENT(render_left);
     xf_component_t  right  = XF_COMPONENT(render_right);
     xf_component_t *body_comps[] = {&left, &right};
-    int             body_widths[] = {DISPLAY_W / 2, DISPLAY_W / 2};
+    int             body_widths[2];
     const uint8_t  *frame;
     xf_device_t    *dev;
 
-    dash = dashboard_create(DISPLAY_W, DISPLAY_H);
+    dash = dashboard_create(DISPLAY_W, DISPLAY_H, PADDING);
     if (!dash) {
         fprintf(stderr, "dashboard_create failed\n");
         return 1;
     }
+
+    body_widths[0] = dashboard_content_width(dash) / 2;
+    body_widths[1] = dashboard_content_width(dash) / 2;
 
     if (dashboard_add_full_row(dash, &header, 60) < 0) {
         fprintf(stderr, "dashboard_add_full_row failed\n");

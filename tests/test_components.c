@@ -66,7 +66,7 @@ static int buffer_has_content(const uint8_t *buf, int w, int h)
    the buffer is non-NULL and non-zero. Writes a PPM side-effect. */
 static int render_component(xf_component_t *comp, int height, const char *ppm)
 {
-    xf_dashboard_t *dash = dashboard_create(DISPLAY_W, height);
+    xf_dashboard_t *dash = dashboard_create(DISPLAY_W, height, 0);
     if (!dash) return 0;
 
     if (dashboard_add_full_row(dash, comp, height) != 0) {
@@ -102,7 +102,7 @@ static void test_header(void)
 static void test_spacer(void)
 {
     /* Spacer is intentionally blank; the buffer itself must still be allocated. */
-    xf_dashboard_t *dash = dashboard_create(DISPLAY_W, COMP_SPACER_HEIGHT);
+    xf_dashboard_t *dash = dashboard_create(DISPLAY_W, COMP_SPACER_HEIGHT, 0);
     TEST_ASSERT_NOT_NULL(dash);
 
     xf_component_t comp = comp_spacer_create();
@@ -120,7 +120,7 @@ static void test_divider(void)
 {
     xf_component_t comp = comp_divider_create();
     /* A 1-pixel tall render is still a valid non-NULL buffer. */
-    xf_dashboard_t *dash = dashboard_create(DISPLAY_W, COMP_DIVIDER_HEIGHT);
+    xf_dashboard_t *dash = dashboard_create(DISPLAY_W, COMP_DIVIDER_HEIGHT, 0);
     TEST_ASSERT_NOT_NULL(dash);
     TEST_ASSERT_EQUAL_INT(0, dashboard_add_full_row(dash, &comp, COMP_DIVIDER_HEIGHT));
     TEST_ASSERT_NOT_NULL(dashboard_render(dash));

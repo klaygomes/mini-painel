@@ -1,9 +1,10 @@
 #include "comp_alerts.h"
 #include "draw.h"
+#include "layout.h"
 
-#define HEADER_H 16
-#define ROW_H     18
-#define ROW_GAP    2
+#define HEADER_H LAY_HEADER_H
+#define ROW_H     LAY_ROW_ALERT
+#define ROW_GAP   LAY_GAP_SM
 
 static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
 {
@@ -11,8 +12,8 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
     const comp_alerts_data_t *d = user_data;
     (void)h;
 
-    xf_draw_text(ctx, d->title, 8.0, 11.0, &(xf_text_opts_t){
-        .size = 9, .weight = 600, .color = t->text_muted
+    xf_draw_text(ctx, d->title, LAY_PAD_X, 13.0, &(xf_text_opts_t){
+        .size = FONT_MD, .weight = 600, .color = t->text_muted
     });
 
     double y = HEADER_H;
@@ -24,13 +25,13 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
 
         xf_draw_circle(ctx, 9.0, y + (double)ROW_H / 2.0, 3.0, r->dot);
 
-        xf_draw_text(ctx, r->message, 18.0, y + 12.0, &(xf_text_opts_t){
-            .size = 10, .weight = 400, .color = t->text_secondary,
+        xf_draw_text(ctx, r->message, 18.0, y + 13.0, &(xf_text_opts_t){
+            .size = FONT_LG, .weight = 400, .color = t->text_secondary,
             .max_width = (double)w - 70.0
         });
 
-        xf_draw_text(ctx, r->time, (double)w - 8.0, y + 12.0, &(xf_text_opts_t){
-            .size = 8, .weight = 400, .color = t->text_faint, .align = XF_TEXT_RIGHT
+        xf_draw_text(ctx, r->time, (double)w - LAY_PAD_X, y + 13.0, &(xf_text_opts_t){
+            .size = FONT_SM, .weight = 400, .color = t->text_faint, .align = XF_TEXT_RIGHT
         });
 
         y += ROW_H + ROW_GAP;

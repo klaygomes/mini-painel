@@ -6,8 +6,9 @@
 #pragma once
 #include "../dashboard.h"
 #include "draw.h"
+#include "layout.h"
 
-#define COMP_TEAM_STATUS_HEIGHT      44
+#define COMP_TEAM_STATUS_HEIGHT      50
 #define COMP_TEAM_STATUS_MAX_MEMBERS  6
 
 /**

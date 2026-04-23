@@ -5,12 +5,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/* REVERSE_* orientations are software-managed (180° pixel flip before send). */
+/* Values match the Turing protocol: device byte = value + 100. */
 typedef enum {
-    XF_ORIENT_PORTRAIT = 0,
-    XF_ORIENT_LANDSCAPE,
-    XF_ORIENT_REVERSE_PORTRAIT,
-    XF_ORIENT_REVERSE_LANDSCAPE
+    XF_ORIENT_PORTRAIT          = 0,
+    XF_ORIENT_REVERSE_PORTRAIT  = 1,
+    XF_ORIENT_LANDSCAPE         = 2,
+    XF_ORIENT_REVERSE_LANDSCAPE = 3
 } xf_orientation_t;
 
 typedef struct {

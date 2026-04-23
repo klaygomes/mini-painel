@@ -6,8 +6,9 @@
 #pragma once
 #include "../dashboard.h"
 #include "draw.h"
+#include "layout.h"
 
-#define COMP_SLA_GAUGE_HEIGHT   76
+#define COMP_SLA_GAUGE_HEIGHT   (LAY_HEADER_H + 3 * LAY_ROW_MD)
 #define COMP_SLA_GAUGE_MAX_ROWS  3
 
 /**

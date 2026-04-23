@@ -3,8 +3,9 @@
 
 #include "comp_team_status.h"
 #include "draw.h"
+#include "layout.h"
 
-#define HEADER_H    16
+#define HEADER_H LAY_HEADER_H
 #define AVATAR_R    13.0
 #define AVATAR_GAP   6.0
 #define START_X     14.0
@@ -15,8 +16,8 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
     const comp_team_status_data_t *d = user_data;
     (void)w; (void)h;
 
-    xf_draw_text(ctx, d->title, 8.0, 11.0, &(xf_text_opts_t){
-        .size = 9, .weight = 600, .color = t->text_muted
+    xf_draw_text(ctx, d->title, LAY_PAD_X, 13.0, &(xf_text_opts_t){
+        .size = FONT_MD, .weight = 600, .color = t->text_muted
     });
 
     double cy  = (double)HEADER_H + AVATAR_R + 2.0;
@@ -29,8 +30,8 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
         xf_draw_circle(ctx, x, cy, AVATAR_R,
                        m->online ? m->avatar_color : t->offline);
 
-        xf_draw_text(ctx, m->initials, x, cy + 4.0, &(xf_text_opts_t){
-            .size = 8, .weight = 700, .color = t->white, .align = XF_TEXT_CENTER
+        xf_draw_text(ctx, m->initials, x, cy + 5.0, &(xf_text_opts_t){
+            .size = FONT_SM, .weight = 700, .color = t->white, .align = XF_TEXT_CENTER
         });
 
         if (m->online) {

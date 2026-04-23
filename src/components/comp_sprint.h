@@ -5,8 +5,9 @@
 
 #pragma once
 #include "../dashboard.h"
+#include "layout.h"
 
-#define COMP_SPRINT_HEIGHT 42
+#define COMP_SPRINT_HEIGHT 48
 
 /**
  * @brief Data for the sprint progress component.

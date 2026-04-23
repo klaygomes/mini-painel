@@ -5,8 +5,9 @@
 
 #pragma once
 #include "../dashboard.h"
+#include "layout.h"
 
-#define COMP_DEPLOY_HEIGHT 24
+#define COMP_DEPLOY_HEIGHT 28
 
 /**
  * @brief Data for the deploy status component.

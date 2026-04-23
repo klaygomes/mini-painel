@@ -1,5 +1,6 @@
 #include "comp_metrics.h"
 #include "draw.h"
+#include "layout.h"
 
 static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
 {
@@ -18,15 +19,15 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
         xf_draw_fill_round_rect(ctx, x + 2.0, 2.0, card_w - 4.0, (double)h - 4.0,
                                 4.0, t->surface_card);
 
-        xf_draw_text(ctx, d->cards[i].label, x + card_w / 2.0, 14.0,
+        xf_draw_text(ctx, d->cards[i].label, x + card_w / 2.0, 16.0,
                      &(xf_text_opts_t){
-                         .size = 8, .weight = 600, .color = t->text_muted,
+                         .size = FONT_SM, .weight = 600, .color = t->text_muted,
                          .align = XF_TEXT_CENTER
                      });
 
-        xf_draw_text(ctx, d->cards[i].value, x + card_w / 2.0, 28.0,
+        xf_draw_text(ctx, d->cards[i].value, x + card_w / 2.0, 34.0,
                      &(xf_text_opts_t){
-                         .size = 12, .weight = 700, .color = t->text_primary,
+                         .size = FONT_HERO, .weight = 700, .color = t->text_primary,
                          .align = XF_TEXT_CENTER
                      });
     }

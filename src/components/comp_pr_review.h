@@ -6,8 +6,9 @@
 #pragma once
 #include "../dashboard.h"
 #include "draw.h"
+#include "layout.h"
 
-#define COMP_PR_REVIEW_HEIGHT   82
+#define COMP_PR_REVIEW_HEIGHT   (LAY_HEADER_H + 3 * LAY_ROW_MD + 2 * LAY_GAP_SM)
 #define COMP_PR_REVIEW_MAX_ROWS  3
 
 /**

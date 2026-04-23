@@ -6,8 +6,9 @@
 #pragma once
 #include "../dashboard.h"
 #include "draw.h"
+#include "layout.h"
 
-#define COMP_ALERTS_HEIGHT   70
+#define COMP_ALERTS_HEIGHT   (LAY_HEADER_H + 3 * LAY_ROW_ALERT + 2 * LAY_GAP_SM)
 #define COMP_ALERTS_MAX_ROWS  3
 
 /**

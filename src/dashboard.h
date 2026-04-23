@@ -28,6 +28,11 @@ struct xf_component {
     /* Caller-owned context passed into fetch() and render() via self->ctx.
      * The dashboard never reads or frees this pointer. */
     void *ctx;
+
+    /* Set to non-zero by the caller to signal that the component's output has
+     * changed since the last display update. dashboard_dirty_rect() reads and
+     * clears this flag; the dashboard itself never modifies it. */
+    int dirty;
 };
 
 /*
@@ -45,22 +50,24 @@ struct xf_component {
  *     Use for live data (clock, CPU stats, sensor readings, etc.)
  */
 #define XF_COMPONENT(render_fn) \
-    { NULL, (render_fn), NULL }
+    { NULL, (render_fn), NULL, 0 }
 
 #define XF_COMPONENT_DATA(render_fn, ctx) \
-    { NULL, (render_fn), (ctx) }
+    { NULL, (render_fn), (ctx), 0 }
 
 #define XF_COMPONENT_LIVE(fetch_fn, render_fn, ctx) \
-    { (fetch_fn), (render_fn), (ctx) }
+    { (fetch_fn), (render_fn), (ctx), 0 }
 
 /* Opaque dashboard handle. */
 typedef struct xf_dashboard xf_dashboard_t;
 
 /*
  * Allocate a dashboard for a display of the given pixel dimensions.
+ * padding is added on all four sides; the usable content area is
+ * (width - 2*padding) × (height - 2*padding). Pass 0 for no padding.
  * Returns NULL on allocation failure.
  */
-xf_dashboard_t *dashboard_create(int width, int height);
+xf_dashboard_t *dashboard_create(int width, int height, int padding);
 
 /*
  * Free the dashboard and its internal framebuffer.
@@ -72,7 +79,7 @@ void dashboard_destroy(xf_dashboard_t *dash);
  * Append a row to the bottom of the dashboard.
  *
  *   components  array of component pointers; the dashboard copies this array.
- *   widths      pixel width of each component; must sum to the dashboard width.
+ *   widths      pixel width of each component; must sum to the content width (dashboard width - 2*padding).
  *   count       number of components in this row; must be >= 1.
  *   height      row height in pixels; must be >= 1.
  *
@@ -86,7 +93,7 @@ int dashboard_add_row(xf_dashboard_t  *dash,
 
 /*
  * Append a single component that spans the full dashboard width.
- * Equivalent to dashboard_add_row with count=1 and widths={dash->width}.
+ * Equivalent to dashboard_add_row with count=1 and widths={content_width}.
  * Returns 0 on success, -1 on error.
  */
 int dashboard_add_full_row(xf_dashboard_t *dash,
@@ -124,6 +131,12 @@ int dashboard_remove_row(xf_dashboard_t *dash, int index);
 const uint8_t *dashboard_render(xf_dashboard_t *dash);
 
 /*
+ * Returns the usable content width (display width minus horizontal padding).
+ * Use this when building widths[] arrays for dashboard_add_row.
+ */
+int dashboard_content_width(const xf_dashboard_t *dash);
+
+/*
  * Returns the number of pages the current row list produces.
  * A new page begins whenever a row would overflow the bottom of the display.
  * Always returns >= 1 for a valid dashboard. Returns 0 for NULL.
@@ -137,5 +150,29 @@ int dashboard_page_count(xf_dashboard_t *dash);
  * Returns a pointer to the internal RGB888 buffer, or NULL if dash is NULL.
  */
 const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page);
+
+/*
+ * Computes the bounding rectangle (in framebuffer coordinates, padding
+ * included) that covers every component on the given page whose dirty flag
+ * is set, then clears those flags.
+ *
+ * Returns 1 and fills x/y/w/h if at least one dirty component was found.
+ * Returns 0 if no component was dirty (x/y/w/h are left unchanged).
+ * Returns -1 if dash is NULL.
+ */
+int dashboard_dirty_rect(xf_dashboard_t *dash, int page,
+                         int *x, int *y, int *w, int *h);
+
+/*
+ * Calls visit(x, y, w, h, ctx) once per dirty component on the given page,
+ * then clears all dirty flags. Each call covers exactly the component's own
+ * pixel rectangle rather than a union of all dirty areas, so unchanged
+ * regions between dirty components are never sent.
+ *
+ * Returns the number of dirty components found (0 if none), -1 if dash is NULL.
+ */
+typedef void (*xf_dirty_visitor_t)(int x, int y, int w, int h, void *ctx);
+int dashboard_visit_dirty_rects(xf_dashboard_t *dash, int page,
+                                xf_dirty_visitor_t visit, void *ctx);
 
 #endif /* DASHBOARD_H */
