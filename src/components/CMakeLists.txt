@@ -4,6 +4,7 @@ pkg_check_modules(CAIRO REQUIRED cairo)
 file(GLOB COMPONENT_SOURCES "*.c")
 
 add_library(xf_components STATIC ${COMPONENT_SOURCES})
+target_compile_options(xf_components PRIVATE -Wall -Wextra -Werror)
 
 target_include_directories(xf_components
     PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}

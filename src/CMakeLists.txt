@@ -7,5 +7,5 @@ add_executable(panel
 )
 
 target_include_directories(panel PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(panel PRIVATE -Wall -Wextra -Wpedantic)
+target_compile_options(panel PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(panel PRIVATE xf_components)

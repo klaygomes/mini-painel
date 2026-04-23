@@ -16,7 +16,7 @@ target_include_directories(test_panel PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 
-target_compile_options(test_panel PRIVATE -Wall -Wextra)
+target_compile_options(test_panel PRIVATE -Wall -Wextra -Werror)
 add_test(NAME test_panel COMMAND test_panel)
 
 add_executable(test_dashboard
