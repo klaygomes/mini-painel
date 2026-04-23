@@ -24,3 +24,14 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+      - name: Configure (ASAN)
+        run: cmake -S . -B build-asan -DBUILD_TESTING=ON -DCMAKE_C_FLAGS="-fsanitize=address,undefined -g" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+
+      - name: Build (ASAN)
+        run: cmake --build build-asan
+
+      - name: Test (ASAN)
+        run: ctest --test-dir build-asan --output-on-failure
+        env:
+          ASAN_OPTIONS: halt_on_error=1:detect_leaks=0
