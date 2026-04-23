@@ -1,11 +1,6 @@
-/**
- * @file draw.c
- * @brief Cairo backend for the engine-agnostic draw.h API.
- *
- * This is the only file in the project that includes cairo.h. Replacing this
+/* This is the only file in the project that includes cairo.h. Replacing this
  * file with a different backend is sufficient to change the rendering engine;
- * all component code remains unchanged.
- */
+ * all component code remains unchanged. */
 
 #include "draw.h"
 
@@ -117,9 +112,9 @@ static void surface_to_rgb888(cairo_surface_t *surf, uint8_t *buf, int w, int h)
         const uint8_t *src = data + row * stride;
         uint8_t       *dst = buf  + row * w * 3;
         for (int col = 0; col < w; col++) {
-            dst[col * 3 + 0] = src[col * 4 + 2]; /* R */
-            dst[col * 3 + 1] = src[col * 4 + 1]; /* G */
-            dst[col * 3 + 2] = src[col * 4 + 0]; /* B */
+            dst[col * 3 + 0] = src[col * 4 + 2];
+            dst[col * 3 + 1] = src[col * 4 + 1];
+            dst[col * 3 + 2] = src[col * 4 + 0];
         }
     }
 }

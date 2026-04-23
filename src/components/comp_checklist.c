@@ -1,12 +1,5 @@
-/**
- * @file comp_checklist.c
- * @brief Section header + checklist rows with checkmark / empty box and strikethrough.
- *
- * Done checkboxes: filled success square + white checkmark path.
- * Undone checkboxes: stroke-only border so the background shows through.
- * Strikethrough on done items is drawn with xf_draw_measure_text so it always
- * matches the actual rendered text width.
- */
+/* Strikethrough is measured with xf_draw_measure_text so it always matches
+ * the actual rendered text width. */
 
 #include "comp_checklist.h"
 #include "draw.h"
@@ -36,7 +29,6 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
         double baseline = y + 12.0;
 
         if (item->done) {
-            /* Filled checkbox */
             xf_draw_fill_round_rect(ctx, PAD_X, box_y, BOX_SIZE, BOX_SIZE,
                                     2.0, t->success);
 
@@ -48,14 +40,12 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
             xf_draw_line_to(ctx,  PAD_X + BOX_SIZE - 1.5,  box_y + 2.0);
             xf_draw_stroke(ctx, t->white, 1.5, XF_LINE_CAP_ROUND);
 
-            /* Struck-through text */
             double tw = xf_draw_measure_text(ctx, item->item, FONT_SIZE, 400);
             xf_draw_text(ctx, item->item, TEXT_X, baseline, &(xf_text_opts_t){
                 .size = FONT_SIZE, .weight = 400, .color = t->text_faint,
                 .max_width = (double)w - TEXT_X - PAD_X
             });
 
-            /* Strikethrough bar at the text midline */
             double strike_y = baseline - FONT_SIZE * 0.35;
             double max_tw   = (double)w - TEXT_X - PAD_X;
             if (tw > max_tw) tw = max_tw;
@@ -64,7 +54,6 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
             xf_draw_line_to(ctx, TEXT_X + tw,   strike_y);
             xf_draw_stroke(ctx, t->text_faint, 1.0, XF_LINE_CAP_BUTT);
         } else {
-            /* Stroke-only checkbox */
             xf_draw_stroke_round_rect(ctx, PAD_X, box_y, BOX_SIZE, BOX_SIZE,
                                       2.0, t->surface_border, 1.0);
 

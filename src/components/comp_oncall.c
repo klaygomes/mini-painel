@@ -1,8 +1,3 @@
-/**
- * @file comp_oncall.c
- * @brief Avatar circle with initials, full name, role, and phone extension.
- */
-
 #include "comp_oncall.h"
 #include "draw.h"
 
@@ -14,15 +9,12 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
 
     double cy = (double)h / 2.0;
 
-    /* Avatar circle */
     xf_draw_circle(ctx, 22.0, cy, 12.0, d->avatar_color);
 
-    /* Initials centred inside the avatar */
     xf_draw_text(ctx, d->initials, 22.0, cy + 4.0, &(xf_text_opts_t){
         .size = 9, .weight = 700, .color = t->white, .align = XF_TEXT_CENTER
     });
 
-    /* Name and role to the right of the avatar */
     xf_draw_text(ctx, d->name, 42.0, cy - 2.0, &(xf_text_opts_t){
         .size = 11, .weight = 600, .color = t->text_secondary, .max_width = 160.0
     });
@@ -31,7 +23,6 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
         .size = 9, .weight = 400, .color = t->text_muted, .max_width = 160.0
     });
 
-    /* Phone extension right-aligned */
     xf_draw_text(ctx, d->phone, (double)w - 8.0, cy + 4.0, &(xf_text_opts_t){
         .size = 10, .weight = 400, .color = t->text_faint, .align = XF_TEXT_RIGHT
     });

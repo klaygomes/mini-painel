@@ -1,8 +1,3 @@
-/**
- * @file comp_sprint.c
- * @brief Sprint progress: title, progress label, time left, and a filled bar.
- */
-
 #include "comp_sprint.h"
 #include "draw.h"
 
@@ -15,7 +10,6 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
     const comp_sprint_data_t *d = user_data;
     (void)h;
 
-    /* Title row */
     xf_draw_text(ctx, d->title, PAD_X, 12.0, &(xf_text_opts_t){
         .size = 10, .weight = 700, .color = t->text_primary
     });
@@ -24,12 +18,10 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
         .size = 9, .weight = 400, .color = t->text_faint, .align = XF_TEXT_RIGHT
     });
 
-    /* Progress label */
     xf_draw_text(ctx, d->progress_label, PAD_X, 26.0, &(xf_text_opts_t){
         .size = 9, .weight = 400, .color = t->text_secondary
     });
 
-    /* Bar track and fill */
     double bar_x     = PAD_X;
     double bar_w     = (double)w - 2.0 * PAD_X;
     double bar_y     = 31.0;

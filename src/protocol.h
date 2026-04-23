@@ -10,7 +10,6 @@
 #define CMD_SET_LIGHTING    ((uint8_t)0xCD)
 #define CMD_SET_BRIGHTNESS  ((uint8_t)0xCE)
 
-/* Hardware orientation values for CMD_SET_ORIENT payload[0]. */
 #define HW_ORIENT_PORTRAIT  ((uint8_t)0x00)
 #define HW_ORIENT_LANDSCAPE ((uint8_t)0x01)
 
@@ -24,16 +23,9 @@
 /* 50 ms between bitmaps prevents corruption on macOS where flush is async. */
 #define COOLDOWN_US         50000
 
-/* Build and send a 10-byte command frame: [cmd][payload[0..7]][cmd].
- * Pass NULL for payload to send 8 zero bytes.
- * Returns 0 on success, -1 on error. */
+/* Frame format: [cmd][payload[0..7]][cmd]. Pass NULL for payload to send 8 zero bytes. */
 int proto_send_cmd(int fd, uint8_t cmd, const uint8_t payload[8]);
-
-/* Send raw bytes (pixel data — not framed).
- * Returns 0 on success, -1 on error. */
 int proto_send_raw(int fd, const uint8_t *data, size_t len);
-
-/* Read exactly n bytes. Returns number of bytes actually read. */
 int proto_read(int fd, uint8_t *buf, size_t n);
 
 #endif /* PROTOCOL_H */

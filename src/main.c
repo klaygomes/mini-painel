@@ -8,9 +8,6 @@
 #define DISPLAY_W 320
 #define DISPLAY_H 480
 
-/* ── demo components ─────────────────────────────────────────────────────── */
-
-/* Header: solid blue bar across the full width. */
 static void render_header(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
@@ -22,7 +19,6 @@ static void render_header(xf_component_t *self, uint8_t *buf, int w, int h)
     }
 }
 
-/* Left body panel: red. */
 static void render_left(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
@@ -34,7 +30,6 @@ static void render_left(xf_component_t *self, uint8_t *buf, int w, int h)
     }
 }
 
-/* Right body panel: green. */
 static void render_right(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
@@ -45,8 +40,6 @@ static void render_right(xf_component_t *self, uint8_t *buf, int w, int h)
         buf[i*3+2] = 0x40;
     }
 }
-
-/* ── main ────────────────────────────────────────────────────────────────── */
 
 int main(void)
 {
@@ -59,31 +52,26 @@ int main(void)
     const uint8_t  *frame;
     xf_device_t    *dev;
 
-    /* Build the dashboard layout. */
     dash = dashboard_create(DISPLAY_W, DISPLAY_H);
     if (!dash) {
         fprintf(stderr, "dashboard_create failed\n");
         return 1;
     }
 
-    /* Row 0: full-width header (60 px tall). */
     if (dashboard_add_full_row(dash, &header, 60) < 0) {
         fprintf(stderr, "dashboard_add_full_row failed\n");
         dashboard_destroy(dash);
         return 1;
     }
 
-    /* Row 1: two equal-width body panels filling the rest. */
     if (dashboard_add_row(dash, body_comps, body_widths, 2, DISPLAY_H - 60) < 0) {
         fprintf(stderr, "dashboard_add_row failed\n");
         dashboard_destroy(dash);
         return 1;
     }
 
-    /* Render one frame into the internal RGB888 buffer. */
     frame = dashboard_render(dash);
 
-    /* Open the display and send the frame. */
     dev = panel_open_auto();
     if (!dev) {
         fprintf(stderr, "No XuanFang device found. Is it plugged in?\n");

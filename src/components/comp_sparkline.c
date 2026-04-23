@@ -1,10 +1,5 @@
-/**
- * @file comp_sparkline.c
- * @brief Filled area sparkline with title, current value, and a last-point dot.
- *
- * The filled area and line share the same path points so the alpha fill
- * visually anchors the line without a second render pass.
- */
+/* Filled area and line share the same path points so the alpha fill
+ * visually anchors the line without a second render pass. */
 
 #include "comp_sparkline.h"
 #include "draw.h"
@@ -35,7 +30,6 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
     double step    = chart_w / (double)(d->count - 1);
     double bottom  = chart_y + chart_h;
 
-    /* Filled area: bottom-left → data points → bottom-right → close */
     xf_draw_begin_path(ctx);
     xf_draw_move_to(ctx, chart_x, bottom);
     for (int i = 0; i < d->count; i++) {
@@ -47,7 +41,6 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
     xf_draw_close_path(ctx);
     xf_draw_fill(ctx, t->info_fill);
 
-    /* Line over the fill */
     xf_draw_begin_path(ctx);
     xf_draw_move_to(ctx, chart_x,
                     bottom - (double)d->points[0] * chart_h);
@@ -58,7 +51,6 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
     }
     xf_draw_stroke(ctx, t->info, 1.25, XF_LINE_CAP_ROUND);
 
-    /* Dot at the last data point */
     double last_x = chart_x + (double)(d->count - 1) * step;
     double last_y = bottom - (double)d->points[d->count - 1] * chart_h;
     xf_draw_circle(ctx, last_x, last_y, 2.5, t->info);

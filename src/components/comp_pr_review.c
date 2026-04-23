@@ -1,8 +1,3 @@
-/**
- * @file comp_pr_review.c
- * @brief Section header + list of PR rows with author avatar, title, and age.
- */
-
 #include "comp_pr_review.h"
 #include "draw.h"
 #include <stdio.h>
@@ -27,24 +22,20 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
         const comp_pr_row_t *r = &d->rows[i];
         double cy = y + (double)ROW_H / 2.0;
 
-        /* Author avatar */
         xf_draw_circle(ctx, 14.0, cy, 8.0, r->avatar_color);
         xf_draw_text(ctx, r->initials, 14.0, cy + 3.5, &(xf_text_opts_t){
             .size = 7, .weight = 700, .color = t->white, .align = XF_TEXT_CENTER
         });
 
-        /* PR title */
         xf_draw_text(ctx, r->title, 27.0, cy + 4.0, &(xf_text_opts_t){
             .size = 10, .weight = 500, .color = t->text_secondary,
             .max_width = (double)w - 80.0
         });
 
-        /* Age right-aligned */
         xf_draw_text(ctx, r->age, (double)w - 8.0, cy + 4.0, &(xf_text_opts_t){
             .size = 9, .weight = 400, .color = t->text_faint, .align = XF_TEXT_RIGHT
         });
 
-        /* Review count badge if there are any approvals */
         if (r->reviews > 0) {
             char badge[8];
             snprintf(badge, sizeof(badge), "%d", r->reviews);

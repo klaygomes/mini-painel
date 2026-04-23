@@ -1,8 +1,3 @@
-/**
- * @file comp_divider.c
- * @brief Thin horizontal rule using the theme separator colour.
- */
-
 #include "comp_divider.h"
 #include "draw.h"
 

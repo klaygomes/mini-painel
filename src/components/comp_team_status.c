@@ -1,10 +1,5 @@
-/**
- * @file comp_team_status.c
- * @brief Section header + row of avatars with an online/offline presence dot.
- *
- * A white halo circle behind the green presence dot ensures it reads clearly
- * on any avatar colour without requiring a separate border colour.
- */
+/* White halo behind the presence dot ensures it reads clearly on any avatar
+ * colour without requiring a separate border colour. */
 
 #include "comp_team_status.h"
 #include "draw.h"

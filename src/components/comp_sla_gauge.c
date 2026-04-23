@@ -1,8 +1,3 @@
-/**
- * @file comp_sla_gauge.c
- * @brief Section header + horizontal progress bars for SLA attainment.
- */
-
 #include "comp_sla_gauge.h"
 #include "draw.h"
 
@@ -38,7 +33,6 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
                          .align = XF_TEXT_RIGHT
                      });
 
-        /* Track */
         xf_draw_fill_round_rect(ctx, bar_x, y + 13.0, bar_avail, BAR_H,
                                 3.0, t->surface_card);
 

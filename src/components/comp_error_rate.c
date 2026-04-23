@@ -1,10 +1,5 @@
-/**
- * @file comp_error_rate.c
- * @brief Bar histogram with colour thresholds: danger >= 10, warning >= 7, else info.
- *
- * The thresholds encode the operational rule: a sustained index above 10 is an
- * incident (danger), 7–9 is degraded (warning), below 7 is nominal (info).
- */
+/* Thresholds encode the operational rule: sustained index >= 10 is an incident
+ * (danger), 7-9 is degraded (warning), < 7 is nominal (info). */
 
 #include "comp_error_rate.h"
 #include "draw.h"

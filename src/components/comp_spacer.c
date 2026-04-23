@@ -1,8 +1,3 @@
-/**
- * @file comp_spacer.c
- * @brief Empty vertical gap — no drawing, just an opaque transparent region.
- */
-
 #include "comp_spacer.h"
 #include "draw.h"
 

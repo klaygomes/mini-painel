@@ -73,7 +73,7 @@ int serial_read(int fd, uint8_t *buf, size_t len)
             perror("serial_read");
             break;
         }
-        if (n == 0) break; /* timeout */
+        if (n == 0) break;
         total += (size_t)n;
     }
     return (int)total;

@@ -1,8 +1,3 @@
-/**
- * @file comp_alerts.c
- * @brief Section header + list of alert rows with severity dot and age label.
- */
-
 #include "comp_alerts.h"
 #include "draw.h"
 
@@ -27,16 +22,13 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
 
         xf_draw_fill_round_rect(ctx, 0, y, (double)w, ROW_H, 2.0, r->row_bg);
 
-        /* Severity dot */
         xf_draw_circle(ctx, 9.0, y + (double)ROW_H / 2.0, 3.0, r->dot);
 
-        /* Message text */
         xf_draw_text(ctx, r->message, 18.0, y + 12.0, &(xf_text_opts_t){
             .size = 10, .weight = 400, .color = t->text_secondary,
             .max_width = (double)w - 70.0
         });
 
-        /* Age right-aligned */
         xf_draw_text(ctx, r->time, (double)w - 8.0, y + 12.0, &(xf_text_opts_t){
             .size = 8, .weight = 400, .color = t->text_faint, .align = XF_TEXT_RIGHT
         });

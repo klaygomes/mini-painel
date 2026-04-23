@@ -1,8 +1,3 @@
-/**
- * @file comp_schedule.c
- * @brief Section header + timeline rows with a coloured left accent bar.
- */
-
 #include "comp_schedule.h"
 #include "draw.h"
 
@@ -24,16 +19,13 @@ static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
     for (int i = 0; i < d->count; i++) {
         const comp_schedule_row_t *r = &d->rows[i];
 
-        /* Left accent bar */
         xf_draw_fill_round_rect(ctx, 4.0, y + 2.0, 3.0, (double)ROW_H - 4.0,
                                 1.5, r->bar);
 
-        /* Time label */
         xf_draw_text(ctx, r->time, 12.0, y + 12.0, &(xf_text_opts_t){
             .size = 9, .weight = 400, .color = t->text_faint, .max_width = 68.0
         });
 
-        /* Event text */
         xf_draw_text(ctx, r->event, 84.0, y + 12.0, &(xf_text_opts_t){
             .size = 10, .weight = 500, .color = t->text_secondary,
             .max_width = (double)w - 92.0

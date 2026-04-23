@@ -8,8 +8,8 @@ void image_rgb888_to_rgb565be(const uint8_t *rgb888, int pixel_count, uint8_t *o
         uint16_t g = (uint16_t)(rgb888[i * 3 + 1] >> 2);
         uint16_t b = (uint16_t)(rgb888[i * 3 + 2] >> 3);
         uint16_t px = (uint16_t)((r << 11) | (g << 5) | b);
-        out[i * 2 + 0] = (uint8_t)((px >> 8) & 0xFF); /* high byte */
-        out[i * 2 + 1] = (uint8_t)(px & 0xFF);         /* low byte  */
+        out[i * 2 + 0] = (uint8_t)((px >> 8) & 0xFF);
+        out[i * 2 + 1] = (uint8_t)(px & 0xFF);
     }
 }
 

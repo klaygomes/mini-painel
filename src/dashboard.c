@@ -21,8 +21,6 @@ struct xf_dashboard {
     int      row_cap;
 };
 
-/* ── lifecycle ───────────────────────────────────────────────────────────── */
-
 xf_dashboard_t *dashboard_create(int width, int height)
 {
     xf_dashboard_t *dash;
@@ -59,8 +57,6 @@ void dashboard_destroy(xf_dashboard_t *dash)
     free(dash);
 }
 
-/* ── row management ──────────────────────────────────────────────────────── */
-
 int dashboard_add_row(xf_dashboard_t  *dash,
                       xf_component_t **components,
                       const int       *widths,
@@ -79,7 +75,6 @@ int dashboard_add_row(xf_dashboard_t  *dash,
     if (sum != dash->width)
         return -1;
 
-    /* Grow the rows array when full. */
     if (dash->row_count == dash->row_cap) {
         int new_cap = dash->row_cap ? dash->row_cap * 2 : 4;
         row_t *tmp = realloc(dash->rows, (size_t)new_cap * sizeof(*dash->rows));
@@ -150,7 +145,6 @@ int dashboard_remove_row(xf_dashboard_t *dash, int index)
     free(dash->rows[index].components);
     free(dash->rows[index].widths);
 
-    /* Shift the tail left by one. */
     if (index < dash->row_count - 1) {
         memmove(&dash->rows[index],
                 &dash->rows[index + 1],
@@ -160,8 +154,6 @@ int dashboard_remove_row(xf_dashboard_t *dash, int index)
     dash->row_count--;
     return 0;
 }
-
-/* ── pagination ──────────────────────────────────────────────────────────── */
 
 /*
  * Single-pass page layout walker.
@@ -183,8 +175,6 @@ static int page_layout(const xf_dashboard_t *dash, int *page_of_row, int *y_of_r
     }
     return dash->row_count == 0 ? 1 : page + 1;
 }
-
-/* ── rendering ───────────────────────────────────────────────────────────── */
 
 const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page)
 {

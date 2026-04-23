@@ -1,8 +1,3 @@
-/**
- * @file comp_header.c
- * @brief Top bar: date label on the left, status dot and text on the right.
- */
-
 #include "comp_header.h"
 #include "draw.h"
 
