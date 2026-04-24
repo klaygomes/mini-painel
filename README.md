@@ -1,8 +1,8 @@
-# mini-painel — your stack's vital signs, always in view
+# mini-painel: your stack's vital signs, always in view
 
 [![CI](https://github.com/klaygomes/mini-painel/actions/workflows/ci.yml/badge.svg)](https://github.com/klaygomes/mini-painel/actions/workflows/ci.yml)
 
-A tiny panel on your desk. Builds, incidents, on-call, metrics — live, at a glance, no tab-switching required.
+A cheap, tiny panel on your desk. Builds, incidents, on-call, metrics, live and at a glance, no tab-switching required.
 
 ---
 
