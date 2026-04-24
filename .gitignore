@@ -1,5 +1,5 @@
 bin/
-build/
+build*/
 
 # Object files and compiled libraries that may end up outside the build tree
 *.o
