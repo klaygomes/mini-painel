@@ -1,8 +1,8 @@
-# mini-painel
+# mini-painel — your stack's vital signs, always in view
 
 [![CI](https://github.com/klaygomes/mini-painel/actions/workflows/ci.yml/badge.svg)](https://github.com/klaygomes/mini-painel/actions/workflows/ci.yml)
 
-Turn a USB display into a live dashboard for your desk.
+A tiny panel on your desk. Builds, incidents, on-call, metrics — live, at a glance, no tab-switching required.
 
 ---
 
