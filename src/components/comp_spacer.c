@@ -1,9 +1,8 @@
 #include "comp_spacer.h"
-#include "draw.h"
 
-static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
+static void draw(xf_draw_ctx_t *ctx, void *user_data)
 {
-    (void)ctx; (void)w; (void)h; (void)user_data;
+    (void)ctx; (void)user_data;
     /* xf_render already clears the surface to transparent before calling here */
 }
 

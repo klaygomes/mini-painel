@@ -1,5 +1,5 @@
 #include "vendor/unity.h"
-#include "../src/transition.h"
+#include "../src/draw/transition.h"
 
 #include <string.h>
 #include <stdint.h>

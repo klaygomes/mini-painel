@@ -4,9 +4,7 @@
  */
 
 #pragma once
-#include "../dashboard.h"
-#include "draw.h"
-#include "layout.h"
+#include "comp_base.h"
 
 #define COMP_HEADER_HEIGHT 20
 

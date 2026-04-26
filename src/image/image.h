@@ -7,6 +7,9 @@
  * out must be pixel_count * 2 bytes. */
 void image_rgb888_to_rgb565be(const uint8_t *rgb888, int pixel_count, uint8_t *out);
 
+/* Same formula, stored little-endian (Turing protocol). */
+void image_rgb888_to_rgb565le(const uint8_t *rgb888, int pixel_count, uint8_t *out);
+
 /* Used for REVERSE_PORTRAIT and REVERSE_LANDSCAPE orientations.
  * in and out must not alias. */
 void image_rotate_180(const uint8_t *in, int width, int height, uint8_t *out);

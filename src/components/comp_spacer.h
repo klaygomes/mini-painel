@@ -4,7 +4,7 @@
  */
 
 #pragma once
-#include "../dashboard.h"
+#include "comp_base.h"
 
 #define COMP_SPACER_HEIGHT 8
 

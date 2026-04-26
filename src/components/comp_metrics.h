@@ -4,8 +4,7 @@
  */
 
 #pragma once
-#include "../dashboard.h"
-#include "layout.h"
+#include "comp_base.h"
 
 #define COMP_METRICS_HEIGHT    46
 #define COMP_METRICS_MAX_CARDS  4

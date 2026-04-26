@@ -1,7 +1,7 @@
 #ifndef TURING_DEVICE_INTERNAL_H
 #define TURING_DEVICE_INTERNAL_H
 
-#include "types.h"
+#include "device_base.h"
 
 /* TURING_3_5 is the official Turing Smart Screen 3.5"; it does not answer HELLO. */
 typedef enum {
@@ -13,11 +13,8 @@ typedef enum {
 } turing_variant_t;
 
 struct xf_device {
-    int              fd;
-    turing_variant_t variant;
-    xf_orientation_t orientation;
-    int              display_width;
-    int              display_height;
+    xf_device_base_t  base;           /* must stay first */
+    turing_variant_t  variant;
 };
 
 #endif /* TURING_DEVICE_INTERNAL_H */

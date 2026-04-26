@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "dashboard.h"
-#include "components/draw.h"
+#include "components/comp_base.h"
 
 /* Internal row record. y offset is computed on the fly during render
  * so that move/remove operations never need to reindex the array. */
@@ -180,9 +180,38 @@ static int page_layout(const xf_dashboard_t *dash, int *page_of_row, int *y_of_r
     return dash->row_count == 0 ? 1 : page + 1;
 }
 
+static void render_row(xf_dashboard_t *dash, const row_t *row, int pad, int y)
+{
+    int c, ly, x = 0;
+
+    for (c = 0; c < row->count; c++) {
+        xf_component_t *comp = row->components[c];
+        int w = row->widths[c];
+        int h = row->height;
+        uint8_t *sub = malloc((size_t)(w * h * 3));
+
+        if (!sub) {
+            x += w;
+            continue;
+        }
+
+        comp_fetch(comp);
+        comp_render(comp, sub, w, h);
+
+        for (ly = 0; ly < h; ly++) {
+            int fb_off  = ((pad + y + ly) * dash->width + pad + x) * 3;
+            int sub_off = (ly * w) * 3;
+            memcpy(dash->framebuffer + fb_off, sub + sub_off, (size_t)(w * 3));
+        }
+
+        free(sub);
+        x += w;
+    }
+}
+
 const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page)
 {
-    int r, c, ly;
+    int r;
     int cur_page = 0, y = 0;
 
     if (!dash)
@@ -207,36 +236,8 @@ const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page)
         if (cur_page > page)
             break;
 
-        if (cur_page == page) {
-            row_t *row = &dash->rows[r];
-            int x = 0;
-
-            for (c = 0; c < row->count; c++) {
-                xf_component_t *comp = row->components[c];
-                int w = row->widths[c];
-                int h = row->height;
-                uint8_t *sub = malloc((size_t)(w * h * 3));
-
-                if (!sub) {
-                    x += w;
-                    continue;
-                }
-
-                if (comp->fetch)
-                    comp->fetch(comp);
-
-                comp->render(comp, sub, w, h);
-
-                for (ly = 0; ly < h; ly++) {
-                    int fb_off  = ((pad + y + ly) * dash->width + pad + x) * 3;
-                    int sub_off = (ly * w) * 3;
-                    memcpy(dash->framebuffer + fb_off, sub + sub_off, (size_t)(w * 3));
-                }
-
-                free(sub);
-                x += w;
-            }
-        }
+        if (cur_page == page)
+            render_row(dash, &dash->rows[r], pad, y);
 
         y += dash->rows[r].height;
     }

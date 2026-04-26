@@ -1,5 +1,5 @@
 #include "fake_serial.h"
-#include "../src/serial.h"
+#include "../src/serial/serial.h"
 
 #include <string.h>
 #include <stdio.h>

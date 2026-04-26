@@ -1,14 +1,6 @@
 #ifndef LAYOUT_H
 #define LAYOUT_H
 
-/* Font sizes in pixels (+2pt from the original defaults). Change here to rescale all components. */
-#define FONT_XS    9   /* initials, badges, small indicators */
-#define FONT_SM   10   /* timestamps, secondary labels */
-#define FONT_MD   11   /* body text, section labels */
-#define FONT_LG   12   /* primary content, titles */
-#define FONT_XL   13   /* prominent names */
-#define FONT_HERO 14   /* large metric values */
-
 /* Vertical row heights. */
 #define LAY_HEADER_H  18   /* section label row */
 #define LAY_TITLE_H   16   /* inline title bar (sparkline, error rate) */

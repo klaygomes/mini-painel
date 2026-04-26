@@ -1,6 +1,6 @@
 #include "vendor/unity.h"
-#include "../src/dashboard.h"
-#include "../src/components/draw.h"
+#include "../src/dashboard/dashboard.h"
+#include "../src/draw/draw.h"
 
 #include <string.h>
 #include <stddef.h>

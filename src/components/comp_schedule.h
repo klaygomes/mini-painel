@@ -4,9 +4,7 @@
  */
 
 #pragma once
-#include "../dashboard.h"
-#include "draw.h"
-#include "layout.h"
+#include "comp_base.h"
 
 #define COMP_SCHEDULE_HEIGHT   (LAY_HEADER_H + 4 * LAY_ROW_SM)
 #define COMP_SCHEDULE_MAX_ROWS  4

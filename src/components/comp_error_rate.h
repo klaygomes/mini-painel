@@ -7,8 +7,7 @@
  */
 
 #pragma once
-#include "../dashboard.h"
-#include "layout.h"
+#include "comp_base.h"
 
 #define COMP_ERROR_RATE_HEIGHT   62
 #define COMP_ERROR_RATE_MAX_BARS 16

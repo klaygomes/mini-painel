@@ -8,7 +8,7 @@
 #include "panel.h"
 #include "dashboard.h"
 #include "transition.h"
-#include "components/draw.h"
+#include "draw.h"
 #include "components/comp_header.h"
 #include "components/comp_divider.h"
 #include "components/comp_spacer.h"

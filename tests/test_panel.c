@@ -1,6 +1,6 @@
 #include "vendor/unity.h"
 #include "fake_serial.h"
-#include "../src/panel.h"
+#include "../src/device/panel.h"
 
 #include <stdlib.h>
 #include <string.h>

@@ -4,8 +4,7 @@
  */
 
 #pragma once
-#include "../dashboard.h"
-#include "layout.h"
+#include "comp_base.h"
 
 #define COMP_SPRINT_HEIGHT 48
 

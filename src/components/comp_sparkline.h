@@ -4,8 +4,7 @@
  */
 
 #pragma once
-#include "../dashboard.h"
-#include "layout.h"
+#include "comp_base.h"
 
 #define COMP_SPARKLINE_HEIGHT     50
 #define COMP_SPARKLINE_MAX_POINTS 60

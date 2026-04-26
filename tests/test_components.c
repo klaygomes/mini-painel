@@ -15,8 +15,8 @@
  */
 
 #include "vendor/unity.h"
-#include "../src/dashboard.h"
-#include "../src/components/draw.h"
+#include "../src/dashboard/dashboard.h"
+#include "../src/draw/draw.h"
 #include "../src/components/comp_header.h"
 #include "../src/components/comp_spacer.h"
 #include "../src/components/comp_divider.h"

@@ -4,9 +4,7 @@
  */
 
 #pragma once
-#include "../dashboard.h"
-#include "draw.h"
-#include "layout.h"
+#include "comp_base.h"
 
 #define COMP_OUTAGES_HEIGHT   (LAY_HEADER_H + 3 * LAY_ROW_LG + 2 * LAY_GAP_MD)
 #define COMP_OUTAGES_MAX_ROWS  3
