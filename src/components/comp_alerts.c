@@ -1,5 +1,6 @@
 #include "comp_alerts.h"
-#include "comp_gfx.h"
+#include "gfx/section_label.h"
+#include "gfx/dot.h"
 
 #define HEADER_H LAY_HEADER_H
 #define ROW_H     LAY_ROW_ALERT

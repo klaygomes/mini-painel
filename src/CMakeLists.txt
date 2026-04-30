@@ -1,5 +1,6 @@
 add_subdirectory(theme)
 add_subdirectory(draw)
+add_subdirectory(gfx)
 add_subdirectory(components)
 
 add_executable(panel

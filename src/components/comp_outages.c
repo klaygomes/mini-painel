@@ -2,7 +2,9 @@
  * mapping; this component never encodes those rules internally. */
 
 #include "comp_outages.h"
-#include "comp_gfx.h"
+#include "gfx/section_label.h"
+#include "gfx/dot.h"
+#include "gfx/pill.h"
 
 #define HEADER_H LAY_HEADER_H
 #define ROW_H    LAY_ROW_LG

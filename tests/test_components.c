@@ -82,7 +82,7 @@ static int render_component(xf_component_t *comp, int height, const char *ppm)
     return ok;
 }
 
-/* ── comp_header ─────────────────────────────────────────────────────────── */
+/* comp_header */
 
 static void test_header(void)
 {
@@ -97,7 +97,7 @@ static void test_header(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_HEADER_HEIGHT, "bin/test_header.ppm"));
 }
 
-/* ── comp_spacer ─────────────────────────────────────────────────────────── */
+/* comp_spacer */
 
 static void test_spacer(void)
 {
@@ -114,7 +114,7 @@ static void test_spacer(void)
     dashboard_destroy(dash);
 }
 
-/* ── comp_divider ────────────────────────────────────────────────────────── */
+/* comp_divider */
 
 static void test_divider(void)
 {
@@ -127,7 +127,7 @@ static void test_divider(void)
     dashboard_destroy(dash);
 }
 
-/* ── comp_metrics ────────────────────────────────────────────────────────── */
+/* comp_metrics */
 
 static void test_metrics(void)
 {
@@ -144,7 +144,7 @@ static void test_metrics(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_METRICS_HEIGHT, "bin/test_metrics.ppm"));
 }
 
-/* ── comp_oncall ─────────────────────────────────────────────────────────── */
+/* comp_oncall */
 
 static void test_oncall(void)
 {
@@ -161,7 +161,7 @@ static void test_oncall(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_ONCALL_HEIGHT, "bin/test_oncall.ppm"));
 }
 
-/* ── comp_deploy ─────────────────────────────────────────────────────────── */
+/* comp_deploy */
 
 static void test_deploy(void)
 {
@@ -174,7 +174,7 @@ static void test_deploy(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_DEPLOY_HEIGHT, "bin/test_deploy.ppm"));
 }
 
-/* ── comp_outages ────────────────────────────────────────────────────────── */
+/* comp_outages */
 
 static void test_outages(void)
 {
@@ -206,7 +206,7 @@ static void test_outages(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_OUTAGES_HEIGHT, "bin/test_outages.ppm"));
 }
 
-/* ── comp_schedule ───────────────────────────────────────────────────────── */
+/* comp_schedule */
 
 static void test_schedule(void)
 {
@@ -232,7 +232,7 @@ static void test_schedule(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_SCHEDULE_HEIGHT, "bin/test_schedule.ppm"));
 }
 
-/* ── comp_pr_review ──────────────────────────────────────────────────────── */
+/* comp_pr_review */
 
 static void test_pr_review(void)
 {
@@ -258,7 +258,7 @@ static void test_pr_review(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_PR_REVIEW_HEIGHT, "bin/test_pr_review.ppm"));
 }
 
-/* ── comp_sla_gauge ──────────────────────────────────────────────────────── */
+/* comp_sla_gauge */
 
 static void test_sla_gauge(void)
 {
@@ -287,7 +287,7 @@ static void test_sla_gauge(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_SLA_GAUGE_HEIGHT, "bin/test_sla_gauge.ppm"));
 }
 
-/* ── comp_sparkline ──────────────────────────────────────────────────────── */
+/* comp_sparkline */
 
 static void test_sparkline(void)
 {
@@ -306,7 +306,7 @@ static void test_sparkline(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_SPARKLINE_HEIGHT, "bin/test_sparkline.ppm"));
 }
 
-/* ── comp_sprint ─────────────────────────────────────────────────────────── */
+/* comp_sprint */
 
 static void test_sprint(void)
 {
@@ -320,7 +320,7 @@ static void test_sprint(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_SPRINT_HEIGHT, "bin/test_sprint.ppm"));
 }
 
-/* ── comp_alerts ─────────────────────────────────────────────────────────── */
+/* comp_alerts */
 
 static void test_alerts(void)
 {
@@ -349,7 +349,7 @@ static void test_alerts(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_ALERTS_HEIGHT, "bin/test_alerts.ppm"));
 }
 
-/* ── comp_error_rate ─────────────────────────────────────────────────────── */
+/* comp_error_rate */
 
 static void test_error_rate(void)
 {
@@ -367,7 +367,7 @@ static void test_error_rate(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_ERROR_RATE_HEIGHT, "bin/test_error_rate.ppm"));
 }
 
-/* ── comp_team_status ────────────────────────────────────────────────────── */
+/* comp_team_status */
 
 static void test_team_status(void)
 {
@@ -401,7 +401,7 @@ static void test_team_status(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_TEAM_STATUS_HEIGHT, "bin/test_team_status.ppm"));
 }
 
-/* ── comp_checklist ──────────────────────────────────────────────────────── */
+/* comp_checklist */
 
 static void test_checklist(void)
 {
@@ -425,7 +425,7 @@ static void test_checklist(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_CHECKLIST_HEIGHT, "bin/test_checklist.ppm"));
 }
 
-/* ── comp_build_status ───────────────────────────────────────────────────── */
+/* comp_build_status */
 
 static void test_build_status(void)
 {
@@ -443,7 +443,7 @@ static void test_build_status(void)
     TEST_ASSERT_TRUE(render_component(&comp, COMP_BUILD_STATUS_HEIGHT, "bin/test_build_status.ppm"));
 }
 
-/* ── custom theme ────────────────────────────────────────────────────────── */
+/* custom theme */
 
 /* Confirms that no component hard-codes colour literals: switching to a
    visually distinct theme should still produce a non-zero buffer. */

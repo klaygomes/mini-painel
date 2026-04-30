@@ -71,11 +71,13 @@ Current demo uses **4 px padding** on all sides.
 
 ---
 
-## Layout Constants (`components/layout.h`)
+## Layout Constants
 
-All font sizes and row heights are defined in `layout.h`. Change values there to rescale all components simultaneously.
+Row heights and gaps live in `src/draw/layout.h` (`LAY_*`).
+Font sizes and weights live in `src/theme/theme.h` (`FONT_*`, `WEIGHT_*`).
+Change values in those headers to rescale all components simultaneously.
 
-### Font Sizes (pixels, +2pt from v1)
+### Font Sizes (pixels, +2pt from v1) — defined in `src/theme/theme.h`
 
 | Constant | Value | Usage |
 |---|---|---|
@@ -86,7 +88,7 @@ All font sizes and row heights are defined in `layout.h`. Change values there to
 | `FONT_XL` | 13 | Prominent names |
 | `FONT_HERO` | 14 | Large metric card values |
 
-### Vertical Dimensions
+### Vertical Dimensions — defined in `src/draw/layout.h`
 
 | Constant | Value | Usage |
 |---|---|---|
@@ -109,7 +111,7 @@ COMP_ALERTS_HEIGHT    = LAY_HEADER_H + 3 * LAY_ROW_ALERT + 2 * LAY_GAP_SM  // = 
 COMP_OUTAGES_HEIGHT   = LAY_HEADER_H + 3 * LAY_ROW_LG    + 2 * LAY_GAP_MD  // = 104
 COMP_SLA_GAUGE_HEIGHT = LAY_HEADER_H + 3 * LAY_ROW_MD                        // = 84
 COMP_SCHEDULE_HEIGHT  = LAY_HEADER_H + 4 * LAY_ROW_SM                        // = 94
-COMP_PR_REVIEW_HEIGHT = LAY_HEADER_H + 3 * LAY_ROW_MD    + 2 * LAY_GAP_SM   // = 90
+COMP_PR_REVIEW_HEIGHT = LAY_HEADER_H + 3 * LAY_ROW_MD    + 2 * LAY_GAP_SM   // = 88
 COMP_CHECKLIST_HEIGHT = LAY_HEADER_H + 4 * LAY_ROW_SM                        // = 94
 ```
 
@@ -138,7 +140,7 @@ Fixed heights (no clean formula, tuned by inspection):
 | 1 | header + spacer + deploy + div + build + div + metrics + spacer + sparkline + error\_rate | 264 px |
 | 2 | alerts + spacer + outages + spacer + sprint | 250 px |
 | 3 | spacer + team + div + oncall + div + sla + div + schedule | 279 px |
-| 4 | spacer + pr\_review + div + checklist | 193 px |
+| 4 | spacer + pr\_review + div + checklist | 191 px |
 
 A new page starts when the next row would overflow `content_height`. The first row on a page is never overflowed regardless of size.
 

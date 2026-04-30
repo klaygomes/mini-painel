@@ -1,5 +1,5 @@
 #include "comp_build_status.h"
-#include "comp_gfx.h"
+#include "gfx/pill.h"
 
 static void draw(xf_draw_ctx_t *ctx, void *user_data)
 {

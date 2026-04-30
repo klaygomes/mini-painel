@@ -2,7 +2,9 @@
  * colour without requiring a separate border colour. */
 
 #include "comp_team_status.h"
-#include "comp_gfx.h"
+#include "gfx/section_label.h"
+#include "gfx/avatar.h"
+#include "gfx/online_dot.h"
 
 #define HEADER_H LAY_HEADER_H
 #define AVATAR_R    13.0

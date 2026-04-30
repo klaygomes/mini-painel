@@ -1,5 +1,7 @@
 #include "comp_pr_review.h"
-#include "comp_gfx.h"
+#include "gfx/section_label.h"
+#include "gfx/avatar.h"
+#include "gfx/pill.h"
 #include <stdio.h>
 
 #define HEADER_H LAY_HEADER_H

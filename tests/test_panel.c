@@ -37,9 +37,7 @@ static xf_device_t *open_as(uint8_t sub_byte)
 void setUp(void)    { fake_serial_reset(); }
 void tearDown(void) {}
 
-/* ─────────────────────────────────────────────────────────────────────────── */
 /* Capability detection                                                         */
-/* ─────────────────────────────────────────────────────────────────────────── */
 
 static void test_a01_is_not_flagship_and_not_range(void)
 {
@@ -84,9 +82,7 @@ static void test_open_returns_null_on_bad_hello(void)
     TEST_ASSERT_NULL(panel_open("fake"));
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
 /* Brightness                                                                   */
-/* ─────────────────────────────────────────────────────────────────────────── */
 
 static void test_range_brightness_off_sends_zero(void)
 {
@@ -139,9 +135,7 @@ static void test_binary_brightness_off_sends_one(void)
     panel_close(dev);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
 /* Backplate LED                                                                */
-/* ─────────────────────────────────────────────────────────────────────────── */
 
 static void test_led_flagship_sends_rgb_to_device(void)
 {
@@ -165,9 +159,7 @@ static void test_led_non_flagship_sends_nothing(void)
     panel_close(dev);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
 /* Orientation                                                                  */
-/* ─────────────────────────────────────────────────────────────────────────── */
 
 static void test_portrait_sends_hw_portrait(void)
 {
@@ -210,9 +202,7 @@ static void test_reverse_landscape_sends_hw_landscape(void)
     panel_close(dev);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
 /* Bitmap display                                                               */
-/* ─────────────────────────────────────────────────────────────────────────── */
 
 static void test_bitmap_portrait_sends_correct_region(void)
 {
@@ -285,9 +275,7 @@ static void test_bitmap_reverse_portrait_rotates_pixels(void)
     panel_close(dev);
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
 /* Runner                                                                       */
-/* ─────────────────────────────────────────────────────────────────────────── */
 
 int main(void)
 {

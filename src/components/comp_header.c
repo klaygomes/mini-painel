@@ -1,5 +1,5 @@
 #include "comp_header.h"
-#include "comp_gfx.h"
+#include "gfx/dot.h"
 
 static void draw(xf_draw_ctx_t *ctx, void *user_data)
 {

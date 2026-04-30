@@ -1,5 +1,5 @@
 #include "comp_oncall.h"
-#include "comp_gfx.h"
+#include "gfx/avatar.h"
 
 static void draw(xf_draw_ctx_t *ctx, void *user_data)
 {

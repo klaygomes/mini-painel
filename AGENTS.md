@@ -1,16 +1,23 @@
 # Agent context
 
+> Single source of truth for every coding agent (Claude Code, Cursor, Aider, Codex, etc.). `CLAUDE.md` is a pointer to this file. Editing this file (or any other `*-agents.md`)? Read `doc/meta-agents.md` first — it governs all agent docs and prevents the regressions a previous validation pass surfaced.
+
 ## What this is
 
-A C99 library that implements the serial communication protocol for XuanFang 3.5" USB displays (Rev B and Flagship). macOS only (POSIX termios). No GUI, no system metrics — just device communication.
+A C99 library that drives small USB dashboards. Two protocol families are implemented:
+
+- **Turing Rev A** (`src/protocol/turing_protocol.c`) — the active path used by the demo.
+- **XuanFang Rev B / Flagship** (`src/protocol/protocol.c`) — original target, still buildable.
+
+A device abstraction in `src/device/device_base.h` selects the right backend at open time. The serial layer (`src/serial/`) is macOS-only (POSIX termios); the dashboard, draw, theme, and component layers are platform-independent and build anywhere Cairo is available. No GUI, no system metrics — just rendering and device communication.
 
 ## Build
 
 Cairo must be installed before the first `cmake` configure:
 
 ```sh
-brew install cairo        # macOS
-sudo apt-get install libcairo2-dev  # Debian/Ubuntu
+brew install cairo                   # macOS
+sudo apt-get install libcairo2-dev   # Debian/Ubuntu
 ```
 
 ```sh
@@ -20,15 +27,41 @@ cmake .. -DBUILD_TESTING=ON && make       # with tests
 ctest --output-on-failure                 # run tests (from build/)
 ```
 
-Tests run without hardware. Unity is vendored in `tests/vendor/` — no extra setup needed.
-After running `test_components`, visual PPM dumps of every component appear in `bin/`.
+Tests run without hardware. Unity is vendored in `tests/vendor/` — no extra setup needed. After running `test_components`, visual PPM dumps of every component appear in `bin/`.
 
 ## Code conventions
 
-- **Standard**: C99, no extensions beyond POSIX
-- **Comments**: why only — never what or how. No decorative separators.
-- **Public API**: `src/panel.h` and `src/types.h`. Everything in `src/` that is not one of these two files is internal.
-- **Opaque types**: `xf_device_t` is opaque. Its fields live in `src/device_internal.h`, which only `panel.c` and tests include.
+- **Standard**: C99, no extensions beyond POSIX.
+- **Public API**: `src/device/panel.h` and `src/types.h`. Everything else under `src/` is internal.
+- **Opaque types**: `xf_device_t` is opaque. Its fields live in `src/device/device_internal.h`, included only by `src/device/panel.c` and tests.
+- **Single responsibility**: each function performs one conceptual operation.
+- **No globals**: functions rely exclusively on their parameters.
+- **Error handling**: never ignore return values from standard library functions; check for `NULL`, negative codes, and boundary conditions at call sites.
+- **Input validation**: validate all external data at the system boundary before processing.
+- **Assertions**: use `assert()` to document invariants; never for runtime error handling.
+- **Memory ownership**: every `malloc`/`calloc` has a guaranteed `free` path; ownership is explicit at the call site.
+- **Bounds checking**: verify buffer sizes before reading or writing.
+- **Fixed-width integers**: use `<stdint.h>` types (`uint8_t`, `int32_t`, etc.) over `int`/`long`.
+- **Undefined behavior**: avoid all UB patterns (uninitialized reads, signed overflow, null dereference).
+- **Compiler flags**: build with `-Wall -Wextra -Werror -pedantic`.
+- **Static analysis**: run a static analyser (e.g. `clang --analyze`) to catch memory and UB issues before runtime.
+
+## Comments
+
+**Why-only.** A comment must explain why something non-obvious is done. The code explains what.
+
+Forbidden:
+- Section dividers: `/* ── section ── */`, `/* === ... === */`
+- Page labels: `/* page 1 */`, `/* page 2 */`
+- Narrative "what" comments: `/* draw the circle */`, `/* loop over rows */`
+- Block labels that describe structure: `/* mocked data */`, `/* render loop */`, `/* device */`
+
+## Drawing & components
+
+- **No colour literals in component source.** Every colour is a field on the active theme (`t->danger`, `t->text_primary`, etc.). Per-row colours are stored as `xf_rgba_t` fields in the data struct and assigned by the caller from theme values at creation time. Adding a needed shade means extending `xf_theme_t`, not hard-coding hex.
+- **`cairo.h` is included only by `src/draw/draw.c`.** The rest of the codebase talks to Cairo through the engine-agnostic `xf_draw_*` API in `draw.h`. Use `#include <cairo.h>` (not `<cairo/cairo.h>`) — `pkg_check_modules` already adds the `cairo/` directory to the include path.
+- **`XF_COMPONENT*` macros are brace initialisers.** Always assign to a local variable; `return XF_COMPONENT_DATA(...)` is invalid C99.
+- **Heights are derived, not duplicated.** Read `COMP_<NAME>_HEIGHT` from the component header. Do not restate the value in docs or other source files.
 
 ## Testing rules
 
@@ -56,37 +89,48 @@ Tests live in `tests/`, use the Unity framework (vendored in `tests/vendor/`), a
 
 ## Architecture
 
-| File | Responsibility |
-|---|---|
-| `src/panel.h/.c` | Public API — lifecycle, display control, bitmap |
-| `src/serial.h/.c` | POSIX termios serial port (open, read, write, drain) |
-| `src/protocol.h/.c` | 10-byte frame builder and sender |
-| `src/image.h/.c` | RGB888 → RGB565 BE conversion; 180° pixel rotation |
-| `src/port_detect.h/.c` | Auto-detect device via HELLO probe on `/dev/tty.usbmodem*` |
-| `src/types.h` | Public types: `xf_orientation_t`, `xf_color_t`, `xf_device_t` (opaque) |
-| `src/device_internal.h` | Internal: `xf_sub_revision_t` enum + `struct xf_device` fields |
-| `src/dashboard.h/.c` | Row-based immediate-mode layout engine; produces RGB888 framebuffer |
-| `src/components/draw.h` | Engine-agnostic draw + theme API (no Cairo types) |
-| `src/components/draw.c` | Cairo backend — the only file that includes cairo.h |
-| `src/components/comp_*.h/.c` | 17 pre-built Cairo-rendered dashboard widgets |
-| `tests/fake_serial.c` | Serial mock for offline testing |
-| `tests/test_panel.c` | Unit tests for the panel module |
-| `tests/test_dashboard.c` | Unit tests for the dashboard module |
-| `tests/test_components.c` | Unit tests for all components; writes PPMs to `bin/` |
+Run `tree src tests -L 2` to see the current layout — do not restate it here, it drifts.
 
-See `doc/dashboard-agents.md` for dashboard module internals and testing conventions.
-See `doc/components-agents.md` for the component library, draw API, theming, and all Cairo build gotchas.
+High-level responsibilities by directory:
+
+| Directory | Role |
+|---|---|
+| `src/device/` | Public panel API (`panel.h`); per-revision backends dispatched via `device_base.h`. Internal headers are off-limits to public callers and tests. |
+| `src/serial/` | POSIX termios serial port. macOS-only by design. |
+| `src/protocol/` | Wire-frame builders + senders, one family per protocol (`protocol.c` for XuanFang, `turing_protocol.c` for Turing Rev A) plus `port_detect` for HELLO-based auto-detection. |
+| `src/image/` | RGB888 → RGB565 BE conversion and 180° pixel rotation. |
+| `src/dashboard/` | Row-based immediate-mode layout engine. Produces an RGB888 framebuffer; has no graphics dependency and no `panel.h` dependency. |
+| `src/draw/` | Engine-agnostic draw API (`draw.h`), Cairo implementation (`draw.c`), layout constants (`layout.h`), page transitions (`transition.h/.c`). |
+| `src/theme/` | `xf_rgba_t`, `xf_theme_t`, active-theme singleton, font/weight constants, built-in palettes. |
+| `src/components/` | Pre-built dashboard widgets (`comp_*`) and shared drawing primitives (`gfx/*`). Each component header defines `COMP_<NAME>_HEIGHT`. |
+| `src/types.h` | Public types: `xf_orientation_t`, `xf_color_t`, `xf_device_t` (opaque). |
+| `tests/` | Unity-based offline tests. `fake_serial.c` mocks the serial port; `test_components.c` writes PPMs to `bin/` for visual review. |
 
 ## Adding a new device revision
 
-1. Create `src/panel_<revision>.h/.c` with its own open/display/command functions.
-2. Share `src/serial.h/.c` and `src/protocol.h/.c` if the framing is compatible.
-3. Add new capability query functions to its public header; do not extend `panel.h`.
-4. Add a new test file in `tests/` using the same fake serial approach.
+1. Create `src/device/<revision>_panel.c` and `src/device/<revision>_device_internal.h` (mirror the existing `turing_*` naming).
+2. Share `src/serial/serial.h/.c` and `src/protocol/protocol.h/.c` if the framing is compatible; otherwise add a new `src/protocol/<revision>_protocol.h/.c`.
+3. Register the backend in `src/device/device_base.h` so `panel_open` can dispatch to it.
+4. Add capability query functions to its internal header; do not extend `panel.h`.
+5. Add a new test file in `tests/` using the same fake serial approach.
 
 ## What not to do
 
 - Do not add GUI, system metrics, or font rendering — this is a communication library only.
 - Do not expose `xf_sub_revision_t` or any struct fields in public headers.
-- Do not write tests that import `device_internal.h` or call internal functions.
-- Do not add Windows or Linux support without also updating serial.c — the current implementation is macOS-only by design.
+- Do not write tests that import `src/device/device_internal.h` or call internal functions.
+- Do not add Windows or Linux support without also updating `src/serial/serial.c` — the current implementation is macOS-only by design.
+
+## Editing agent docs
+
+Before editing this file or any `doc/*-agents.md`, read **`doc/meta-agents.md`**. It defines the rules that keep agent docs consistent (no restated source values, no hand-written file trees, one fact one home, etc.) and lists the validation commands to run before committing.
+
+## Reference
+
+- `doc/meta-agents.md` — rules for changing any agent doc. Read first when editing them.
+- `doc/agents.md` — device specs, protocol details, layout constants, and page math.
+- `doc/components-agents.md` — component module conventions, draw API, theme rules.
+- `doc/dashboard-agents.md` — dashboard module internals and testing.
+- `doc/glossary.md` — naming conventions and terms.
+</content>
+</invoke>

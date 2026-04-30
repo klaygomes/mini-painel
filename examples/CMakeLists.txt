@@ -19,6 +19,8 @@ set(PANEL_INCS
     ${SRC}/dashboard
     ${SRC}/draw
     ${SRC}/theme
+    ${SRC}/components
+    ${SRC}/gfx
 )
 
 add_executable(demo demo.c ${PANEL_SRCS})

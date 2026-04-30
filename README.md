@@ -32,6 +32,23 @@ Any **XuanFang 3.5" USB display** (Rev B or Flagship) works. Plug it in, run the
 
 ---
 
+## Build requirements
+
+| Tool | Purpose |
+|---|---|
+| CMake ≥ 3.10 | Build system |
+| pkg-config | Locates the Cairo library during CMake configure |
+| Cairo | Rendering backend for all dashboard components |
+| C99 compiler (clang / gcc) | macOS only; POSIX termios required |
+
+Install Cairo before the first `cmake` configure:
+
+```sh
+brew install cairo          # macOS
+sudo apt-get install libcairo2-dev   # Debian / Ubuntu
+sudo dnf install cairo-devel         # Fedora
+```
+
 ## For developers
 
 - [Getting started](doc/getting-started.md): build, run, and wire up your first component

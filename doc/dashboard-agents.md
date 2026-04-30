@@ -18,8 +18,8 @@ save as PNG) is outside its scope.
 
 | File | Responsibility |
 |---|---|
-| `src/dashboard.h` | Public API: `xf_component_t`, `xf_dashboard_t`, all function declarations |
-| `src/dashboard.c` | Implementation: `row_t` internals, create/destroy, add/move/remove, render loop |
+| `src/dashboard/dashboard.h` | Public API: `xf_component_t`, `xf_dashboard_t`, all function declarations |
+| `src/dashboard/dashboard.c` | Implementation: `row_t` internals, create/destroy, add/move/remove, render loop |
 | `tests/test_dashboard.c` | All unit tests (no hardware, no serial, no panel dependency) |
 | `doc/dashboard.md` | Human-focused API reference and worked examples |
 

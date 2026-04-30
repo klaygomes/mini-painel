@@ -13,7 +13,7 @@
 #define W 100
 #define H 60
 
-/* ── test helpers ─────────────────────────────────────────────────────────── */
+/* test helpers */
 
 /* Pixel accessor: byte offset of channel ch at (x, y) in a W-wide framebuffer. */
 #define PX(fb, x, y, ch) ((fb)[((y) * W + (x)) * 3 + (ch)])
@@ -83,7 +83,7 @@ static void render_set_called(xf_component_t *self, uint8_t *buf, int w, int h)
     render_was_called = 1;
 }
 
-/* ── setUp / tearDown ─────────────────────────────────────────────────────── */
+/* setUp / tearDown */
 
 void setUp(void)
 {
@@ -96,7 +96,7 @@ void setUp(void)
 
 void tearDown(void) {}
 
-/* ── creation / destruction ───────────────────────────────────────────────── */
+/* creation / destruction */
 
 static void test_create_returns_non_null_for_valid_dimensions(void)
 {
@@ -111,7 +111,7 @@ static void test_destroy_null_is_a_noop(void)
     dashboard_destroy(NULL);
 }
 
-/* ── dashboard_add_row rejection ──────────────────────────────────────────── */
+/* dashboard_add_row rejection */
 
 static void test_add_row_rejects_null_dashboard(void)
 {
@@ -168,7 +168,7 @@ static void test_add_row_rejects_widths_that_dont_sum_to_display_width(void)
     dashboard_destroy(dash);
 }
 
-/* ── dashboard_add_full_row rejection ────────────────────────────────────── */
+/* dashboard_add_full_row rejection */
 
 static void test_add_full_row_rejects_null_dashboard(void)
 {
@@ -183,7 +183,7 @@ static void test_add_full_row_rejects_null_component(void)
     dashboard_destroy(dash);
 }
 
-/* ── dashboard_render basics ─────────────────────────────────────────────── */
+/* dashboard_render basics */
 
 static void test_render_returns_null_for_null_dashboard(void)
 {
@@ -197,7 +197,7 @@ static void test_render_returns_non_null_for_valid_dashboard(void)
     dashboard_destroy(dash);
 }
 
-/* ── fetch / render lifecycle ────────────────────────────────────────────── */
+/* fetch / render lifecycle */
 
 static void test_render_calls_fetch_before_render(void)
 {
@@ -237,7 +237,7 @@ static void test_render_proceeds_when_fetch_returns_error(void)
     dashboard_destroy(dash);
 }
 
-/* ── component receives correct dimensions ───────────────────────────────── */
+/* component receives correct dimensions */
 
 static void test_render_passes_full_width_to_full_row_component(void)
 {
@@ -268,7 +268,7 @@ static void test_render_passes_half_width_to_split_row_component(void)
     dashboard_destroy(dash);
 }
 
-/* ── pixel placement ─────────────────────────────────────────────────────── */
+/* pixel placement */
 
 static void test_single_full_row_pixels_appear_at_top_left(void)
 {
@@ -349,7 +349,7 @@ static void test_framebuffer_is_cleared_between_renders(void)
     dashboard_destroy(dash);
 }
 
-/* ── row mutation ────────────────────────────────────────────────────────── */
+/* row mutation */
 
 static void test_move_row_up_swaps_visual_position(void)
 {
@@ -439,7 +439,7 @@ static void test_remove_row_out_of_bounds_returns_error(void)
     dashboard_destroy(dash);
 }
 
-/* ── pagination: dashboard_page_count ────────────────────────────────────── */
+/* pagination: dashboard_page_count */
 
 static void test_page_count_returns_zero_for_null(void)
 {
@@ -499,7 +499,7 @@ static void test_page_count_is_three_for_three_pages(void)
     dashboard_destroy(dash);
 }
 
-/* ── pagination: dashboard_render_page ───────────────────────────────────── */
+/* pagination: dashboard_render_page */
 
 static void test_render_page_returns_null_for_null_dashboard(void)
 {
@@ -604,7 +604,7 @@ static void test_dashboard_render_is_equivalent_to_render_page_0(void)
     dashboard_destroy(dash);
 }
 
-/* ── dashboard_dirty_rect ────────────────────────────────────────────────── */
+/* dashboard_dirty_rect */
 
 static void test_dirty_rect_returns_minus_one_for_null_dashboard(void)
 {
@@ -723,7 +723,7 @@ static void test_dirty_rect_ignores_components_on_other_page(void)
     dashboard_destroy(dash);
 }
 
-/* ── runner ──────────────────────────────────────────────────────────────── */
+/* runner */
 
 int main(void)
 {

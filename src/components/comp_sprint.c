@@ -1,5 +1,5 @@
 #include "comp_sprint.h"
-#include "comp_gfx.h"
+#include "gfx/progress_bar.h"
 
 #define BAR_H  6
 

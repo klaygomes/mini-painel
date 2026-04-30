@@ -1,5 +1,5 @@
 #include "comp_schedule.h"
-#include "comp_gfx.h"
+#include "gfx/section_label.h"
 
 #define HEADER_H LAY_HEADER_H
 #define ROW_H    LAY_ROW_SM

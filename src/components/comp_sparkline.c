@@ -2,7 +2,7 @@
  * visually anchors the line without a second render pass. */
 
 #include "comp_sparkline.h"
-#include "comp_gfx.h"
+#include "gfx/section_label.h"
 
 #define TITLE_H LAY_TITLE_H
 

@@ -2,7 +2,9 @@
  * the actual rendered text width. */
 
 #include "comp_checklist.h"
-#include "comp_gfx.h"
+#include "gfx/section_label.h"
+#include "gfx/checkbox.h"
+#include "gfx/strikethrough.h"
 
 #define HEADER_H  LAY_HEADER_H
 #define ROW_H     LAY_ROW_SM

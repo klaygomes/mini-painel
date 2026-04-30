@@ -1,5 +1,6 @@
 #include "comp_deploy.h"
-#include "comp_gfx.h"
+#include "gfx/dot.h"
+#include "gfx/chip.h"
 
 static void draw(xf_draw_ctx_t *ctx, void *user_data)
 {

@@ -33,29 +33,18 @@ path — installing it as above fixes this.
 
 ## File layout
 
-```
-src/components/
-├── CMakeLists.txt        Static library xf_components; owns Cairo dependency
-├── draw.h                Engine-agnostic public draw + theme API
-├── draw.c                Cairo implementation — the only file that includes cairo.h
-├── comp_header.h/.c      16 px  — date label + status dot
-├── comp_outages.h/.c     96 px  — list of active outages with severity rows
-├── comp_schedule.h/.c    84 px  — timeline event list
-├── comp_metrics.h/.c     38 px  — row of small metric cards
-├── comp_oncall.h/.c      32 px  — avatar, name, role, phone
-├── comp_deploy.h/.c      24 px  — branch chip, time-ago, outcome label
-├── comp_pr_review.h/.c   82 px  — PR list with author avatars
-├── comp_sla_gauge.h/.c   76 px  — horizontal progress bars per service
-├── comp_sparkline.h/.c   44 px  — filled area chart with last-point dot
-├── comp_sprint.h/.c      42 px  — sprint progress bar and labels
-├── comp_alerts.h/.c      70 px  — alert list with severity rows
-├── comp_error_rate.h/.c  56 px  — bar histogram, colour-coded by severity
-├── comp_team_status.h/.c 44 px  — avatar row with online/offline presence
-├── comp_checklist.h/.c   84 px  — checklist with checkmarks and strikethroughs
-├── comp_build_status.h/.c 34 px — CI build status with outcome pill
-├── comp_spacer.h/.c       8 px  — blank vertical gap
-└── comp_divider.h/.c      1 px  — thin horizontal rule
-```
+Run `tree src/draw src/theme src/components` to see the current layout — do not restate it here, it drifts.
+
+Roles you should know without reading the tree:
+
+- `src/draw/draw.h` — engine-agnostic draw API. **The only file that includes `cairo.h` is `src/draw/draw.c`.**
+- `src/draw/layout.h` — `LAY_*` row-height and gap constants.
+- `src/theme/theme.h` — `xf_rgba_t`, `xf_theme_t`, `xf_set_theme` / `xf_get_theme`, `FONT_*`, `WEIGHT_*`.
+- `src/components/comp_base.h` — convenience include (`dashboard.h` + `draw.h` + `layout.h`).
+- `src/components/comp_*.{h,c}` — one widget per pair. Each header defines `COMP_<NAME>_HEIGHT`.
+- `src/components/gfx/*` — reusable drawing primitives (avatar, pill, chip, dot, progress bar, etc.). Components include only the specific `gfx/<name>.h` they use.
+
+Authoritative heights live in each component header as `COMP_<NAME>_HEIGHT`. Read those macros directly — never restate the numbers in docs (they drift).
 
 `xf_components` is a static library. It links Cairo as PUBLIC so that any
 target linking `xf_components` automatically pulls in Cairo at link time —
@@ -63,13 +52,13 @@ static libraries do not embed their dependencies.
 
 ## draw.h — the only header components include for drawing
 
-`draw.h` has zero Cairo types in its public surface. It exposes:
+`src/draw/draw.h` has zero Cairo types in its public surface. It includes `theme.h` and exposes:
 
-- `xf_rgba_t` — normalized RGBA (double channels in [0.0, 1.0])
-- `XF_RGB(0xRRGGBB)` / `XF_RGBA(0xRRGGBB, alpha)` macros — compile-time aggregate initialisers
-- `xf_theme_t` — full colour and typography palette
-- `xf_theme_default` — default light theme
-- `xf_set_theme` / `xf_get_theme` — module-level theme pointer
+- `xf_rgba_t` — normalized RGBA (double channels in [0.0, 1.0]) *(from theme.h)*
+- `XF_RGB(0xRRGGBB)` / `XF_RGBA(0xRRGGBB, alpha)` macros *(from theme.h)*
+- `xf_theme_t` — full colour and typography palette *(from theme.h)*
+- `xf_theme_default` — default light theme *(from theme.h)*
+- `xf_set_theme` / `xf_get_theme` — module-level theme pointer *(from theme.h)*
 - `xf_draw_ctx_t` — opaque draw context (components never inspect it)
 - Shape and text draw functions: `xf_draw_fill_round_rect`, `xf_draw_circle`, `xf_draw_text`, etc.
 - Path API: `xf_draw_begin_path`, `xf_draw_move_to`, `xf_draw_line_to`, `xf_draw_close_path`, `xf_draw_fill`, `xf_draw_stroke`
@@ -95,40 +84,48 @@ If you see `'cairo/cairo.h' file not found`, change the include to `<cairo.h>`.
 
 ## Component pattern
 
-### Header
+There are three factory macros, each expanding to a brace-initialiser. Always
+assign to a local variable — a bare `return XF_COMPONENT*(...)` is invalid C99.
+
+| Macro | Use case |
+|---|---|
+| `XF_COMPONENT(render_fn)` | No data — static visuals (spacer, divider) |
+| `XF_COMPONENT_DATA(render_fn, ctx)` | Caller-owned data; `fetch` is never called |
+| `XF_COMPONENT_LIVE(fetch_fn, render_fn, ctx)` | Live data; `fetch` runs every frame before `render` |
+
+### Header (data component)
 
 ```c
 #pragma once
-#include "../dashboard.h"
-#include "draw.h"         /* omit for pure data components (spacer, sprint, etc.) */
+#include "comp_base.h"
 
 #define COMP_FOO_HEIGHT <N>
 
 typedef struct {
-    /* All data the component needs — caller fills everything, no defaults */
     char      label[32];
-    xf_rgba_t color;      /* caller assigns from theme at creation time */
+    xf_rgba_t dot;        /* caller assigns from theme at creation time */
 } comp_foo_data_t;
 
 xf_component_t comp_foo_create(comp_foo_data_t *data);
 ```
 
-### Implementation
+### Implementation (data component)
+
+Include only the specific gfx headers the component needs.
 
 ```c
 #include "comp_foo.h"
-#include "draw.h"
+#include "gfx/dot.h"      /* include only what is used */
 
-static void draw(xf_draw_ctx_t *ctx, int w, int h, void *user_data)
+static void draw(xf_draw_ctx_t *ctx, void *user_data)
 {
-    const xf_theme_t     *t = xf_get_theme();
+    const xf_theme_t      *t = xf_get_theme();
     const comp_foo_data_t *d = user_data;
-    (void)h;  /* suppress warning when height is not used */
 
-    /* all colours from t->*, all content from d->* */
-    xf_draw_text(ctx, d->label, 8.0, 12.0, &(xf_text_opts_t){
-        .size = 10, .weight = 400, .color = t->text_primary
+    xf_draw_text(ctx, d->label, LAY_PAD_X, 13.0, &(xf_text_opts_t){
+        .size = FONT_LG, .weight = WEIGHT_NORMAL, .color = t->text_primary
     });
+    xf_gfx_dot(ctx, 4.0, 8.0, 3.0, d->dot);
 }
 
 static void render(xf_component_t *self, uint8_t *buf, int w, int h)
@@ -138,18 +135,56 @@ static void render(xf_component_t *self, uint8_t *buf, int w, int h)
 
 xf_component_t comp_foo_create(comp_foo_data_t *data)
 {
-    /* XF_COMPONENT_DATA expands to a brace-initialiser, not a compound literal.
-       A local variable is required; a bare return XF_COMPONENT_DATA(...) is
-       invalid C99 and will not compile. */
     xf_component_t c = XF_COMPONENT_DATA(render, data);
     return c;
 }
 ```
 
-For components with no data (spacer, divider) use `XF_COMPONENT(render)` with
-the same local-variable pattern:
+### Implementation (live data component)
+
+`fetch` refreshes the context pointer before every frame. A non-zero return is
+non-fatal — `render` still runs with the existing data.
 
 ```c
+#include "comp_foo.h"
+
+static int fetch(xf_component_t *self)
+{
+    comp_foo_data_t *d = self->ctx;
+    /* populate d from live source */
+    return 0;
+}
+
+static void draw(xf_draw_ctx_t *ctx, void *user_data) { /* same as above */ }
+
+static void render(xf_component_t *self, uint8_t *buf, int w, int h)
+{
+    xf_render(buf, w, h, draw, self->ctx);
+}
+
+xf_component_t comp_foo_create(comp_foo_data_t *data)
+{
+    xf_component_t c = XF_COMPONENT_LIVE(fetch, render, data);
+    return c;
+}
+```
+
+### Implementation (no-data component)
+
+```c
+#include "comp_spacer.h"
+
+static void draw(xf_draw_ctx_t *ctx, void *user_data)
+{
+    (void)ctx; (void)user_data;
+}
+
+static void render(xf_component_t *self, uint8_t *buf, int w, int h)
+{
+    (void)self;
+    xf_render(buf, w, h, draw, NULL);
+}
+
 xf_component_t comp_spacer_create(void)
 {
     xf_component_t c = XF_COMPONENT(render);
@@ -159,9 +194,8 @@ xf_component_t comp_spacer_create(void)
 
 ### NULL in component files
 
-Component `.c` files include `draw.h` which includes `<stddef.h>`, providing
-`NULL` for the `XF_COMPONENT*` macros. If you add a component that does not
-include `draw.h`, add `#include <stddef.h>` explicitly.
+`comp_base.h` → `draw.h` → `theme.h` → `<stddef.h>`, so `NULL` is always
+available for the `XF_COMPONENT*` macros without an explicit include.
 
 ## Colour rule
 
@@ -226,7 +260,7 @@ static void test_metrics(void)
 
     xf_component_t comp = comp_metrics_create(&d);
 
-    xf_dashboard_t *dash = dashboard_create(320, COMP_METRICS_HEIGHT);
+    xf_dashboard_t *dash = dashboard_create(320, COMP_METRICS_HEIGHT, 0);
     TEST_ASSERT_EQUAL_INT(0, dashboard_add_full_row(dash, &comp, COMP_METRICS_HEIGHT));
 
     const uint8_t *buf = dashboard_render(dash);
@@ -307,17 +341,34 @@ does not exist and `fopen` silently returns `NULL`.
 - One dashboard per test, destroyed at the end.
 - Assert buffer non-null AND has non-zero content (transparent = all zeros = nothing rendered).
 
+## Adding a new gfx primitive
+
+A gfx primitive is a reusable drawing helper used by multiple components. It
+receives a `ctx` and draws into it directly — no `render` wrapper, no `buf`.
+
+1. Add `src/components/gfx/<name>.h`:
+   ```c
+   #ifndef XF_GFX_<NAME>_H
+   #define XF_GFX_<NAME>_H
+   #include "gfx.h"
+   void xf_gfx_<name>(xf_draw_ctx_t *ctx, /* ... */);
+   #endif
+   ```
+2. Add `src/components/gfx/<name>.c` — include `"gfx/<name>.h"`, implement using `xf_draw_*` API and `xf_gfx_get_theme()` for colours.
+3. `CMakeLists.txt` uses `file(GLOB_RECURSE ...)` — no listing update needed.
+4. Components include it as `#include "gfx/<name>.h"`.
+
 ## Adding a new component
 
-1. Add `comp_<name>.h` — `COMP_<NAME>_HEIGHT`, data struct, factory declaration.
-2. Add `comp_<name>.c` — `draw` callback reading `xf_get_theme()` and `user_data`, `render` wrapper, factory using local `XF_COMPONENT_DATA`.
-3. `src/components/CMakeLists.txt` uses `file(GLOB COMPONENT_SOURCES "*.c")` — no explicit listing needed.
+1. Add `comp_<name>.h` — `#include "comp_base.h"`, `COMP_<NAME>_HEIGHT`, data struct, factory declaration.
+2. Add `comp_<name>.c` — include `"comp_<name>.h"` and any specific `"gfx/<primitive>.h"` headers needed. `draw` callback reads `xf_get_theme()` and `user_data`, `render` wrapper, factory using local `XF_COMPONENT_DATA` (or `XF_COMPONENT_LIVE` if the component has a `fetch`).
+3. `src/components/CMakeLists.txt` uses `file(GLOB_RECURSE COMPONENT_SOURCES "*.c")` — no explicit listing needed.
 4. Add a test case to `tests/test_components.c` following the pattern above.
 5. Confirm zero compiler warnings with `-Wall -Wextra -Wpedantic`.
 
 ## What not to do
 
-- **Do not include `cairo.h` in any file other than `draw.c`** — it breaks engine decoupling.
+- **Do not include `cairo.h` in any file other than `src/draw/draw.c`** — it breaks engine decoupling.
 - **Do not write `#include <cairo/cairo.h>` in `draw.c`** — use `#include <cairo.h>` (see above).
 - **Do not hard-code colour literals in component source** — use `t->*` fields only.
 - **Do not use `return XF_COMPONENT_DATA(...)`** — the macro is a brace-initialiser; wrap it in a local variable.

@@ -2,7 +2,7 @@
  * (danger), 7-9 is degraded (warning), < 7 is nominal (info). */
 
 #include "comp_error_rate.h"
-#include "comp_gfx.h"
+#include "gfx/section_label.h"
 
 #define TITLE_H LAY_TITLE_H
 #define BAR_GAP  2
