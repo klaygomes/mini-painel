@@ -42,7 +42,7 @@ Roles you should know without reading the tree:
 - `src/theme/theme.h` — `xf_rgba_t`, `xf_theme_t`, `xf_set_theme` / `xf_get_theme`, `FONT_*`, `WEIGHT_*`.
 - `src/components/comp_base.h` — convenience include (`dashboard.h` + `draw.h` + `layout.h`).
 - `src/components/comp_*.{h,c}` — one widget per pair. Each header defines `COMP_<NAME>_HEIGHT`.
-- `src/components/gfx/*` — reusable drawing primitives (avatar, pill, chip, dot, progress bar, etc.). Components include only the specific `gfx/<name>.h` they use.
+- `src/gfx/*` — reusable drawing primitives (avatar, pill, chip, dot, progress bar, etc.). Components include only the specific `gfx/<name>.h` they use.
 
 Authoritative heights live in each component header as `COMP_<NAME>_HEIGHT`. Read those macros directly — never restate the numbers in docs (they drift).
 
@@ -346,7 +346,7 @@ does not exist and `fopen` silently returns `NULL`.
 A gfx primitive is a reusable drawing helper used by multiple components. It
 receives a `ctx` and draws into it directly — no `render` wrapper, no `buf`.
 
-1. Add `src/components/gfx/<name>.h`:
+1. Add `src/gfx/<name>.h`:
    ```c
    #ifndef XF_GFX_<NAME>_H
    #define XF_GFX_<NAME>_H
@@ -354,7 +354,7 @@ receives a `ctx` and draws into it directly — no `render` wrapper, no `buf`.
    void xf_gfx_<name>(xf_draw_ctx_t *ctx, /* ... */);
    #endif
    ```
-2. Add `src/components/gfx/<name>.c` — include `"gfx/<name>.h"`, implement using `xf_draw_*` API and `xf_gfx_get_theme()` for colours.
+2. Add `src/gfx/<name>.c` — include `"gfx/<name>.h"`, implement using `xf_draw_*` API and `xf_gfx_get_theme()` for colours.
 3. `CMakeLists.txt` uses `file(GLOB_RECURSE ...)` — no listing update needed.
 4. Components include it as `#include "gfx/<name>.h"`.
 

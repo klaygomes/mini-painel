@@ -10,7 +10,7 @@ Short definitions for terms and naming conventions used across the codebase.
 | `XF_` | Public macros (`XF_RGB`, `XF_COMPONENT_DATA`). |
 | `comp_` | Dashboard widget. A component owns a fetch/render pair plus its own data struct. Lives in `src/components/comp_*.{h,c}`. |
 | `COMP_` | Component-related macro, almost always `COMP_<NAME>_HEIGHT`. |
-| `xf_gfx_` | Drawing primitive shared between components — avatar, pill, chip, dot, etc. Lives in `src/components/gfx/`. |
+| `xf_gfx_` | Drawing primitive shared between components — avatar, pill, chip, dot, etc. Lives in `src/gfx/`. |
 | `LAY_` | Row-height or gap constant from `src/draw/layout.h`. |
 | `FONT_` / `WEIGHT_` | Font-size or weight constant from `src/theme/theme.h`. |
 | `turing_` | Turing Rev A device or protocol implementation. |
@@ -34,6 +34,6 @@ Short definitions for terms and naming conventions used across the codebase.
 | `src/theme/theme.h` | Add a colour field, change a font size, change a weight. |
 | `src/theme/theme_default.c` | Change the default light palette. |
 | `src/components/comp_base.h` | The umbrella include used by every component. |
-| `src/components/gfx/gfx.h` | Base include for primitives; pulls in draw + layout + theme helper. |
+| `src/gfx/gfx.h` | Base include for primitives; pulls in draw + layout + theme helper. |
 | `src/dashboard/dashboard.h` | Public layout/render API. |
 | `src/draw/draw.h` | Public draw API; what components actually call. |

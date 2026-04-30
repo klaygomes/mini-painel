@@ -97,12 +97,13 @@ High-level responsibilities by directory:
 |---|---|
 | `src/device/` | Public panel API (`panel.h`); per-revision backends dispatched via `device_base.h`. Internal headers are off-limits to public callers and tests. |
 | `src/serial/` | POSIX termios serial port. macOS-only by design. |
-| `src/protocol/` | Wire-frame builders + senders, one family per protocol (`protocol.c` for XuanFang, `turing_protocol.c` for Turing Rev A) plus `port_detect` for HELLO-based auto-detection. |
+| `src/protocol/` | Wire-frame builders + senders, one family per protocol (`protocol.c` for XuanFang, `turing_protocol.c` for Turing Rev A) plus HELLO-based auto-detection helpers (`port_detect.c`, `turing_port_detect.c`). |
 | `src/image/` | RGB888 → RGB565 BE conversion and 180° pixel rotation. |
 | `src/dashboard/` | Row-based immediate-mode layout engine. Produces an RGB888 framebuffer; has no graphics dependency and no `panel.h` dependency. |
 | `src/draw/` | Engine-agnostic draw API (`draw.h`), Cairo implementation (`draw.c`), layout constants (`layout.h`), page transitions (`transition.h/.c`). |
 | `src/theme/` | `xf_rgba_t`, `xf_theme_t`, active-theme singleton, font/weight constants, built-in palettes. |
-| `src/components/` | Pre-built dashboard widgets (`comp_*`) and shared drawing primitives (`gfx/*`). Each component header defines `COMP_<NAME>_HEIGHT`. |
+| `src/components/` | Pre-built dashboard widgets (`comp_*`). Each component header defines `COMP_<NAME>_HEIGHT`. |
+| `src/gfx/` | Shared drawing primitives used by components (`gfx/*`). |
 | `src/types.h` | Public types: `xf_orientation_t`, `xf_color_t`, `xf_device_t` (opaque). |
 | `tests/` | Unity-based offline tests. `fake_serial.c` mocks the serial port; `test_components.c` writes PPMs to `bin/` for visual review. |
 

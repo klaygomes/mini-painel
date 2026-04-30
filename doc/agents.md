@@ -9,7 +9,7 @@ This document captures design decisions and calculations established during deve
 | Setting | Value |
 |---|---|
 | Physical display | UsbMonitor 3.5" (VID=0x1A86, PID=0x5722, serial=`USB35INCHIPSV2`) |
-| Native resolution | 320 × 480 px (portrait) |
+| Native resolution | 320 × 480 (portrait) |
 | Active orientation | **Landscape** (480 × 320) |
 | Active protocol | Turing Rev A (NOT XuanFang) |
 
@@ -77,70 +77,65 @@ Row heights and gaps live in `src/draw/layout.h` (`LAY_*`).
 Font sizes and weights live in `src/theme/theme.h` (`FONT_*`, `WEIGHT_*`).
 Change values in those headers to rescale all components simultaneously.
 
-### Font Sizes (pixels, +2pt from v1) — defined in `src/theme/theme.h`
+### Font Sizes — defined in `src/theme/theme.h`
 
-| Constant | Value | Usage |
-|---|---|---|
-| `FONT_XS` | 9 | Initials, badges, small indicators |
-| `FONT_SM` | 10 | Timestamps, secondary labels |
-| `FONT_MD` | 11 | Body text, section labels |
-| `FONT_LG` | 12 | Primary content, titles |
-| `FONT_XL` | 13 | Prominent names |
-| `FONT_HERO` | 14 | Large metric card values |
+| Constant | Usage |
+|---|---|
+| `FONT_XS` | Initials, badges, small indicators |
+| `FONT_SM` | Timestamps, secondary labels |
+| `FONT_MD` | Body text, section labels |
+| `FONT_LG` | Primary content, titles |
+| `FONT_XL` | Prominent names |
+| `FONT_HERO` | Large metric card values |
 
 ### Vertical Dimensions — defined in `src/draw/layout.h`
 
-| Constant | Value | Usage |
-|---|---|---|
-| `LAY_HEADER_H` | 18 | Section label row height |
-| `LAY_TITLE_H` | 16 | Inline title bar (sparkline, error rate) |
-| `LAY_ROW_SM` | 19 | Checklist, schedule rows |
-| `LAY_ROW_ALERT` | 20 | Alert rows |
-| `LAY_ROW_MD` | 22 | SLA gauge, PR review rows |
-| `LAY_ROW_LG` | 26 | Outage rows |
-| `LAY_GAP_SM` | 2 | Gap between alert rows |
-| `LAY_GAP_MD` | 4 | Gap between outage rows |
-| `LAY_PAD_X` | 8 | Universal horizontal padding |
+| Constant | Usage |
+|---|---|
+| `LAY_HEADER_H` | Section label row height |
+| `LAY_TITLE_H` | Inline title bar (sparkline, error rate) |
+| `LAY_ROW_SM` | Checklist, schedule rows |
+| `LAY_ROW_ALERT` | Alert rows |
+| `LAY_ROW_MD` | SLA gauge, PR review rows |
+| `LAY_ROW_LG` | Outage rows |
+| `LAY_GAP_SM` | Gap between alert rows |
+| `LAY_GAP_MD` | Gap between outage rows |
+| `LAY_PAD_X` | Universal horizontal padding |
 
 ### Component Height Formulas
 
 Row-based heights are computed from layout constants so changing a row constant auto-updates the component height:
 
 ```c
-COMP_ALERTS_HEIGHT    = LAY_HEADER_H + 3 * LAY_ROW_ALERT + 2 * LAY_GAP_SM  // = 82
-COMP_OUTAGES_HEIGHT   = LAY_HEADER_H + 3 * LAY_ROW_LG    + 2 * LAY_GAP_MD  // = 104
-COMP_SLA_GAUGE_HEIGHT = LAY_HEADER_H + 3 * LAY_ROW_MD                        // = 84
-COMP_SCHEDULE_HEIGHT  = LAY_HEADER_H + 4 * LAY_ROW_SM                        // = 94
-COMP_PR_REVIEW_HEIGHT = LAY_HEADER_H + 3 * LAY_ROW_MD    + 2 * LAY_GAP_SM   // = 88
-COMP_CHECKLIST_HEIGHT = LAY_HEADER_H + 4 * LAY_ROW_SM                        // = 94
+COMP_ALERTS_HEIGHT    = LAY_HEADER_H + 3 * LAY_ROW_ALERT + 2 * LAY_GAP_SM
+COMP_OUTAGES_HEIGHT   = LAY_HEADER_H + 3 * LAY_ROW_LG    + 2 * LAY_GAP_MD
+COMP_SLA_GAUGE_HEIGHT = LAY_HEADER_H + 3 * LAY_ROW_MD
+COMP_SCHEDULE_HEIGHT  = LAY_HEADER_H + 4 * LAY_ROW_SM
+COMP_PR_REVIEW_HEIGHT = LAY_HEADER_H + 3 * LAY_ROW_MD    + 2 * LAY_GAP_SM
+COMP_CHECKLIST_HEIGHT = LAY_HEADER_H + 4 * LAY_ROW_SM
 ```
 
-Fixed heights (no clean formula, tuned by inspection):
+Fixed heights live in the relevant component headers. Read the `COMP_<NAME>_HEIGHT`
+macro directly instead of restating the numbers here.
 
-| Component | Height |
-|---|---|
-| `COMP_HEADER_HEIGHT` | 20 |
-| `COMP_DEPLOY_HEIGHT` | 28 |
-| `COMP_BUILD_STATUS_HEIGHT` | 40 |
-| `COMP_METRICS_HEIGHT` | 46 |
-| `COMP_SPARKLINE_HEIGHT` | 50 |
-| `COMP_ERROR_RATE_HEIGHT` | 62 |
-| `COMP_SPRINT_HEIGHT` | 48 |
-| `COMP_TEAM_STATUS_HEIGHT` | 50 |
-| `COMP_ONCALL_HEIGHT` | 40 |
-| `COMP_DIVIDER_HEIGHT` | 1 |
-| `COMP_SPACER_HEIGHT` | 8 |
+Fixed-height components in the demo include `COMP_HEADER_HEIGHT`,
+`COMP_DEPLOY_HEIGHT`, `COMP_BUILD_STATUS_HEIGHT`, `COMP_METRICS_HEIGHT`,
+`COMP_SPARKLINE_HEIGHT`, `COMP_ERROR_RATE_HEIGHT`, `COMP_SPRINT_HEIGHT`,
+`COMP_TEAM_STATUS_HEIGHT`, `COMP_ONCALL_HEIGHT`, `COMP_DIVIDER_HEIGHT`, and
+`COMP_SPACER_HEIGHT`.
 
 ---
 
-## Demo Page Layout (landscape 480×320, 4px padding → content 472×312)
+## Demo Page Layout
 
-| Page | Components | Height |
-|---|---|---|
-| 1 | header + spacer + deploy + div + build + div + metrics + spacer + sparkline + error\_rate | 264 px |
-| 2 | alerts + spacer + outages + spacer + sprint | 250 px |
-| 3 | spacer + team + div + oncall + div + sla + div + schedule | 279 px |
-| 4 | spacer + pr\_review + div + checklist | 191 px |
+The demo currently groups rows in this order:
+
+| Page | Components |
+|---|---|
+| 1 | header + spacer + deploy + div + build + div + metrics + spacer + sparkline + error\_rate |
+| 2 | alerts + spacer + outages + spacer + sprint |
+| 3 | spacer + team + div + oncall + div + sla + div + schedule |
+| 4 | spacer + pr\_review + div + checklist |
 
 A new page starts when the next row would overflow `content_height`. The first row on a page is never overflowed regardless of size.
 
