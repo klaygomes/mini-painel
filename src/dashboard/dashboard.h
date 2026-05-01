@@ -74,11 +74,13 @@ int dashboard_remove_row(xf_dashboard_t *dash, int index);
  * dashboard_render_page(dash, 0). Rows that overflow the display height are
  * excluded and appear on subsequent pages instead.
  *
- * Returns a pointer to the internal RGB888 buffer (width * height * 3 bytes).
- * The pointer remains valid until the next render call or dashboard_destroy().
- * Returns NULL if dash is NULL.
+ * On success, writes the internal RGB888 buffer pointer (width * height * 3
+ * bytes) to out_frame. The pointer remains valid until the next render call
+ * or dashboard_destroy().
+ *
+ * Returns 0 on success, negative on failure.
  */
-const uint8_t *dashboard_render(xf_dashboard_t *dash);
+int dashboard_render(xf_dashboard_t *dash, const uint8_t **out_frame);
 
 /*
  * Returns the usable content width (display width minus horizontal padding).
@@ -96,10 +98,13 @@ int dashboard_page_count(xf_dashboard_t *dash);
 /*
  * Render a specific page into the internal framebuffer.
  * Rows on earlier pages are skipped; rows on later pages are excluded.
- * An out-of-range page index clears the buffer to black (returns non-NULL).
- * Returns a pointer to the internal RGB888 buffer, or NULL if dash is NULL.
+ * An out-of-range page index clears the buffer to the theme background.
+ *
+ * Returns 0 on success, negative on failure. On success, out_frame receives
+ * the internal framebuffer pointer.
  */
-const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page);
+int dashboard_render_page(xf_dashboard_t *dash, int page,
+                          const uint8_t **out_frame);
 
 /*
  * Computes the bounding rectangle (in framebuffer coordinates, padding
@@ -124,5 +129,11 @@ int dashboard_dirty_rect(xf_dashboard_t *dash, int page,
 typedef void (*xf_dirty_visitor_t)(int x, int y, int w, int h, void *ctx);
 int dashboard_visit_dirty_rects(xf_dashboard_t *dash, int page,
                                 xf_dirty_visitor_t visit, void *ctx);
+
+/*
+ * Returns the row index (0-based) of the first row whose components array
+ * contains comp. Returns -1 if comp is not found or either argument is NULL.
+ */
+int dashboard_find_row(const xf_dashboard_t *dash, const xf_component_t *comp);
 
 #endif /* DASHBOARD_H */

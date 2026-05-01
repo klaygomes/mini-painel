@@ -17,8 +17,8 @@
  *       });
  *   }
  *
- *   static void render(xf_component_t *self, uint8_t *buf, int w, int h) {
- *       xf_render(buf, w, h, draw, self->ctx);
+ *   static int render(xf_component_t *self, uint8_t *buf, int w, int h) {
+ *       return xf_render(buf, w, h, draw, self->ctx);
  *   }
  * @endcode
  */
@@ -27,6 +27,7 @@
 #define DRAW_H
 
 #include "theme.h"
+#include "status.h"
 
 #include <stdint.h>
 
@@ -203,7 +204,7 @@ typedef void (*xf_draw_fn_t)(xf_draw_ctx_t *ctx, void *user_data);
  * @param fn         Draw callback; must not be NULL.
  * @param user_data  Forwarded unchanged to fn.
  */
-void xf_render(uint8_t *buf, int w, int h, xf_draw_fn_t fn, void *user_data);
+int xf_render(uint8_t *buf, int w, int h, xf_draw_fn_t fn, void *user_data);
 
 /* Fill an RGB888 buffer with a solid color. */
 void xf_fill_rgb888(uint8_t *buf, int w, int h, xf_rgba_t color);

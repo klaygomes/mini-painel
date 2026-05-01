@@ -276,7 +276,12 @@ int main(void)
 
     page = 0;
     while (1) {
-        const uint8_t *frame = dashboard_render_page(dash, page);
+        const uint8_t *frame = NULL;
+
+        if (dashboard_render_page(dash, page, &frame) < 0) {
+            fprintf(stderr, "dashboard_render_page failed\n");
+            break;
+        }
 
         if (dev && panel_display_bitmap(dev, 0, 0, DISPLAY_W, DISPLAY_H, frame) < 0)
             fprintf(stderr, "panel_display_bitmap failed\n");

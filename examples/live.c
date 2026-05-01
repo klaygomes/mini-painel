@@ -323,7 +323,14 @@ int main(void)
 
     /* Send the first page without a transition and prime old_frame_buf. */
     {
-        const uint8_t *f = dashboard_render_page(dash, 0);
+        const uint8_t *f = NULL;
+        if (dashboard_render_page(dash, 0, &f) < 0) {
+            fprintf(stderr, "dashboard_render_page failed\n");
+            if (dev)
+                panel_close(dev);
+            dashboard_destroy(dash);
+            return 1;
+        }
         send_rect(dev, f, 0, 0, DISPLAY_W, DISPLAY_H);
         memcpy(old_frame_buf, f, (size_t)(DISPLAY_W * DISPLAY_H * 3));
         int _x, _y, _w, _h;
@@ -427,7 +434,11 @@ int main(void)
         }
         c_header.dirty = 1;
 
-        const uint8_t *frame = dashboard_render_page(dash, page);
+        const uint8_t *frame = NULL;
+        if (dashboard_render_page(dash, page, &frame) < 0) {
+            fprintf(stderr, "dashboard_render_page failed\n");
+            break;
+        }
 
         send_ctx_t sc = { dev, frame };
 

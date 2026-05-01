@@ -20,7 +20,7 @@ struct xf_component {
     int  (*fetch)(xf_component_t *self);
 
     /** Draws into the supplied RGB888 buffer. */
-    void (*render)(xf_component_t *self, uint8_t *buf, int width, int height);
+    int  (*render)(xf_component_t *self, uint8_t *buf, int width, int height);
 
     /** Caller-owned context passed into fetch() and render(). */
     void *ctx;
@@ -60,8 +60,9 @@ struct xf_component {
  * @brief Invoke a component fetch callback if present.
  *
  * @param comp Component instance.
+ * @return     0 on success, negative on failure.
  */
-void comp_fetch(xf_component_t *comp);
+int comp_fetch(xf_component_t *comp);
 
 /**
  * @brief Invoke a component render callback.
@@ -70,5 +71,6 @@ void comp_fetch(xf_component_t *comp);
  * @param buf  RGB888 output buffer.
  * @param w    Component width.
  * @param h    Component height.
+ * @return     0 on success, negative on failure.
  */
-void comp_render(xf_component_t *comp, uint8_t *buf, int w, int h);
+int comp_render(xf_component_t *comp, uint8_t *buf, int w, int h);

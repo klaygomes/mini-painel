@@ -22,9 +22,9 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
     xf_gfx_dot(ctx, right - tw - 8.0, baseline - 3.0, 3.0, d->status_dot);
 }
 
-static void render(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render(xf_component_t *self, uint8_t *buf, int w, int h)
 {
-    xf_render(buf, w, h, draw, self->ctx);
+    return xf_render(buf, w, h, draw, self->ctx);
 }
 
 xf_component_t comp_header_create(comp_header_data_t *data)

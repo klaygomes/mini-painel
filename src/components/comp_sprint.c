@@ -28,9 +28,9 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
                          (double)d->percent, t->purple_bar);
 }
 
-static void render(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render(xf_component_t *self, uint8_t *buf, int w, int h)
 {
-    xf_render(buf, w, h, draw, self->ctx);
+    return xf_render(buf, w, h, draw, self->ctx);
 }
 
 xf_component_t comp_sprint_create(comp_sprint_data_t *data)

@@ -19,36 +19,40 @@
 #define PX(fb, x, y, ch) ((fb)[((y) * W + (x)) * 3 + (ch)])
 
 /* Solid-colour render callbacks. */
-static void render_red(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_red(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
     (void)self;
     for (i = 0; i < w * h; i++) { buf[i*3]=0xFF; buf[i*3+1]=0x00; buf[i*3+2]=0x00; }
+    return XF_RES_OK;
 }
 
-static void render_blue(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_blue(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
     (void)self;
     for (i = 0; i < w * h; i++) { buf[i*3]=0x00; buf[i*3+1]=0x00; buf[i*3+2]=0xFF; }
+    return XF_RES_OK;
 }
 
-static void render_green(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_green(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
     (void)self;
     for (i = 0; i < w * h; i++) { buf[i*3]=0x00; buf[i*3+1]=0xFF; buf[i*3+2]=0x00; }
+    return XF_RES_OK;
 }
 
 /* Helpers that record the dimensions received by render(). */
 static int last_render_w = 0;
 static int last_render_h = 0;
 
-static void render_record_size(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_record_size(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     (void)self; (void)buf;
     last_render_w = w;
     last_render_h = h;
+    return XF_RES_OK;
 }
 
 /* Helpers that test fetch-before-render ordering. */
@@ -62,10 +66,11 @@ static int fetch_set_flag(xf_component_t *self)
     return 0;
 }
 
-static void render_check_flag(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_check_flag(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     (void)self; (void)buf; (void)w; (void)h;
     render_saw_fetch = fetch_ran;
+    return XF_RES_OK;
 }
 
 /* Fetch that signals an error. */
@@ -77,10 +82,27 @@ static int fetch_error(xf_component_t *self)
 
 static int render_was_called = 0;
 
-static void render_set_called(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_set_called(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     (void)self; (void)buf; (void)w; (void)h;
     render_was_called = 1;
+    return XF_RES_OK;
+}
+
+static const uint8_t *render_or_null(xf_dashboard_t *dash)
+{
+    const uint8_t *fb = NULL;
+    if (dashboard_render(dash, &fb) < 0)
+        return NULL;
+    return fb;
+}
+
+static const uint8_t *render_page_or_null(xf_dashboard_t *dash, int page)
+{
+    const uint8_t *fb = NULL;
+    if (dashboard_render_page(dash, page, &fb) < 0)
+        return NULL;
+    return fb;
 }
 
 /* setUp / tearDown */
@@ -187,13 +209,13 @@ static void test_add_full_row_rejects_null_component(void)
 
 static void test_render_returns_null_for_null_dashboard(void)
 {
-    TEST_ASSERT_NULL(dashboard_render(NULL));
+    TEST_ASSERT_NULL(render_or_null(NULL));
 }
 
 static void test_render_returns_non_null_for_valid_dashboard(void)
 {
     xf_dashboard_t *dash = dashboard_create(W, H, 0);
-    TEST_ASSERT_NOT_NULL(dashboard_render(dash));
+    TEST_ASSERT_NOT_NULL(render_or_null(dash));
     dashboard_destroy(dash);
 }
 
@@ -205,7 +227,7 @@ static void test_render_calls_fetch_before_render(void)
     xf_component_t comp  = {fetch_set_flag, render_check_flag, NULL, 0};
 
     dashboard_add_full_row(dash, &comp, H);
-    dashboard_render(dash);
+    render_or_null(dash);
 
     TEST_ASSERT_TRUE(render_saw_fetch);
     dashboard_destroy(dash);
@@ -218,22 +240,22 @@ static void test_render_skips_fetch_when_null(void)
     xf_component_t comp  = {NULL, render_set_called, NULL, 0};
 
     dashboard_add_full_row(dash, &comp, H);
-    dashboard_render(dash);
+    render_or_null(dash);
 
     TEST_ASSERT_TRUE(render_was_called);
     dashboard_destroy(dash);
 }
 
-static void test_render_proceeds_when_fetch_returns_error(void)
+static void test_render_fails_when_fetch_returns_error(void)
 {
-    /* fetch returns -1 but render should still run. */
+    /* fetch error must propagate and prevent render. */
     xf_dashboard_t *dash = dashboard_create(W, H, 0);
     xf_component_t comp  = {fetch_error, render_set_called, NULL, 0};
 
     dashboard_add_full_row(dash, &comp, H);
-    dashboard_render(dash);
+    TEST_ASSERT_NULL(render_or_null(dash));
 
-    TEST_ASSERT_TRUE(render_was_called);
+    TEST_ASSERT_FALSE(render_was_called);
     dashboard_destroy(dash);
 }
 
@@ -245,7 +267,7 @@ static void test_render_passes_full_width_to_full_row_component(void)
     xf_component_t comp  = {NULL, render_record_size, NULL, 0};
 
     dashboard_add_full_row(dash, &comp, H);
-    dashboard_render(dash);
+    render_or_null(dash);
 
     TEST_ASSERT_EQUAL_INT(W, last_render_w);
     TEST_ASSERT_EQUAL_INT(H, last_render_h);
@@ -261,7 +283,7 @@ static void test_render_passes_half_width_to_split_row_component(void)
     int widths[] = {W / 2, W / 2};
 
     dashboard_add_row(dash, comps, widths, 2, H);
-    dashboard_render(dash);
+    render_or_null(dash);
 
     TEST_ASSERT_EQUAL_INT(W / 2, last_render_w);
     TEST_ASSERT_EQUAL_INT(H,     last_render_h);
@@ -277,7 +299,7 @@ static void test_single_full_row_pixels_appear_at_top_left(void)
     const uint8_t *fb;
 
     dashboard_add_full_row(dash, &comp, H);
-    fb = dashboard_render(dash);
+    fb = render_or_null(dash);
 
     TEST_ASSERT_EQUAL_UINT8(0xFF, PX(fb, 0, 0, 0)); /* R */
     TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 1)); /* G */
@@ -295,7 +317,7 @@ static void test_second_row_pixels_appear_below_first_row(void)
 
     dashboard_add_full_row(dash, &red,  10);
     dashboard_add_full_row(dash, &blue, H - 10);
-    fb = dashboard_render(dash);
+    fb = render_or_null(dash);
 
     /* Last row of the red region. */
     TEST_ASSERT_EQUAL_UINT8(0xFF, PX(fb, 0, 9, 0));
@@ -318,7 +340,7 @@ static void test_right_column_pixels_appear_at_correct_x_offset(void)
     const uint8_t *fb;
 
     dashboard_add_row(dash, comps, widths, 2, H);
-    fb = dashboard_render(dash);
+    fb = render_or_null(dash);
 
     /* Last pixel of left column at y=0. */
     TEST_ASSERT_EQUAL_UINT8(0xFF, PX(fb, W/2 - 1, 0, 0)); /* red */
@@ -338,10 +360,10 @@ static void test_framebuffer_is_cleared_between_renders(void)
     const uint8_t  *fb;
 
     dashboard_add_full_row(dash, &comp, H);
-    dashboard_render(dash);
+    render_or_null(dash);
 
     dashboard_remove_row(dash, 0);
-    fb = dashboard_render(dash);
+    fb = render_or_null(dash);
 
     TEST_ASSERT_EQUAL_UINT8(TO_R(xf_get_theme()->background), PX(fb, 0, 0, 0));
     TEST_ASSERT_EQUAL_UINT8(TO_G(xf_get_theme()->background), PX(fb, 0, 0, 1));
@@ -363,7 +385,7 @@ static void test_move_row_up_swaps_visual_position(void)
     dashboard_add_full_row(dash, &blue, H / 2);
 
     TEST_ASSERT_EQUAL_INT(0, dashboard_move_row_up(dash, 1));
-    fb = dashboard_render(dash);
+    fb = render_or_null(dash);
 
     /* Top row is now blue. */
     TEST_ASSERT_EQUAL_UINT8(0xFF, PX(fb, 0, 0, 2));
@@ -383,7 +405,7 @@ static void test_move_row_down_swaps_visual_position(void)
     dashboard_add_full_row(dash, &blue, H / 2);
 
     TEST_ASSERT_EQUAL_INT(0, dashboard_move_row_down(dash, 0));
-    fb = dashboard_render(dash);
+    fb = render_or_null(dash);
 
     /* Top row is now blue. */
     TEST_ASSERT_EQUAL_UINT8(0xFF, PX(fb, 0, 0, 2));
@@ -422,7 +444,7 @@ static void test_remove_row_eliminates_pixels_from_next_render(void)
 
     /* Remove the red row; green moves to the top. */
     TEST_ASSERT_EQUAL_INT(0, dashboard_remove_row(dash, 0));
-    fb = dashboard_render(dash);
+    fb = render_or_null(dash);
 
     /* Previously-red area (y=0) is now green. */
     TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 0));
@@ -503,7 +525,7 @@ static void test_page_count_is_three_for_three_pages(void)
 
 static void test_render_page_returns_null_for_null_dashboard(void)
 {
-    TEST_ASSERT_NULL(dashboard_render_page(NULL, 0));
+    TEST_ASSERT_NULL(render_page_or_null(NULL, 0));
 }
 
 static void test_render_page_0_shows_rows_fitting_display(void)
@@ -513,7 +535,7 @@ static void test_render_page_0_shows_rows_fitting_display(void)
     const uint8_t  *fb;
 
     dashboard_add_full_row(dash, &comp, 40);
-    fb = dashboard_render_page(dash, 0);
+    fb = render_page_or_null(dash, 0);
 
     TEST_ASSERT_EQUAL_UINT8(0xFF, PX(fb, 0, 0, 0)); /* red at top */
     TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 2));
@@ -530,7 +552,7 @@ static void test_render_page_1_shows_overflow_row_at_top(void)
 
     dashboard_add_full_row(dash, &a, 40);
     dashboard_add_full_row(dash, &b, 40);
-    fb = dashboard_render_page(dash, 1);
+    fb = render_page_or_null(dash, 1);
 
     /* Row B starts at y=0 on page 1. */
     TEST_ASSERT_EQUAL_UINT8(0x00, PX(fb, 0, 0, 0)); /* blue: R=0 */
@@ -548,7 +570,7 @@ static void test_render_page_0_excludes_overflow_row(void)
 
     dashboard_add_full_row(dash, &a, 40);
     dashboard_add_full_row(dash, &b, 40);
-    fb = dashboard_render_page(dash, 0);
+    fb = render_page_or_null(dash, 0);
 
     /* y=40 must be background — row B is on page 1, not page 0. */
     TEST_ASSERT_EQUAL_UINT8(TO_R(xf_get_theme()->background), PX(fb, 0, 40, 0));
@@ -563,7 +585,7 @@ static void test_render_out_of_bounds_page_returns_background_buffer(void)
     const uint8_t  *fb;
 
     dashboard_add_full_row(dash, &comp, 40);
-    fb = dashboard_render_page(dash, 99); /* only 1 page exists */
+    fb = render_page_or_null(dash, 99); /* only 1 page exists */
 
     TEST_ASSERT_NOT_NULL(fb);
     TEST_ASSERT_EQUAL_UINT8(TO_R(xf_get_theme()->background), PX(fb, 0, 0, 0));
@@ -578,7 +600,7 @@ static void test_render_page_still_calls_fetch_and_render_callbacks(void)
     xf_component_t  comp = {fetch_set_flag, render_check_flag, NULL, 0};
 
     dashboard_add_full_row(dash, &comp, 40);
-    dashboard_render_page(dash, 0);
+    render_page_or_null(dash, 0);
 
     TEST_ASSERT_TRUE(render_saw_fetch);
     dashboard_destroy(dash);
@@ -596,10 +618,10 @@ static void test_dashboard_render_is_equivalent_to_render_page_0(void)
     dashboard_add_full_row(dash, &a, 40);
     dashboard_add_full_row(dash, &b, 40); /* b overflows to page 1 */
 
-    fb0 = dashboard_render_page(dash, 0);
+    fb0 = render_page_or_null(dash, 0);
     memcpy(page0_copy, fb0, sizeof(page0_copy));
 
-    fb1 = dashboard_render(dash);
+    fb1 = render_or_null(dash);
     TEST_ASSERT_EQUAL_MEMORY(page0_copy, fb1, sizeof(page0_copy));
     dashboard_destroy(dash);
 }
@@ -747,7 +769,7 @@ int main(void)
 
     RUN_TEST(test_render_calls_fetch_before_render);
     RUN_TEST(test_render_skips_fetch_when_null);
-    RUN_TEST(test_render_proceeds_when_fetch_returns_error);
+    RUN_TEST(test_render_fails_when_fetch_returns_error);
 
     RUN_TEST(test_render_passes_full_width_to_full_row_component);
     RUN_TEST(test_render_passes_half_width_to_split_row_component);

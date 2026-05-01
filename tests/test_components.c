@@ -46,6 +46,14 @@
 void setUp(void)   { xf_set_theme(&xf_theme_default); }
 void tearDown(void) {}
 
+static const uint8_t *render_or_null(xf_dashboard_t *dash)
+{
+    const uint8_t *buf = NULL;
+    if (dashboard_render(dash, &buf) < 0)
+        return NULL;
+    return buf;
+}
+
 static void write_ppm(const char *path, const uint8_t *buf, int w, int h)
 {
     FILE *f = fopen(path, "wb");
@@ -74,7 +82,7 @@ static int render_component(xf_component_t *comp, int height, const char *ppm)
         return 0;
     }
 
-    const uint8_t *buf = dashboard_render(dash);
+    const uint8_t *buf = render_or_null(dash);
     int ok = buf && buffer_has_content(buf, DISPLAY_W, height);
     if (buf) write_ppm(ppm, buf, DISPLAY_W, height);
 
@@ -108,7 +116,7 @@ static void test_spacer(void)
     xf_component_t comp = comp_spacer_create();
     TEST_ASSERT_EQUAL_INT(0, dashboard_add_full_row(dash, &comp, COMP_SPACER_HEIGHT));
 
-    const uint8_t *buf = dashboard_render(dash);
+    const uint8_t *buf = render_or_null(dash);
     TEST_ASSERT_NOT_NULL(buf);
 
     dashboard_destroy(dash);
@@ -123,7 +131,7 @@ static void test_divider(void)
     xf_dashboard_t *dash = dashboard_create(DISPLAY_W, COMP_DIVIDER_HEIGHT, 0);
     TEST_ASSERT_NOT_NULL(dash);
     TEST_ASSERT_EQUAL_INT(0, dashboard_add_full_row(dash, &comp, COMP_DIVIDER_HEIGHT));
-    TEST_ASSERT_NOT_NULL(dashboard_render(dash));
+    TEST_ASSERT_NOT_NULL(render_or_null(dash));
     dashboard_destroy(dash);
 }
 

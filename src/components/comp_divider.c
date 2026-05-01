@@ -11,10 +11,10 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
     xf_draw_stroke(ctx, t->surface_separator, 1.0, XF_LINE_CAP_BUTT);
 }
 
-static void render(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     (void)self;
-    xf_render(buf, w, h, draw, NULL);
+    return xf_render(buf, w, h, draw, NULL);
 }
 
 xf_component_t comp_divider_create(void)

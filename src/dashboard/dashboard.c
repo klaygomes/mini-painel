@@ -3,6 +3,7 @@
 
 #include "dashboard.h"
 #include "components/comp_base.h"
+#include "debug.h"
 
 /* Internal row record. y offset is computed on the fly during render
  * so that move/remove operations never need to reindex the array. */
@@ -180,7 +181,7 @@ static int page_layout(const xf_dashboard_t *dash, int *page_of_row, int *y_of_r
     return dash->row_count == 0 ? 1 : page + 1;
 }
 
-static void render_row(xf_dashboard_t *dash, const row_t *row, int pad, int y)
+static int render_row(xf_dashboard_t *dash, const row_t *row, int pad, int y)
 {
     int c, ly, x = 0;
 
@@ -189,14 +190,25 @@ static void render_row(xf_dashboard_t *dash, const row_t *row, int pad, int y)
         int w = row->widths[c];
         int h = row->height;
         uint8_t *sub = malloc((size_t)(w * h * 3));
+        int rc;
 
-        if (!sub) {
-            x += w;
-            continue;
+        if (!sub)
+            return XF_RES_ERR_NOMEM;
+
+        rc = comp_fetch(comp);
+        if (rc < 0) {
+            free(sub);
+            return rc;
         }
 
-        comp_fetch(comp);
-        comp_render(comp, sub, w, h);
+        rc = comp_render(comp, sub, w, h);
+        if (rc < 0) {
+            free(sub);
+            return rc;
+        }
+
+        DEBUG_LOG("row comp=%p render=%p ctx=%p w=%d h=%d rc=%d",
+                  (void *)comp, (void *)comp->render, comp->ctx, w, h, rc);
 
         for (ly = 0; ly < h; ly++) {
             int fb_off  = ((pad + y + ly) * dash->width + pad + x) * 3;
@@ -207,15 +219,19 @@ static void render_row(xf_dashboard_t *dash, const row_t *row, int pad, int y)
         free(sub);
         x += w;
     }
+
+    return XF_RES_OK;
 }
 
-const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page)
+int dashboard_render_page(xf_dashboard_t *dash, int page,
+                          const uint8_t **out_frame)
 {
     int r;
     int cur_page = 0, y = 0;
+    int rc;
 
-    if (!dash)
-        return NULL;
+    if (!dash || !out_frame)
+        return XF_RES_ERR_INVALID_ARG;
 
     int pad = dash->padding;
     int content_h = dash->height - 2 * pad;
@@ -224,8 +240,10 @@ const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page)
                    xf_get_theme()->background);
 
     /* Out-of-range page: return the cleared buffer without rendering. */
-    if (page < 0 || page >= page_layout(dash, NULL, NULL))
-        return dash->framebuffer;
+    if (page < 0 || page >= page_layout(dash, NULL, NULL)) {
+        *out_frame = dash->framebuffer;
+        return XF_RES_OK;
+    }
 
     for (r = 0; r < dash->row_count; r++) {
         if (y > 0 && y + dash->rows[r].height > content_h) {
@@ -233,21 +251,27 @@ const uint8_t *dashboard_render_page(xf_dashboard_t *dash, int page)
             y = 0;
         }
 
+        DEBUG_LOG("row=%d cur_page=%d page=%d height=%d",
+                  r, cur_page, page, dash->rows[r].height);
         if (cur_page > page)
             break;
 
-        if (cur_page == page)
-            render_row(dash, &dash->rows[r], pad, y);
+        if (cur_page == page) {
+            rc = render_row(dash, &dash->rows[r], pad, y);
+            if (rc < 0)
+                return rc;
+        }
 
         y += dash->rows[r].height;
     }
 
-    return dash->framebuffer;
+    *out_frame = dash->framebuffer;
+    return XF_RES_OK;
 }
 
-const uint8_t *dashboard_render(xf_dashboard_t *dash)
+int dashboard_render(xf_dashboard_t *dash, const uint8_t **out_frame)
 {
-    return dashboard_render_page(dash, 0);
+    return dashboard_render_page(dash, 0, out_frame);
 }
 
 int dashboard_content_width(const xf_dashboard_t *dash)
@@ -375,4 +399,18 @@ int dashboard_visit_dirty_rects(xf_dashboard_t *dash, int page,
     free(page_of_row);
     free(y_of_row);
     return count;
+}
+
+int dashboard_find_row(const xf_dashboard_t *dash, const xf_component_t *comp)
+{
+    int r, c;
+    if (!dash || !comp)
+        return -1;
+    for (r = 0; r < dash->row_count; r++) {
+        for (c = 0; c < dash->rows[r].count; c++) {
+            if (dash->rows[r].components[c] == comp)
+                return r;
+        }
+    }
+    return -1;
 }

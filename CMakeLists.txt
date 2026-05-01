@@ -5,6 +5,11 @@ project(mini-panel C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+option(XF_ENABLE_DEBUG_LOG "Enable DEBUG_LOG traces" OFF)
+if(XF_ENABLE_DEBUG_LOG)
+    add_compile_definitions(XF_ENABLE_DEBUG_LOG=1)
+endif()
+
 # Output binaries to bin/
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 

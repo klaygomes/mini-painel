@@ -3,6 +3,7 @@
  * all component code remains unchanged. */
 
 #include "draw.h"
+#include "debug.h"
 
 #include <cairo.h>
 #include <math.h>
@@ -45,11 +46,17 @@ static void round_rect_path(cairo_t *cr,
 }
 
 /* Cairo ARGB32 on little-endian stores bytes as [B, G, R, A] per pixel. */
-static void surface_to_rgb888(cairo_surface_t *surf, uint8_t *buf, int w, int h)
+static int surface_to_rgb888(cairo_surface_t *surf, uint8_t *buf, int w, int h)
 {
+    if (!surf || !buf || w <= 0 || h <= 0)
+        return XF_RES_ERR_INVALID_ARG;
+
     cairo_surface_flush(surf);
     const unsigned char *data   = cairo_image_surface_get_data(surf);
     int                  stride = cairo_image_surface_get_stride(surf);
+
+    if (!data)
+        return XF_RES_ERR_CAIRO;
 
     for (int row = 0; row < h; row++) {
         const uint8_t *src = data + row * stride;
@@ -60,6 +67,8 @@ static void surface_to_rgb888(cairo_surface_t *surf, uint8_t *buf, int w, int h)
             dst[col * 3 + 2] = src[col * 4 + 0];
         }
     }
+
+    return XF_RES_OK;
 }
 
 static void select_font(cairo_t *cr, const char *family, int weight, double size)
@@ -110,6 +119,9 @@ void xf_draw_text(xf_draw_ctx_t *ctx, const char *text,
     const xf_theme_t *t      = xf_get_theme();
     const char       *family = opts->family ? opts->family : t->font_sans;
 
+        DEBUG_LOG("text='%s' color=(%g,%g,%g,%g)",
+              text, opts->color.r, opts->color.g, opts->color.b, opts->color.a);
+
     select_font(ctx->cr, family, opts->weight, opts->size);
 
     cairo_text_extents_t ext;
@@ -132,6 +144,10 @@ void xf_draw_text(xf_draw_ctx_t *ctx, const char *text,
     set_color(ctx->cr, opts->color);
     cairo_move_to(ctx->cr, tx, y);
     cairo_show_text(ctx->cr, text);
+
+    DEBUG_LOG("x=%g y=%g tx=%g size=%g weight=%d xadv=%g status=%d (%s)",
+              x, y, tx, opts->size, opts->weight, ext.x_advance,
+              cairo_status(ctx->cr), cairo_status_to_string(cairo_status(ctx->cr)));
 
     if (opts->max_width > 0)
         cairo_restore(ctx->cr);
@@ -202,10 +218,46 @@ void xf_fill_rgb888(uint8_t *buf, int w, int h, xf_rgba_t color)
     }
 }
 
-void xf_render(uint8_t *buf, int w, int h, xf_draw_fn_t fn, void *user_data)
+int xf_render(uint8_t *buf, int w, int h, xf_draw_fn_t fn, void *user_data)
 {
-    cairo_surface_t *surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
-    cairo_t         *cr   = cairo_create(surf);
+    cairo_surface_t *surf;
+    cairo_t *cr;
+    cairo_status_t surface_status;
+    cairo_status_t cr_status;
+    int rc;
+
+    if (!buf || w <= 0 || h <= 0 || !fn)
+        return XF_RES_ERR_INVALID_ARG;
+
+    surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+    if (!surf)
+        return XF_RES_ERR_NOMEM;
+
+    surface_status = cairo_surface_status(surf);
+    if (surface_status != CAIRO_STATUS_SUCCESS) {
+        DEBUG_LOG("surface create failed status=%d (%s)",
+                  surface_status, cairo_status_to_string(surface_status));
+        cairo_surface_destroy(surf);
+        return surface_status == CAIRO_STATUS_NO_MEMORY ? XF_RES_ERR_NOMEM : XF_RES_ERR_CAIRO;
+    }
+
+    cr = cairo_create(surf);
+    if (!cr) {
+        cairo_surface_destroy(surf);
+        return XF_RES_ERR_NOMEM;
+    }
+
+    cr_status = cairo_status(cr);
+    if (cr_status != CAIRO_STATUS_SUCCESS) {
+        DEBUG_LOG("context create failed status=%d (%s)",
+                  cr_status, cairo_status_to_string(cr_status));
+        cairo_destroy(cr);
+        cairo_surface_destroy(surf);
+        return cr_status == CAIRO_STATUS_NO_MEMORY ? XF_RES_ERR_NOMEM : XF_RES_ERR_CAIRO;
+    }
+
+    DEBUG_LOG("begin surf=%p cr=%p w=%d h=%d fn=%p user=%p",
+              (void *)surf, (void *)cr, w, h, (void *)fn, user_data);
 
     xf_rgba_t bg = xf_get_theme()->background;
     cairo_set_source_rgba(cr, bg.r, bg.g, bg.b, bg.a);
@@ -214,8 +266,25 @@ void xf_render(uint8_t *buf, int w, int h, xf_draw_fn_t fn, void *user_data)
     xf_draw_ctx_t ctx = { cr, w, h };
     fn(&ctx, user_data);
 
-    surface_to_rgb888(surf, buf, w, h);
+    cr_status = cairo_status(cr);
+    surface_status = cairo_surface_status(surf);
+    if (cr_status != CAIRO_STATUS_SUCCESS || surface_status != CAIRO_STATUS_SUCCESS) {
+        DEBUG_LOG("draw failed cr_status=%d (%s) surf_status=%d (%s)",
+                  cr_status, cairo_status_to_string(cr_status),
+                  surface_status, cairo_status_to_string(surface_status));
+        cairo_destroy(cr);
+        cairo_surface_destroy(surf);
+        if (cr_status == CAIRO_STATUS_NO_MEMORY || surface_status == CAIRO_STATUS_NO_MEMORY)
+            return XF_RES_ERR_NOMEM;
+        return XF_RES_ERR_CAIRO;
+    }
+
+    rc = surface_to_rgb888(surf, buf, w, h);
+
+    if (rc < 0)
+        DEBUG_LOG("surface conversion failed rc=%d", rc);
 
     cairo_destroy(cr);
     cairo_surface_destroy(surf);
+    return rc;
 }

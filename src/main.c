@@ -4,12 +4,13 @@
 
 #include "panel.h"
 #include "dashboard.h"
+#include "status.h"
 
 #define DISPLAY_W 320
 #define DISPLAY_H 480
 #define PADDING     4
 
-static void render_header(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_header(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
     (void)self;
@@ -18,9 +19,10 @@ static void render_header(xf_component_t *self, uint8_t *buf, int w, int h)
         buf[i*3+1] = 0x6B;
         buf[i*3+2] = 0xC8;
     }
+    return XF_RES_OK;
 }
 
-static void render_left(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_left(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
     (void)self;
@@ -29,9 +31,10 @@ static void render_left(xf_component_t *self, uint8_t *buf, int w, int h)
         buf[i*3+1] = 0x20;
         buf[i*3+2] = 0x20;
     }
+    return XF_RES_OK;
 }
 
-static void render_right(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_right(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
     (void)self;
@@ -40,6 +43,7 @@ static void render_right(xf_component_t *self, uint8_t *buf, int w, int h)
         buf[i*3+1] = 0xA0;
         buf[i*3+2] = 0x40;
     }
+    return XF_RES_OK;
 }
 
 int main(void)
@@ -74,7 +78,11 @@ int main(void)
         return 1;
     }
 
-    frame = dashboard_render(dash);
+    if (dashboard_render(dash, &frame) < 0) {
+        fprintf(stderr, "dashboard_render failed\n");
+        dashboard_destroy(dash);
+        return 1;
+    }
 
     dev = panel_open_auto();
     if (!dev) {
