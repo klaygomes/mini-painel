@@ -32,3 +32,12 @@ add_executable(live live.c ${PANEL_SRCS} ${SRC}/draw/transition.c)
 target_include_directories(live PRIVATE ${PANEL_INCS})
 target_compile_options(live PRIVATE -Wall -Wextra -Wpedantic -Werror)
 target_link_libraries(live PRIVATE xf_components m)
+
+add_executable(json_demo json_demo.c ${SRC}/dashboard/dashboard.c)
+target_include_directories(json_demo PRIVATE
+    ${PANEL_INCS}
+    ${SRC}/json_api
+    ${CMAKE_SOURCE_DIR}/vendor/mjson
+)
+target_compile_options(json_demo PRIVATE -Wall -Wextra -Wpedantic -Werror)
+target_link_libraries(json_demo PRIVATE xf_components xf_json_api)

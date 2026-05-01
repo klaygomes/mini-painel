@@ -68,3 +68,18 @@ add_executable(test_transition
 target_include_directories(test_transition PRIVATE ${TEST_INCS})
 target_compile_options(test_transition PRIVATE -Wall -Wextra)
 add_test(NAME test_transition COMMAND test_transition)
+
+# test_json_api: exercises the JSON API end-to-end, no hardware required
+add_executable(test_json_api
+    test_json_api.c
+    vendor/unity.c
+    ${SRC}/dashboard/dashboard.c
+)
+target_include_directories(test_json_api PRIVATE
+    ${TEST_INCS}
+    ${SRC}/json_api
+    ${CMAKE_SOURCE_DIR}/vendor/mjson
+)
+target_compile_options(test_json_api PRIVATE -Wall -Wextra)
+target_link_libraries(test_json_api PRIVATE xf_components xf_json_api)
+add_test(NAME test_json_api COMMAND test_json_api)

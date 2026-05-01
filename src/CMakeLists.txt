@@ -2,6 +2,7 @@ add_subdirectory(theme)
 add_subdirectory(draw)
 add_subdirectory(gfx)
 add_subdirectory(components)
+add_subdirectory(json_api)
 
 add_executable(panel
     main.c
