@@ -55,3 +55,11 @@ sudo dnf install cairo-devel         # Fedora
 - [Dashboard API](doc/dashboard.md): rows, components, pages, live data
 - [Device API](doc/api.md): open, send bitmaps, control brightness and LED
 - [Protocol & layout reference](doc/agents.md): hardware specs, pixel math, layout constants
+
+## JSON command API
+
+A compact JSON-driven interface for building and updating dashboards without writing C. Send an array of command objects; receive a JSON result envelope. See [doc/json-api-agents.md](doc/json-api-agents.md) for the full command reference.
+
+```sh
+./bin/json_demo   # writes bin/json_demo.ppm and prints reply to stderr
+```

@@ -32,12 +32,13 @@ Tests run without hardware. Unity is vendored in `tests/vendor/` — no extra se
 ## Code conventions
 
 - **Standard**: C99, no extensions beyond POSIX.
-- **Public API**: `src/device/panel.h` and `src/types.h`. Everything else under `src/` is internal.
+- **Public API**: `src/device/panel.h`, `src/types.h`, and `src/json_api/json_api.h`. Everything else under `src/` is internal.
 - **Opaque types**: `xf_device_t` is opaque. Its fields live in `src/device/device_internal.h`, included only by `src/device/panel.c` and tests.
 - **Single responsibility**: each function performs one conceptual operation.
 - **No globals**: functions rely exclusively on their parameters.
-- **Error handling**: never ignore return values from standard library functions; check for `NULL`, negative codes, and boundary conditions at call sites.
+- **Error handling**: never ignore return values from standard library functions; check for `NULL`, negative codes, and boundary conditions at call sites. Render-pipeline functions return `xf_result_t` (see `src/status.h`); a non-zero value means the frame is unusable and must not be sent to hardware.
 - **Input validation**: validate all external data at the system boundary before processing.
+- **Debug logging**: use `DEBUG_LOG(fmt, ...)` from `src/debug.h` for diagnostic traces. The macro is a no-op unless `XF_ENABLE_DEBUG_LOG=1` is defined at compile time (`cmake -DXF_ENABLE_DEBUG_LOG=ON ..`). Never use `printf` for diagnostics; never leave `DEBUG_LOG` calls that reveal sensitive data.
 - **Assertions**: use `assert()` to document invariants; never for runtime error handling.
 - **Memory ownership**: every `malloc`/`calloc` has a guaranteed `free` path; ownership is explicit at the call site.
 - **Bounds checking**: verify buffer sizes before reading or writing.
@@ -105,6 +106,9 @@ High-level responsibilities by directory:
 | `src/components/` | Pre-built dashboard widgets (`comp_*`). Each component header defines `COMP_<NAME>_HEIGHT`. |
 | `src/gfx/` | Shared drawing primitives used by components (`gfx/*`). |
 | `src/types.h` | Public types: `xf_orientation_t`, `xf_color_t`, `xf_device_t` (opaque). |
+| `src/status.h` | `xf_result_t` enum: shared result type for the render pipeline. Read the header for the full error-code catalogue. |
+| `src/debug.h` | `DEBUG_LOG` macro: compile-time-gated stderr tracing. Activated by `-DXF_ENABLE_DEBUG_LOG=ON`; zero overhead when off. |
+| `src/json_api/` | JSON command API (`json_api.h`). Accepts JSON arrays of ops (add/update/remove/move/render); returns a JSON reply. Backed by mjson (vendored). See `doc/json-api-agents.md`. |
 | `tests/` | Unity-based offline tests. `fake_serial.c` mocks the serial port; `test_components.c` writes PPMs to `bin/` for visual review. |
 
 ## Adding a new device revision
@@ -133,5 +137,6 @@ Before editing this file or any `doc/*-agents.md`, read **`doc/meta-agents.md`**
 - `doc/components-agents.md` — component module conventions, draw API, theme rules.
 - `doc/dashboard-agents.md` — dashboard module internals and testing.
 - `doc/glossary.md` — naming conventions and terms.
+- `doc/json-api-agents.md` — JSON command API: command shapes, id format, response envelope, error catalog, how to add a kind.
 </content>
 </invoke>

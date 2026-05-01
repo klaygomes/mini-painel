@@ -62,7 +62,7 @@ static libraries do not embed their dependencies.
 - `xf_draw_ctx_t` — opaque draw context (components never inspect it)
 - Shape and text draw functions: `xf_draw_fill_round_rect`, `xf_draw_circle`, `xf_draw_text`, etc.
 - Path API: `xf_draw_begin_path`, `xf_draw_move_to`, `xf_draw_line_to`, `xf_draw_close_path`, `xf_draw_fill`, `xf_draw_stroke`
-- `xf_render(buf, w, h, fn, user_data)` — creates a Cairo ARGB32 surface, calls `fn`, converts to RGB888 into `buf`, destroys the surface
+- `xf_render(buf, w, h, fn, user_data)` — creates a Cairo ARGB32 surface, calls `fn`, converts to RGB888 into `buf`, destroys the surface. Returns `int` (`xf_result_t`); a non-zero return means the conversion failed and `buf` is in an undefined state. Always propagate this value — every component's `render` callback must return the `int` from `xf_render` directly. Error codes are defined in `src/status.h`.
 
 ### Cairo include path gotcha
 
@@ -128,9 +128,9 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
     xf_gfx_dot(ctx, 4.0, 8.0, 3.0, d->dot);
 }
 
-static void render(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render(xf_component_t *self, uint8_t *buf, int w, int h)
 {
-    xf_render(buf, w, h, draw, self->ctx);
+    return xf_render(buf, w, h, draw, self->ctx);
 }
 
 xf_component_t comp_foo_create(comp_foo_data_t *data)
@@ -157,9 +157,9 @@ static int fetch(xf_component_t *self)
 
 static void draw(xf_draw_ctx_t *ctx, void *user_data) { /* same as above */ }
 
-static void render(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render(xf_component_t *self, uint8_t *buf, int w, int h)
 {
-    xf_render(buf, w, h, draw, self->ctx);
+    return xf_render(buf, w, h, draw, self->ctx);
 }
 
 xf_component_t comp_foo_create(comp_foo_data_t *data)

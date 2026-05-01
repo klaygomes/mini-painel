@@ -57,13 +57,17 @@ This is intentional: move/remove operations become O(1) array swaps or
 
 ### Sub-buffer blit
 
-For each component, `dashboard_render()`:
+For each component, `dashboard_render()` / `dashboard_render_page()`:
 1. `calloc`s a `w × h × 3` byte sub-buffer (zeroed)
-2. Calls `comp->fetch()` if set
-3. Calls `comp->render()` into the sub-buffer
+2. Calls `comp->fetch()` if set; a non-zero return is recorded but render still proceeds
+3. Calls `comp->render()` into the sub-buffer; a non-zero return aborts the current row and propagates the error
 4. Copies it row by row into the framebuffer at the correct `(x, y)` offset:
    `fb_offset = ((y + ly) * dash->width + x) * 3`
 5. Frees the sub-buffer
+
+Both `dashboard_render` and `dashboard_render_page` now return `int` (`xf_result_t`)
+and write the frame pointer through an `out_frame` parameter. The caller must
+check the return value before using `*out_frame`. Error codes are in `src/status.h`.
 
 ## Testing rules
 
@@ -82,17 +86,21 @@ known colour, add it to a dashboard, call `dashboard_render()`, and read
 specific pixel coordinates in the returned buffer:
 
 ```c
-static void render_red(xf_component_t *self, uint8_t *buf, int w, int h)
+static int render_ran = 0;
+static int render_red(xf_component_t *self, uint8_t *buf, int w, int h)
 {
     int i;
     (void)self;
     for (i = 0; i < w * h; i++) { buf[i*3]=0xFF; buf[i*3+1]=0x00; buf[i*3+2]=0x00; }
+    render_ran = 1;
+    return 0;
 }
 
 /* In the test: */
+const uint8_t *fb = NULL;
 xf_component_t comp = {NULL, render_red, NULL};
 dashboard_add_full_row(dash, &comp, H);
-const uint8_t *fb = dashboard_render(dash);
+TEST_ASSERT_EQUAL_INT(0, dashboard_render(dash, &fb));
 
 /* pixel at (x, y), channel ch: fb[(y * W + x) * 3 + ch] */
 TEST_ASSERT_EQUAL_UINT8(0xFF, fb[0 * 3 + 0]); /* pixel (0,0) red channel */
@@ -111,9 +119,10 @@ static int fetch_ran = 0;
 static int render_saw_fetch = 0;
 
 static int fetch_set_flag(xf_component_t *self) { (void)self; fetch_ran = 1; return 0; }
-static void render_check_flag(xf_component_t *self, uint8_t *buf, int w, int h) {
+static int render_check_flag(xf_component_t *self, uint8_t *buf, int w, int h) {
     (void)self; (void)buf; (void)w; (void)h;
     render_saw_fetch = fetch_ran;
+    return 0;
 }
 
 void setUp(void) { fetch_ran = 0; render_saw_fetch = 0; }
