@@ -1,6 +1,8 @@
 # Agent context
 
-> Single source of truth for every coding agent (Claude Code, Cursor, Aider, Codex, etc.). `CLAUDE.md` is a pointer to this file. Editing this file (or any other `*-agents.md`)? Read `doc/meta-agents.md` first — it governs all agent docs and prevents the regressions a previous validation pass surfaced.
+> **STOP — read `doc/meta-agents.md` before making any edit to this file or any `doc/*-agents.md`.** It defines the rules that govern all agent docs (no restated source values, no hand-written file trees, one fact one home) and lists validation commands to run before committing. Skipping it is the most common cause of doc regressions.
+
+> Single source of truth for every coding agent (Claude Code, Cursor, Aider, Codex, etc.). `CLAUDE.md` is a pointer to this file.
 
 ## What this is
 
@@ -141,5 +143,14 @@ Before editing this file or any `doc/*-agents.md`, read **`doc/meta-agents.md`**
 - `doc/glossary.md` — naming conventions and terms.
 - `doc/json-api-agents.md` — JSON command API: command shapes, id format, response envelope, error catalog, how to add a kind.
 - `doc/daemon-agents.md` — WebSocket daemon: ops, CLI flags, dispatch internals, PPM debug artifact.
+
+## Agent instructions
+
+Read these files before touching the listed paths. They apply to every agent (Claude Code, Cursor, Copilot, Aider, Codex, etc.).
+
+| File | Read when touching |
+|------|--------------------|
+| `doc/theme-tokens.instructions.md` | `src/theme/**` |
+| `doc/component-token-usage.instructions.md` | `src/components/**`, `src/gfx/**`, `src/draw/**` |
 </content>
 </invoke>

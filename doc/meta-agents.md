@@ -12,8 +12,10 @@ This document governs every other `*agents*.md` file in the repo. Read it before
 - `doc/glossary.md` — naming conventions and terms.
 - `doc/daemon-agents.md` — WebSocket daemon conventions and daemon op catalog.
 - `doc/meta-agents.md` — this file.
+- `doc/theme-tokens.instructions.md` — agent instruction file; enforces `xf_theme_t` token naming for `src/theme/**`.
+- `doc/component-token-usage.instructions.md` — agent instruction file; enforces zero colour literals for `src/components/**`, `src/gfx/**`, `src/draw/**`.
 
-If you create another `*-agents.md`, list it here in the same edit.
+If you create another `*-agents.md` or `*.instructions.md`, list it here in the same edit.
 
 ## Hard rules
 

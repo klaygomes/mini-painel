@@ -197,6 +197,31 @@ xf_component_t comp_spacer_create(void)
 `comp_base.h` → `draw.h` → `theme.h` → `<stddef.h>`, so `NULL` is always
 available for the `XF_COMPONENT*` macros without an explicit include.
 
+## Status enums
+
+Some components expose a typed status field that controls indicator colours without passing raw `xf_rgba_t` values.
+
+### `comp_deploy_status_t` (`comp_deploy.h`)
+
+| Value | Integer | Dot colour (theme field) | Meaning |
+|---|---|---|---|
+| `COMP_DEPLOY_STATUS_BUILDING` | `0` | `t->warning` (yellow) | In progress |
+| `COMP_DEPLOY_STATUS_SUCCESS` | `1` | `t->success` (green) | Passed |
+| `COMP_DEPLOY_STATUS_FAILED` | `2` | `t->danger` (red) | Failed |
+
+The component selects the dot colour at render time from the active theme — no hex literal appears in the component source. Assign `status` when creating or updating the data struct:
+
+```c
+comp_deploy_data_t d = {
+    .branch   = "main@a3f2c1",
+    .time_ago = "8m",
+    .label    = "prod",
+    .status   = COMP_DEPLOY_STATUS_SUCCESS,
+};
+```
+
+Via JSON API, pass the integer value in `"status"`. Absent `"status"` defaults to `COMP_DEPLOY_STATUS_BUILDING` (`0`).
+
 ## Colour rule
 
 **No colour literal may appear in any component source file.** Every colour is a
@@ -225,6 +250,35 @@ The render function applies them without any switch-on-severity logic.
 `xf_set_theme` must be called before the first render. Omitting it falls back
 to `xf_theme_default` (the call to `xf_get_theme` inside `draw.c` returns the
 default if the pointer was never set).
+
+### Token naming tiers
+
+Every semantic role in `xf_theme_t` (`danger`, `warning`, `success`, `info`, `accent`) exposes tiers with these suffixes. Read `src/theme/theme.h` for the full field list — do not restate it here.
+
+| Suffix | Role |
+|--------|------|
+| *(none)* | Primary indicator: icons, dots, borders |
+| `_bg` | Subtle tinted background: card, row highlight |
+| `_fg` | Body text on `_bg` |
+| `_badge_bg` | Opaque badge/tag background |
+| `_badge_fg` | Text inside a badge or tag |
+| `_emphasis` | Darkest shade: high-contrast labels or headings |
+| `_subtle` | Semi-transparent area fill: charts, sparklines |
+
+Forbidden suffixes (these encode widget shapes or tonal adjectives, not roles): `_pill_*`, `_chip_*`, `_title_*`, `_bar`, `_dark`, `_fill`.
+
+All four main roles (`danger`, `warning`, `success`, `info`) must expose the same set of tiers. Adding a tier to one role requires adding it to the others in the same commit.
+
+Special tokens that do not follow the role+tier pattern:
+
+- `on_color` — foreground drawn on any filled/coloured surface (checkmark strokes, avatar initials, dot rings). Use this wherever you would otherwise reach for a hardcoded white.
+- `status_offline` — avatar background for offline or unknown presence.
+- `caution` — distinct orange tone between `warning` and `danger`.
+- `chart_accent` — primary bar or progress fill for charts with no semantic state.
+
+The text scale is ordered highest to lowest contrast: `text_primary` → `text_secondary` → `text_muted` → `text_subtle`. Do not insert new steps between existing ones; add at the end or rename.
+
+Enforcement: `doc/theme-tokens.instructions.md` (for `src/theme/**`) and `doc/component-token-usage.instructions.md` (for `src/components/**`, `src/gfx/**`, `src/draw/**`).
 
 Call it once at startup:
 
