@@ -541,14 +541,14 @@
         }
         case 'row.add.deploy': {
           const id = 'component.deploy.latest';
-          const data = { service: 'api', version: 'v1.2.3', status: 'ok' };
+          const data = { branch: 'main', time_ago: '1m ago', label: 'v1.0.0' };
           trackAdd(id, data);
           send([{ op: 'row.add', id, data }]);
           break;
         }
         case 'row.add.sparkline': {
           const id = 'component.sparkline.cpu';
-          const data = { label: 'CPU', values: [10,20,15,30,25,40,35,50,45,60] };
+          const data = { title: 'CPU', value: '45%', count: 10, points: [10,20,15,30,25,40,35,50,45,60] };
           trackAdd(id, data);
           send([{ op: 'row.add', id, data }]);
           break;
