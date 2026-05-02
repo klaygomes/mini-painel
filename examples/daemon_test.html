@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>panel_daemon test</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0f1117;
+    --surface:  #1a1d27;
+    --border:   #2a2d3a;
+    --accent:   #4f8ef7;
+    --ok:       #1d9e75;
+    --err:      #e05252;
+    --text:     #d4d8e8;
+    --muted:    #6b7280;
+    --mono:     "JetBrains Mono", "Fira Mono", "Cascadia Code", monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    gap: 0;
+  }
+
+  /* ── header ── */
+  header {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 15px; font-weight: 600; flex: none; }
+  #url-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  #connect-btn {
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    background: var(--accent);
+    color: #fff;
+    transition: opacity .15s;
+  }
+  #connect-btn:hover { opacity: .85; }
+  #connect-btn.connected { background: var(--err); }
+
+  #status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex: none;
+    transition: background .3s;
+  }
+  #status-dot.connected    { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+  #status-dot.connecting   { background: #f59e0b; }
+  #status-dot.disconnected { background: var(--err); }
+
+  /* ── sidebar ── */
+  aside {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel { display: flex; flex-direction: column; gap: 8px; }
+  .panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+  }
+
+  button.action {
+    width: 100%;
+    text-align: left;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--mono);
+    transition: border-color .15s, background .15s;
+  }
+  button.action:hover { border-color: var(--accent); background: #1e2130; }
+  button.action:disabled { opacity: .4; cursor: not-allowed; }
+
+  label { font-size: 12px; color: var(--muted); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  select, input[type=text], input[type=number] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  /* ── main area ── */
+  main {
+    display: grid;
+    grid-template-rows: 1fr auto auto;
+    overflow: hidden;
+  }
+
+  /* log */
+  #log {
+    overflow-y: auto;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .log-entry {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 8px;
+    align-items: baseline;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: var(--surface);
+    border-left: 3px solid transparent;
+    word-break: break-all;
+  }
+  .log-entry.sent   { border-left-color: var(--accent); }
+  .log-entry.ok     { border-left-color: var(--ok); }
+  .log-entry.error  { border-left-color: var(--err); }
+  .log-entry.info   { border-left-color: var(--muted); }
+  .log-time  { color: var(--muted); white-space: nowrap; }
+  .log-dir   { font-weight: 700; white-space: nowrap; }
+  .sent   .log-dir  { color: var(--accent); }
+  .ok     .log-dir  { color: var(--ok); }
+  .error  .log-dir  { color: var(--err); }
+  .info   .log-dir  { color: var(--muted); }
+  .log-body { white-space: pre-wrap; }
+
+  /* canvas preview */
+  #preview-wrap {
+    border-top: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+  }
+  #preview-wrap label { font-size: 11px; color: var(--muted); flex: none; }
+  #preview {
+    image-rendering: pixelated;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    max-width: 100%;
+    height: 80px;
+    background: #000;
+  }
+  #preview-info { font-size: 11px; color: var(--muted); }
+
+  /* raw input */
+  #input-area {
+    border-top: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    gap: 8px;
+    background: var(--surface);
+  }
+  #raw-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    resize: vertical;
+    min-height: 60px;
+  }
+  #raw-input.invalid { border-color: var(--err); }
+  #send-btn {
+    padding: 0 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    background: var(--accent);
+    color: #fff;
+    align-self: flex-end;
+    height: 38px;
+    transition: opacity .15s;
+  }
+  #send-btn:hover   { opacity: .85; }
+  #send-btn:disabled { opacity: .4; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>panel_daemon</h1>
+  <div id="status-dot"></div>
+  <input id="url-input" type="text" value="ws://localhost:8765" spellcheck="false">
+  <button id="connect-btn">Connect</button>
+</header>
+
+<aside>
+
+  <div class="panel">
+    <div class="panel-title">Device</div>
+    <div class="row2">
+      <button class="action" data-cmd='device.open'>device.open</button>
+      <button class="action" data-cmd='device.close'>device.close</button>
+    </div>
+    <label>Port (optional)
+      <input type="text" id="device-port" placeholder="auto">
+    </label>
+    <label>Brightness: <span id="brightness-val">80</span>
+      <input type="range" id="brightness" min="0" max="100" value="80">
+    </label>
+    <label>Orientation
+      <select id="orientation">
+        <option value="landscape">landscape</option>
+        <option value="portrait">portrait</option>
+        <option value="reverse_landscape">reverse_landscape</option>
+        <option value="reverse_portrait">reverse_portrait</option>
+      </select>
+    </label>
+    <button class="action" data-cmd='device.brightness'>Set brightness</button>
+    <button class="action" data-cmd='device.orientation'>Set orientation</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Layout</div>
+    <button class="action" data-cmd='row.add.header'>row.add header</button>
+    <button class="action" data-cmd='row.add.deploy'>row.add deploy</button>
+    <button class="action" data-cmd='row.add.sparkline'>row.add sparkline</button>
+    <label>Row id
+      <input type="text" id="row-id" value="component.header.main" spellcheck="false">
+    </label>
+    <div class="row2">
+      <button class="action" data-cmd='row.remove'>row.remove</button>
+      <button class="action" data-cmd='row.move_up'>move_up</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Render</div>
+    <label>Page
+      <input type="number" id="page-num" value="0" min="0">
+    </label>
+    <button class="action" data-cmd='page.render'>page.render</button>
+    <button class="action" data-cmd='canvas.get'>canvas.get</button>
+    <button class="action" data-cmd='render.and.get'>render + canvas.get</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Log</div>
+    <button class="action" id="clear-log">Clear log</button>
+  </div>
+
+</aside>
+
+<main>
+  <div id="log"></div>
+
+  <div id="preview-wrap">
+    <label>Preview</label>
+    <canvas id="preview" width="480" height="320"></canvas>
+    <span id="preview-info">no render yet</span>
+  </div>
+
+  <div id="input-area">
+    <textarea id="raw-input" spellcheck="false"
+      placeholder='[{"op":"page.render","page":0}]'></textarea>
+    <button id="send-btn" disabled>Send</button>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  let ws = null;
+
+  const urlInput    = document.getElementById('url-input');
+  const connectBtn  = document.getElementById('connect-btn');
+  const statusDot   = document.getElementById('status-dot');
+  const logEl       = document.getElementById('log');
+  const rawInput    = document.getElementById('raw-input');
+  const sendBtn     = document.getElementById('send-btn');
+  const previewCanvas = document.getElementById('preview');
+  const previewInfo   = document.getElementById('preview-info');
+  const brightnessEl  = document.getElementById('brightness');
+  const brightnessVal = document.getElementById('brightness-val');
+
+  brightnessEl.addEventListener('input', () => {
+    brightnessVal.textContent = brightnessEl.value;
+  });
+
+  rawInput.addEventListener('input', () => {
+    const v = rawInput.value.trim();
+    if (!v) { rawInput.classList.remove('invalid'); return; }
+    try { JSON.parse(v); rawInput.classList.remove('invalid'); }
+    catch { rawInput.classList.add('invalid'); }
+  });
+
+  /* ── logging ── */
+  function ts() {
+    const n = new Date();
+    return n.toTimeString().slice(0, 8) + '.' + String(n.getMilliseconds()).padStart(3, '0');
+  }
+
+  function log(dir, body, cls) {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry ' + cls;
+    entry.innerHTML =
+      '<span class="log-time">' + ts() + '</span>' +
+      '<span class="log-dir">'  + dir  + '</span>' +
+      '<span class="log-body">' + escHtml(body) + '</span>';
+    logEl.appendChild(entry);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ── WebSocket ── */
+  function setStatus(s) {
+    statusDot.className = s;
+    connectBtn.textContent = (s === 'connected') ? 'Disconnect' : 'Connect';
+    connectBtn.className   = (s === 'connected') ? 'connected' : '';
+    sendBtn.disabled = (s !== 'connected');
+  }
+
+  function connect() {
+    if (ws) { ws.close(); return; }
+    const url = urlInput.value.trim();
+    setStatus('connecting');
+    log('···', 'connecting to ' + url, 'info');
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      setStatus('connected');
+      log('↔', 'connected', 'info');
+    };
+
+    ws.onclose = () => {
+      ws = null;
+      setStatus('disconnected');
+      log('↔', 'disconnected', 'info');
+    };
+
+    ws.onerror = () => {
+      log('✗', 'WebSocket error', 'error');
+    };
+
+    ws.onmessage = (evt) => {
+      let pretty;
+      try {
+        const parsed = JSON.parse(evt.data);
+        pretty = JSON.stringify(parsed, null, 2);
+        handleResponse(parsed);
+        log('←', pretty, parsed.ok ? 'ok' : 'error');
+      } catch {
+        log('←', evt.data, 'info');
+      }
+    };
+  }
+
+  connectBtn.addEventListener('click', connect);
+
+  /* ── send ── */
+  function send(payload) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    const text = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    log('→', JSON.stringify(JSON.parse(text), null, 2), 'sent');
+    ws.send(text);
+  }
+
+  sendBtn.addEventListener('click', () => {
+    const v = rawInput.value.trim();
+    if (!v) return;
+    try { send(v); } catch { log('✗', 'invalid JSON', 'error'); }
+  });
+
+  rawInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      sendBtn.click();
+    }
+  });
+
+  /* ── canvas preview ── */
+  function renderCanvas(b64, w, h) {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+    previewCanvas.width  = w;
+    previewCanvas.height = h;
+    const ctx = previewCanvas.getContext('2d');
+    const img = ctx.createImageData(w, h);
+    const px  = img.data;
+
+    for (let i = 0, o = 0; i < w * h; i++, o += 4) {
+      px[o]   = bytes[i * 3];
+      px[o+1] = bytes[i * 3 + 1];
+      px[o+2] = bytes[i * 3 + 2];
+      px[o+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    previewInfo.textContent = w + '×' + h + ' RGB888';
+  }
+
+  function handleResponse(resp) {
+    if (!resp.results) return;
+    for (const r of resp.results) {
+      if (r.op === 'canvas.get' && r.ok && r.data) {
+        renderCanvas(r.data, r.width, r.height);
+      }
+    }
+  }
+
+  /* ── quick actions ── */
+  document.querySelectorAll('button[data-cmd]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        log('✗', 'not connected', 'error');
+        return;
+      }
+      const cmd = btn.dataset.cmd;
+      const page = parseInt(document.getElementById('page-num').value, 10) || 0;
+      const rowId = document.getElementById('row-id').value.trim() || 'component.header.main';
+
+      switch (cmd) {
+        case 'device.open': {
+          const port = document.getElementById('device-port').value.trim();
+          const obj = { op: 'device.open' };
+          if (port) obj.port = port;
+          send([obj]);
+          break;
+        }
+        case 'device.close':
+          send([{ op: 'device.close' }]);
+          break;
+        case 'device.brightness':
+          send([{ op: 'device.brightness', level: parseInt(brightnessEl.value, 10) }]);
+          break;
+        case 'device.orientation':
+          send([{ op: 'device.orientation', value: document.getElementById('orientation').value }]);
+          break;
+        case 'row.add.header':
+          send([{ op: 'row.add', id: 'component.header.main',
+            data: { date: fmtDate(), status_text: 'all clear', status_dot: '#1D9E75' } }]);
+          break;
+        case 'row.add.deploy':
+          send([{ op: 'row.add', id: 'component.deploy.latest',
+            data: { service: 'api', version: 'v1.2.3', status: 'ok' } }]);
+          break;
+        case 'row.add.sparkline':
+          send([{ op: 'row.add', id: 'component.sparkline.cpu',
+            data: { label: 'CPU', values: [10,20,15,30,25,40,35,50,45,60] } }]);
+          break;
+        case 'row.remove':
+          send([{ op: 'row.remove', id: rowId }]);
+          break;
+        case 'row.move_up':
+          send([{ op: 'row.move_up', id: rowId }]);
+          break;
+        case 'page.render':
+          send([{ op: 'page.render', page }]);
+          break;
+        case 'canvas.get':
+          send([{ op: 'canvas.get' }]);
+          break;
+        case 'render.and.get':
+          send([{ op: 'page.render', page }, { op: 'canvas.get' }]);
+          break;
+        default:
+          log('✗', 'unknown action: ' + cmd, 'error');
+      }
+    });
+  });
+
+  document.getElementById('clear-log').addEventListener('click', () => {
+    logEl.innerHTML = '';
+  });
+
+  function fmtDate() {
+    const d = new Date();
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return days[d.getDay()] + ' · ' + months[d.getMonth()] + ' ' + d.getDate();
+  }
+
+  setStatus('disconnected');
+}());
+</script>
+</body>
+</html>
