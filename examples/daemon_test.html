@@ -548,7 +548,7 @@
         }
         case 'row.add.sparkline': {
           const id = 'component.sparkline.cpu';
-          const data = { title: 'CPU', value: '45%', count: 10, points: [10,20,15,30,25,40,35,50,45,60] };
+          const data = { title: 'CPU', value: '45%', points: [10,20,15,30,25,40,35,50,45,60] };
           trackAdd(id, data);
           send([{ op: 'row.add', id, data }]);
           break;

@@ -13,8 +13,8 @@ int encode_sparkline(const void *vdata, char *buf, size_t cap)
     size_t pos = 0;
 
     n = mjson_snprintf(tmp, sizeof tmp,
-        "{\"title\":%Q,\"value\":%Q,\"count\":%d,\"points\":[",
-        d->title, d->value, d->count);
+        "{\"title\":%Q,\"value\":%Q,\"points\":[",
+        d->title, d->value);
     if (n <= 0) return -1;
     XF_ENC_APPEND(tmp, n);
 
