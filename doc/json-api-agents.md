@@ -169,6 +169,26 @@ A successful render op emits:
 
 `dirty` is `[0,0,0,0]` when nothing changed since the last render.
 
+## Component data shapes
+
+### `deploy`
+
+```json
+{
+  "branch":   "main@a3f2c1",
+  "time_ago": "8m",
+  "label":    "prod",
+  "status":   1
+}
+```
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `branch` | string | yes | Branch + optional commit ref |
+| `time_ago` | string | yes | Human-readable age, e.g. `"8m"` |
+| `label` | string | yes | Outcome label, e.g. `"prod green"` |
+| `status` | int | no (default `0`) | `0` = building (yellow), `1` = success (green), `2` = failed (red) |
+
 ## How to add a new kind
 
 1. Add a row to `src/json_api/json_kinds.def`:

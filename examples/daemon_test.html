@@ -269,6 +269,13 @@
     <div class="panel-title">Layout</div>
     <button class="action" data-cmd='row.add.header'>row.add header</button>
     <button class="action" data-cmd='row.add.deploy'>row.add deploy</button>
+    <label>Deploy status
+      <select id="deploy-status">
+        <option value="0">0 — building (yellow)</option>
+        <option value="1" selected>1 — success (green)</option>
+        <option value="2">2 — failed (red)</option>
+      </select>
+    </label>
     <button class="action" data-cmd='row.add.sparkline'>row.add sparkline</button>
     <button class="action" data-cmd='row.list'>row.list</button>
     <label>Row
@@ -389,6 +396,20 @@
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  function stripCanvasDataForLog(resp) {
+    if (!resp || typeof resp !== 'object' || !Array.isArray(resp.results)) return resp;
+    return {
+      ...resp,
+      results: resp.results.map(r => {
+        if (r && r.op === 'canvas.get' && Object.prototype.hasOwnProperty.call(r, 'data')) {
+          const { data, ...rest } = r;
+          return { ...rest, data: '...' };
+        }
+        return r;
+      })
+    };
+  }
+
   /* ── WebSocket ── */
   function setStatus(s) {
     statusDot.className = s;
@@ -423,7 +444,7 @@
       let pretty;
       try {
         const parsed = JSON.parse(evt.data);
-        pretty = JSON.stringify(parsed, null, 2);
+        pretty = JSON.stringify(stripCanvasDataForLog(parsed), null, 2);
         handleResponse(parsed);
         log('←', pretty, parsed.ok ? 'ok' : 'error');
       } catch {
@@ -541,7 +562,8 @@
         }
         case 'row.add.deploy': {
           const id = 'component.deploy.latest';
-          const data = { branch: 'main', time_ago: '1m ago', label: 'v1.0.0' };
+          const status = parseInt(document.getElementById('deploy-status').value, 10);
+          const data = { branch: 'main', time_ago: '1m ago', label: 'v1.0.0', status };
           trackAdd(id, data);
           send([{ op: 'row.add', id, data }]);
           break;

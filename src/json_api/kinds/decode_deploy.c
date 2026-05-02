@@ -10,5 +10,8 @@ int decode_deploy(const char *s, int len, void *vdata, int patch)
     if (xf_decode_str(s, len, "$.branch",   d->branch,   sizeof d->branch,   patch) < 0) return -1;
     if (xf_decode_str(s, len, "$.time_ago", d->time_ago, sizeof d->time_ago, patch) < 0) return -1;
     if (xf_decode_str(s, len, "$.label",    d->label,    sizeof d->label,    patch) < 0) return -1;
+    int status = d->status;
+    if (xf_decode_int(s, len, "$.status",   &status,                         patch) < 0) return -1;
+    d->status = (comp_deploy_status_t)status;
     return 0;
 }

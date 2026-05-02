@@ -10,16 +10,37 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
     double cy       = (double)xf_draw_height(ctx) / 2.0;
     double baseline = cy + 5.0;
 
-    xf_gfx_dot(ctx, 10.0, cy, 5.0, t->deploy_bar);
+    xf_rgba_t dot_color;
+    xf_rgba_t branch_bg;
+    xf_rgba_t branch_fg;
+    switch (d->status) {
+        case COMP_DEPLOY_STATUS_SUCCESS:
+            dot_color = t->success;
+            branch_bg = t->success_badge_bg;
+            branch_fg = t->success_badge_fg;
+            break;
+        case COMP_DEPLOY_STATUS_FAILED:
+            dot_color = t->danger;
+            branch_bg = t->danger_badge_bg;
+            branch_fg = t->danger_badge_fg;
+            break;
+        default:
+            dot_color = t->warning;
+            branch_bg = t->warning_badge_bg;
+            branch_fg = t->warning_badge_fg;
+            break;
+    }
 
-    xf_gfx_chip(ctx, 20.0, cy, d->branch, t->deploy_chip_bg, t->deploy_text_dark);
+    xf_gfx_dot(ctx, 10.0, cy, 5.0, dot_color);
+
+    xf_gfx_chip(ctx, 20.0, cy, d->branch, branch_bg, branch_fg);
     double chip_end = 20.0 + xf_gfx_chip_width(ctx, d->branch);
     xf_draw_text(ctx, d->time_ago, chip_end + 6.0, baseline, &(xf_text_opts_t){
-        .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->deploy_text
+        .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->deploy_fg
     });
 
     xf_draw_text(ctx, d->label, (double)xf_draw_width(ctx) - LAY_PAD_X, baseline, &(xf_text_opts_t){
-        .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->deploy_text_dark, .align = XF_TEXT_RIGHT
+        .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->deploy_fg_emphasis, .align = XF_TEXT_RIGHT
     });
 }
 

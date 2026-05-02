@@ -96,7 +96,7 @@ void test_remove_drops_row(void)
         "[{\"op\":\"row.add\",\"id\":\"component.header.r1\",\"data\":{}},"
         " {\"op\":\"row.add\",\"id\":\"component.spacer.r2\",\"data\":{}},"
         " {\"op\":\"row.add\",\"id\":\"component.deploy.r3\","
-        "  \"data\":{\"branch\":\"b\",\"time_ago\":\"1m\",\"label\":\"ok\"}}]";
+        "  \"data\":{\"branch\":\"b\",\"time_ago\":\"1m\",\"label\":\"ok\",\"status\":1}}]";
     xf_json_exec(ctx, setup, strlen(setup),
                  canvas, sizeof canvas, reply, sizeof reply);
 
@@ -292,7 +292,7 @@ void test_full_lifecycle(void)
         "  \"data\":{\"date\":\"Thu\",\"status_text\":\"ok\",\"status_dot\":\"#1D9E75\"}},"
         " {\"op\":\"row.add\",\"id\":\"component.spacer.lc2\",\"data\":{}},"
         " {\"op\":\"row.add\",\"id\":\"component.deploy.lc3\","
-        "  \"data\":{\"branch\":\"main\",\"time_ago\":\"1m\",\"label\":\"green\"}},"
+        "  \"data\":{\"branch\":\"main\",\"time_ago\":\"1m\",\"label\":\"green\",\"status\":1}},"
         " {\"op\":\"row.add\",\"id\":\"component.divider.lc4\",\"data\":{}},"
         " {\"op\":\"row.add\",\"id\":\"component.sprint.lc5\","
         "  \"data\":{\"title\":\"Sprint 42\",\"progress_label\":\"80%\","
@@ -368,7 +368,7 @@ void test_row_list_after_add(void)
         "[{\"op\":\"row.add\",\"id\":\"component.header.ls1\","
         "  \"data\":{\"date\":\"Mon\",\"status_text\":\"ok\",\"status_dot\":\"#1D9E75\"}},"
         " {\"op\":\"row.add\",\"id\":\"component.deploy.ls2\","
-        "  \"data\":{\"branch\":\"main\",\"time_ago\":\"1m\",\"label\":\"v1\"}}]";
+        "  \"data\":{\"branch\":\"main\",\"time_ago\":\"1m\",\"label\":\"v1\",\"status\":0}}]";
     xf_json_exec(ctx, add, strlen(add),
                  canvas, sizeof canvas, reply, sizeof reply);
 
@@ -387,6 +387,7 @@ void test_row_list_after_add(void)
     TEST_ASSERT_NOT_NULL(strstr(reply, "\"page\":0"));
     TEST_ASSERT_NOT_NULL(strstr(reply, "\"date\""));
     TEST_ASSERT_NOT_NULL(strstr(reply, "\"branch\""));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"status\""));
 }
 
 /* ------------------------------------------------------------------ */
