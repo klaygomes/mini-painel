@@ -15,6 +15,10 @@ cmake_install.cmake
 CTestTestfile.cmake
 compile_commands.json
 
+# Generated snapshots and debug artifacts
+codedb.snapshot
+panel_daemon_last.ppm
+
 # macOS metadata
 .DS_Store
 
