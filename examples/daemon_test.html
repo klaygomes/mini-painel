@@ -146,6 +146,11 @@
     border-bottom: 1px solid var(--border);
     gap: 8px;
   }
+  #canvas-wrap {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+  }
   #preview {
     image-rendering: pixelated;
     border: 1px solid var(--border);
@@ -156,6 +161,15 @@
     height: auto;
     background: #000;
     display: block;
+  }
+  #dirty-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border-radius: 6px;
+    pointer-events: none;
+    opacity: 0;
+    image-rendering: pixelated;
   }
   #preview-info { font-size: 11px; color: var(--muted); }
 
@@ -267,6 +281,7 @@
 
   <div class="panel">
     <div class="panel-title">Layout</div>
+    <button class="action" data-cmd='layout.load.demo'>load demo layout</button>
     <button class="action" data-cmd='row.add.header'>row.add header</button>
     <button class="action" data-cmd='row.add.deploy'>row.add deploy</button>
     <label>Deploy status
@@ -310,7 +325,10 @@
 
 <main>
   <div id="preview-wrap">
-    <canvas id="preview" width="480" height="320"></canvas>
+    <div id="canvas-wrap">
+      <canvas id="preview" width="480" height="320"></canvas>
+      <canvas id="dirty-overlay" width="480" height="320"></canvas>
+    </div>
     <span id="preview-info">no render yet</span>
   </div>
 
@@ -357,8 +375,10 @@
   const logEl       = document.getElementById('log');
   const rawInput    = document.getElementById('raw-input');
   const sendBtn     = document.getElementById('send-btn');
-  const previewCanvas = document.getElementById('preview');
+  const previewCanvas  = document.getElementById('preview');
+  const dirtyOverlay  = document.getElementById('dirty-overlay');
   const previewInfo   = document.getElementById('preview-info');
+  let   dirtyTimer    = null;
   const brightnessEl  = document.getElementById('brightness');
   const brightnessVal = document.getElementById('brightness-val');
 
@@ -508,11 +528,31 @@
     previewInfo.textContent = w + '×' + h + ' RGB888';
   }
 
+  function flashDirty(x, y, w, h) {
+    dirtyOverlay.width  = previewCanvas.width;
+    dirtyOverlay.height = previewCanvas.height;
+    const ctx = dirtyOverlay.getContext('2d');
+    ctx.clearRect(0, 0, dirtyOverlay.width, dirtyOverlay.height);
+    ctx.fillStyle = 'rgba(79, 142, 247, 0.45)';
+    ctx.fillRect(x, y, w, h);
+    /* snap to visible, then fade out */
+    dirtyOverlay.style.transition = 'none';
+    dirtyOverlay.style.opacity    = '1';
+    if (dirtyTimer) clearTimeout(dirtyTimer);
+    dirtyTimer = setTimeout(() => {
+      dirtyOverlay.style.transition = 'opacity 0.4s ease-out';
+      dirtyOverlay.style.opacity    = '0';
+    }, 60);
+  }
+
   function handleResponse(resp) {
     if (!resp.results) return;
     for (const r of resp.results) {
       if (r.op === 'canvas.get' && r.ok && r.data) {
         renderCanvas(r.data, r.width, r.height);
+      }
+      if (r.op === 'page.render' && Array.isArray(r.dirty)) {
+        flashDirty(r.dirty[0], r.dirty[1], r.dirty[2], r.dirty[3]);
       }
       if (r.op === 'row.remove' && r.ok && r.id) {
         trackRemove(r.id);
@@ -558,6 +598,26 @@
           const data = { date: fmtDate(), status_text: 'all clear', status_dot: '#1D9E75' };
           trackAdd(id, data);
           send([{ op: 'row.add', id, data }]);
+          break;
+        }
+        case 'layout.load.demo': {
+          const ops = [
+            { op: 'row.add', id: 'component.header.main', data: { date: fmtDate(), status_text: 'all clear', status_dot: '#1D9E75' } },
+            { op: 'row.add', id: 'component.deploy.latest', data: { branch: 'main', time_ago: '1m ago', label: 'v1.0.0', status: 1 } },
+            { op: 'row.add', id: 'component.sparkline.cpu', data: { title: 'CPU', value: '45%', points: [10, 20, 15, 30, 25, 40, 35, 50, 45, 60] } },
+            { op: 'row.add', id: 'component.sparkline.mem', data: { title: 'MEM', value: '72%', points: [55, 60, 58, 64, 61, 66, 70, 68, 71, 72] } },
+            { op: 'row.add', id: 'component.sparkline.net', data: { title: 'NET', value: '28%', points: [18, 25, 22, 20, 24, 26, 23, 27, 25, 28] } },
+            { op: 'page.render', page },
+            { op: 'canvas.get' }
+          ];
+
+          trackedRows.clear();
+          trackAdd('component.header.main', { date: fmtDate(), status_text: 'all clear', status_dot: '#1D9E75' });
+          trackAdd('component.deploy.latest', { branch: 'main', time_ago: '1m ago', label: 'v1.0.0', status: 1 });
+          trackAdd('component.sparkline.cpu', { title: 'CPU', value: '45%', points: [10, 20, 15, 30, 25, 40, 35, 50, 45, 60] });
+          trackAdd('component.sparkline.mem', { title: 'MEM', value: '72%', points: [55, 60, 58, 64, 61, 66, 70, 68, 71, 72] });
+          trackAdd('component.sparkline.net', { title: 'NET', value: '28%', points: [18, 25, 22, 20, 24, 26, 23, 27, 25, 28] });
+          send(ops);
           break;
         }
         case 'row.add.deploy': {
