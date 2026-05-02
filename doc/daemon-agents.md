@@ -80,6 +80,19 @@ After `xf_json_exec` returns, results from both sets are merged into one `{"ok":
 
 After every successful `page.render` the daemon writes the canvas to `--ppm-path` (default: `panel_daemon_last.ppm` in the working directory). This happens whether or not a physical device is connected.
 
+Quick capture workflow:
+
+```sh
+# Run the daemon and render from a client, then inspect the latest frame
+open panel_daemon_last.ppm
+```
+
+Convert the daemon capture to PNG on macOS:
+
+```sh
+sips -s format png panel_daemon_last.ppm --out /tmp/panel_daemon_last.png
+```
+
 ## Base64 module (`src/b64.h/.c`)
 
 Shared C99 utility for Base64 encoding. Public API: see `src/b64.h`. Used only by the `canvas.get` handler. No external dependencies.
