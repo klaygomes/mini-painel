@@ -66,3 +66,15 @@ Fields in `xf_theme_t` must appear in this sequence:
 - Every field in `xf_theme_t` must have a corresponding initialiser.
 - Alignment: use spaces (not tabs) to vertically align `=` within each group.
 - New raw-hex values must be reviewed for WCAG AA contrast (4.5 : 1) against the background they will appear on.
+
+## RGB565 round-trip safety
+
+The wire format is RGB565, so theme colours must survive an RGB888 -> RGB565 -> RGB888 round-trip without drifting between frames.
+
+- When adding or changing any `XF_RGB(...)` or `XF_RGBA(...)` value in `src/theme/theme_*.c`, quantize the RGB channels to the nearest representable RGB565 value first.
+- Quantize each channel independently with nearest rounding, then expand back to 8-bit:
+	- `r5 = (r * 31 + 127) / 255`, `r8 = (r5 * 255 + 15) / 31`
+	- `g6 = (g * 63 + 127) / 255`, `g8 = (g6 * 255 + 31) / 63`
+	- `b5 = (b * 31 + 127) / 255`, `b8 = (b5 * 255 + 15) / 31`
+- Do not rely on floor/truncation for palette authoring. Truncation biases colours and is a common source of visible banding and shimmer.
+- Alpha in `XF_RGBA` is unchanged by RGB565 transport; quantize only RGB.

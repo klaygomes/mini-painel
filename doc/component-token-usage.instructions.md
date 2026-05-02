@@ -51,10 +51,17 @@ d.rows[0].badge_fg = t->danger_badge_fg;
 xf_draw_fill_round_rect(ctx, …, row->row_bg);
 ```
 
+## RGB565-safe token values
+
+Components, `gfx`, and `draw` code consume theme tokens as authored. They must not introduce per-component colour correction or dithering to compensate for transport quantization.
+
+- If a colour appears unstable on device, fix the token in `src/theme/theme_*.c` by applying the RGB565 round-trip quantization rule from `theme-tokens.instructions.md`.
+- Keep component code token-driven: choose the right semantic token, do not post-process channel values in widget code.
+
 ## Forbidden patterns
 
 - Any `#define` or `static const xf_rgba_t` with a hardcoded colour.
-- Accessing `xf_theme_default` directly — always go through `xf_get_theme()`.
+- Accessing `xf_theme` directly — always go through `xf_get_theme()`.
 - Including `<cairo.h>` outside `src/draw/draw.c`.
 - Using the old token names (`text_faint`, `text_dimmed`, `white`, `offline`, `*_pill_*`, `*_title_fg`, `info_dark`, `info_fill`, `orange`, `purple_bar`, `deploy_bar`, `deploy_chip_bg`, `deploy_text`, `deploy_text_dark`).
 
