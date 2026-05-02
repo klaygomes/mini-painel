@@ -1,5 +1,10 @@
 .DEFAULT_GOAL := all
 
+.NOTPARALLEL: all
+
+XF_THEME ?= default
+CMAKE_ARGS ?=
+
 .PHONY: build prepare all setup
 
 setup:
@@ -12,12 +17,12 @@ setup:
 	brew install cmake pkg-config cairo
 
 build:
-	@cmake --build build --config Release
+	+@cmake --build build --config Release
 
 prepare:
-	@cmake -B build
+	@cmake -S . -B build -DXF_THEME=$(XF_THEME) $(CMAKE_ARGS)
 
-all: prepare build clean-build
+all: clean-build prepare build
 
 clean-%:
 	@rm -rf $*
