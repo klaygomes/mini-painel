@@ -63,6 +63,7 @@ Forbidden:
 
 - **No colour literals in component source.** Every colour is a field on the active theme (`t->danger`, `t->text_primary`, etc.). Per-row colours are stored as `xf_rgba_t` fields in the data struct and assigned by the caller from theme values at creation time. Adding a needed shade means extending `xf_theme_t`, not hard-coding hex.
 - **Theme colours must be RGB565 round-trip safe.** When adding or changing `XF_RGB`/`XF_RGBA` values in `src/theme/theme_*.c`, quantize RGB channels to nearest RGB565-representable values first. Keep the quantization rule in `doc/theme-tokens.instructions.md` as the single source of truth.
+- **Theme authoring must follow TFT constraints.** For panel gamma compensation, web-safe authoring, and project palette guardrails (green/red caps, white usage, pink-surface text defaults), follow `doc/theme-tokens.instructions.md` and do not duplicate those values in other docs.
 - **`cairo.h` is included only by `src/draw/draw.c`.** The rest of the codebase talks to Cairo through the engine-agnostic `xf_draw_*` API in `draw.h`. Use `#include <cairo.h>` (not `<cairo/cairo.h>`) — `pkg_check_modules` already adds the `cairo/` directory to the include path.
 - **`XF_COMPONENT*` macros are brace initialisers.** Always assign to a local variable; `return XF_COMPONENT_DATA(...)` is invalid C99.
 - **Heights are derived, not duplicated.** Read `COMP_<NAME>_HEIGHT` from the component header. Do not restate the value in docs or other source files.

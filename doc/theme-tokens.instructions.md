@@ -2,6 +2,19 @@
 
 > Read this file when editing `src/theme/theme.h`, `src/theme/theme_default.c`, or any `src/theme/theme_*.c`.
 
+## Display constraints
+
+Theme colors are authored for an old low-end TFT panel that receives RGB565.
+
+| Property | Value |
+|---|---|
+| Panel type | TFT (low-end) |
+| Color format | RGB565 |
+| Bits per pixel | 16 (R:5, G:6, B:5) |
+| Effective gamma | Approx. 1.8 |
+
+This panel tends to render mid-tones lighter than expected from sRGB monitor previews.
+
 ## Naming tiers
 
 Every semantic role (`danger`, `warning`, `success`, `info`, `accent`) exposes **at most** these tiers:
@@ -73,8 +86,75 @@ The wire format is RGB565, so theme colours must survive an RGB888 -> RGB565 -> 
 
 - When adding or changing any `XF_RGB(...)` or `XF_RGBA(...)` value in `src/theme/theme_*.c`, quantize the RGB channels to the nearest representable RGB565 value first.
 - Quantize each channel independently with nearest rounding, then expand back to 8-bit:
-	- `r5 = (r * 31 + 127) / 255`, `r8 = (r5 * 255 + 15) / 31`
-	- `g6 = (g * 63 + 127) / 255`, `g8 = (g6 * 255 + 31) / 63`
-	- `b5 = (b * 31 + 127) / 255`, `b8 = (b5 * 255 + 15) / 31`
+  - `r5 = (r * 31 + 127) / 255`, `r8 = (r5 * 255 + 15) / 31`
+  - `g6 = (g * 63 + 127) / 255`, `g8 = (g6 * 255 + 31) / 63`
+  - `b5 = (b * 31 + 127) / 255`, `b8 = (b5 * 255 + 15) / 31`
 - Do not rely on floor/truncation for palette authoring. Truncation biases colours and is a common source of visible banding and shimmer.
 - Alpha in `XF_RGBA` is unchanged by RGB565 transport; quantize only RGB.
+
+## Theme authoring pipeline
+
+Use this order for all new palettes and token changes:
+
+1. Design in web-safe channel steps (`0x00`, `0x33`, `0x66`, `0x99`, `0xCC`, `0xFF`).
+2. Quantize every RGB token to RGB565 nearest-neighbour and expand back to 8-bit.
+3. Darken surfaces/backgrounds by about one web-safe stop to compensate for TFT gamma lift.
+
+Reference quantization implementation:
+
+```c
+/* r,g,b are 0..255 integers */
+r5 = (r * 31 + 127) / 255;  r8 = (r5 * 255 + 15) / 31;
+g6 = (g * 63 + 127) / 255;  g8 = (g6 * 255 + 31) / 63;
+b5 = (b * 31 + 127) / 255;  b8 = (b5 * 255 + 15) / 31;
+```
+
+Gamma compensation examples for monitor intent -> theme source value:
+
+| Intent on monitor | Use in theme |
+|---|---|
+| `#CCCCCC` | `#999999` |
+| `#CC99CC` | `#996699` |
+| `#FFCCFF` | `#CC99CC` |
+
+## Project palette guardrails
+
+### Greens
+
+Avoid pure-channel greens. On this TFT they bloom and look neon.
+
+Token ceilings for green-dominant roles:
+
+| Role | Maximum value |
+|---|---|
+| `success` | `#316531` |
+| `success_bg` | `#639A63` |
+| `success_badge_bg` / `success_badge_fg` | `#316531` |
+| `deploy_bg` | `#316531` |
+| `deploy_fg` | `#639A63` |
+
+### Backgrounds and surfaces
+
+- Never use pure white for `background`; reserve white for `on_color` only.
+- Keep post-compensation darkness at or below these anchor ranges:
+  - `background`: around `#996699`
+  - `surface_card`: around `#CC66CC`
+  - `surface_border`: around `#CC6699`
+
+### Reds
+
+Avoid pure `#FF0000`; cap `danger` at `#CE0000` or darker.
+
+### Text on pink/purple surfaces
+
+Prefer warm dark purples over neutral greys:
+
+| Token | Preferred value |
+|---|---|
+| `text_primary` | `#310031` |
+| `text_secondary` | `#633563` |
+| `text_muted` | `#9C659C` |
+
+## Existing themes
+
+Current shipped examples: `src/theme/theme_*.c`
