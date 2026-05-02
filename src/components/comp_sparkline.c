@@ -10,6 +10,9 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
 {
     const xf_theme_t            *t = xf_get_theme();
     const comp_sparkline_data_t  *d = user_data;
+    xf_rgba_t                    chart_fill = t->chart_accent;
+
+    chart_fill.a = 0.15;
 
     xf_gfx_section_label(ctx, d->title, 12.0);
 
@@ -36,7 +39,7 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
     }
     xf_draw_line_to(ctx, chart_x + (double)(d->count - 1) * step, bottom);
     xf_draw_close_path(ctx);
-    xf_draw_fill(ctx, t->info_subtle);
+    xf_draw_fill(ctx, chart_fill);
 
     xf_draw_begin_path(ctx);
     xf_draw_move_to(ctx, chart_x,
@@ -46,11 +49,11 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
         double py = bottom - (double)d->points[i] * chart_h;
         xf_draw_line_to(ctx, px, py);
     }
-    xf_draw_stroke(ctx, t->info, 1.25, XF_LINE_CAP_ROUND);
+    xf_draw_stroke(ctx, t->chart_accent, 1.25, XF_LINE_CAP_ROUND);
 
     double last_x = chart_x + (double)(d->count - 1) * step;
     double last_y = bottom - (double)d->points[d->count - 1] * chart_h;
-    xf_draw_circle(ctx, last_x, last_y, 2.5, t->info);
+    xf_draw_circle(ctx, last_x, last_y, 2.5, t->chart_accent);
 }
 
 static int render(xf_component_t *self, uint8_t *buf, int w, int h)
