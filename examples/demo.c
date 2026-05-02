@@ -21,6 +21,7 @@
 #include "components/comp_schedule.h"
 #include "components/comp_pr_review.h"
 #include "components/comp_checklist.h"
+#include "theme.h"
 
 #define DISPLAY_W       480
 #define DISPLAY_H       320
@@ -31,11 +32,12 @@ int main(void)
     xf_dashboard_t *dash;
     xf_device_t    *dev;
     int             page_count, page;
+    const xf_theme_t *t = xf_get_theme();
 
     comp_header_data_t header_data = {
         .date        = "Thu \xc2\xb7 Apr 23",
         .status_text = "2 alerts",
-        .status_dot  = XF_RGB(0xE24B4A),
+        .status_dot  = t->danger,
     };
 
     comp_deploy_data_t deploy_data = {
@@ -49,8 +51,8 @@ int main(void)
         .build_id     = "#1847",
         .duration     = "2m 34s",
         .status       = "passing",
-        .status_color = XF_RGB(0x1D9E75),
-        .status_fg    = XF_RGB(0xFFFFFF),
+        .status_color = t->success,
+        .status_fg    = t->on_color,
     };
 
     comp_metrics_data_t metrics_data = {
@@ -89,20 +91,20 @@ int main(void)
             {
                 "High memory usage on worker-03",
                 "3m ago",
-                XF_RGB(0xE24B4A),
-                XF_RGBA(0xE24B4A, 0.06),
+                t->danger,
+                t->danger_bg,
             },
             {
                 "Elevated 5xx rate on /api/payments",
                 "11m ago",
-                XF_RGB(0xE24B4A),
-                XF_RGBA(0xE24B4A, 0.06),
+                t->danger,
+                t->danger_bg,
             },
             {
                 "Cache hit ratio dropped below 80%",
                 "22m ago",
-                XF_RGB(0xEF9F27),
-                XF_RGBA(0xEF9F27, 0.06),
+                t->warning,
+                t->warning_bg,
             },
         },
         .count = 3,
@@ -113,15 +115,15 @@ int main(void)
         .rows  = {
             {
                 "payments-svc", "2h 14m", "partial outage",
-                XF_RGBA(0xE24B4A, 0.06),
-                XF_RGB(0xF7C1C1), XF_RGB(0x791F1F),
-                XF_RGB(0x501313), XF_RGB(0xE24B4A),
+                t->danger_bg,
+                t->danger_badge_bg, t->danger_badge_fg,
+                t->danger_emphasis, t->danger,
             },
             {
                 "cdn-edge-eu", "47m", "degraded",
-                XF_RGBA(0xEF9F27, 0.06),
-                XF_RGB(0xFAC775), XF_RGB(0x633806),
-                XF_RGB(0x412402), XF_RGB(0xEF9F27),
+                t->warning_bg,
+                t->warning_badge_bg, t->warning_badge_fg,
+                t->warning_emphasis, t->warning,
             },
         },
         .count = 2,
@@ -137,11 +139,11 @@ int main(void)
     comp_team_status_data_t team_data = {
         .title   = "TEAM",
         .members = {
-            { "MR", "Maya Rodriguez", XF_RGB(0x7F77DD), 1 },
-            { "AK", "Alex Kim",       XF_RGB(0x1D9E75), 1 },
-            { "JS", "Jordan Smith",   XF_RGB(0xE24B4A), 0 },
-            { "PL", "Priya Lal",      XF_RGB(0xEF9F27), 1 },
-            { "TW", "Tom Watkins",    XF_RGB(0x378ADD), 0 },
+            { "MR", "Maya Rodriguez", t->accent, 1 },
+            { "AK", "Alex Kim",       t->success, 1 },
+            { "JS", "Jordan Smith",   t->danger, 0 },
+            { "PL", "Priya Lal",      t->warning, 1 },
+            { "TW", "Tom Watkins",    t->info, 0 },
         },
         .count = 5,
     };
@@ -151,15 +153,15 @@ int main(void)
         .name         = "Maya Rodriguez",
         .role         = "Primary \xc2\xb7 platform",
         .phone        = "x4172",
-        .avatar_color = XF_RGB(0x7F77DD),
+        .avatar_color = t->accent,
     };
 
     comp_sla_gauge_data_t sla_data = {
         .title = "SLA ATTAINMENT",
         .rows  = {
-            { "API Gateway",  "99.94%",  99.94f, XF_RGB(0x1D9E75) },
-            { "Auth Service", "99.82%",  99.82f, XF_RGB(0x1D9E75) },
-            { "DB Cluster",   "100.0%", 100.00f, XF_RGB(0x378ADD) },
+            { "API Gateway",  "99.94%",  99.94f, t->success },
+            { "Auth Service", "99.82%",  99.82f, t->success },
+            { "DB Cluster",   "100.0%", 100.00f, t->info },
         },
         .count = 3,
     };
@@ -167,10 +169,10 @@ int main(void)
     comp_schedule_data_t schedule_data = {
         .title = "TODAY",
         .rows  = {
-            { "09:00-10:00", "Deploy freeze \xe2\x80\x94 release window", XF_RGB(0xE24B4A) },
-            { "11:00-11:30", "Incident review: payments-svc",              XF_RGB(0xEF9F27) },
-            { "14:00-15:00", "Architecture review: v3 API",                XF_RGB(0x378ADD) },
-            { "17:00-17:15", "Daily standup",                              XF_RGB(0x1D9E75) },
+            { "09:00-10:00", "Deploy freeze \xe2\x80\x94 release window", t->danger },
+            { "11:00-11:30", "Incident review: payments-svc",              t->warning },
+            { "14:00-15:00", "Architecture review: v3 API",                t->info },
+            { "17:00-17:15", "Daily standup",                              t->success },
         },
         .count = 4,
     };
@@ -178,9 +180,9 @@ int main(void)
     comp_pr_review_data_t pr_data = {
         .title = "NEEDS REVIEW",
         .rows  = {
-            { "AK", "feat: add payment retry logic",     "2d", 2, XF_RGB(0x1D9E75) },
-            { "JS", "fix: memory leak in session store", "5h", 0, XF_RGB(0xE24B4A) },
-            { "PL", "chore: bump k8s chart to 1.28",     "1d", 1, XF_RGB(0xEF9F27) },
+            { "AK", "feat: add payment retry logic",     "2d", 2, t->success },
+            { "JS", "fix: memory leak in session store", "5h", 0, t->danger },
+            { "PL", "chore: bump k8s chart to 1.28",     "1d", 1, t->warning },
         },
         .count = 3,
     };
