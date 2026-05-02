@@ -278,10 +278,11 @@ static void handle_ws_message(struct mg_connection *c,
     char   *filtered;
     char   *dresults;
     char   *one_result;
-    int     dcount       = 0;
-    int     dany_error   = 0;
+    int     dcount        = 0;
+    int     dany_error    = 0;
     int     has_render;
-    int     flen         = 0;
+    int     has_canvas_get = 0;
+    int     flen          = 0;
     size_t  dresults_len = 0;
     int     off          = 0;
     int     koff, klen, voff, vlen, vtype;
@@ -313,20 +314,31 @@ static void handle_ws_message(struct mg_connection *c,
             continue;
 
         if (is_daemon_op(op)) {
-            int ok = dispatch_daemon_op(op, data + voff, vlen,
-                                        one_result, one_cap, st);
-            if (ok < 0)
-                dany_error = 1;
-
-            if (dcount > 0 && dresults_len + 1 < dresults_cap)
-                dresults[dresults_len++] = ',';
+            /* canvas.get must read the canvas after page.render runs, so defer
+             * it until after xf_json_exec. All other daemon ops are safe to
+             * run immediately because they don't depend on rendered output. */
+            if (!strcmp(op, "canvas.get")) {
+                has_canvas_get = 1;
+                dcount++;
+                continue;
+            }
 
             {
-                size_t rlen = strlen(one_result);
-                if (dresults_len + rlen < dresults_cap) {
-                    memcpy(dresults + dresults_len, one_result, rlen);
-                    dresults_len += rlen;
-                    dresults[dresults_len] = '\0';
+                int ok = dispatch_daemon_op(op, data + voff, vlen,
+                                            one_result, one_cap, st);
+                if (ok < 0)
+                    dany_error = 1;
+
+                if (dcount > 0 && dresults_len + 1 < dresults_cap)
+                    dresults[dresults_len++] = ',';
+
+                {
+                    size_t rlen = strlen(one_result);
+                    if (dresults_len + rlen < dresults_cap) {
+                        memcpy(dresults + dresults_len, one_result, rlen);
+                        dresults_len += rlen;
+                        dresults[dresults_len] = '\0';
+                    }
                 }
             }
             dcount++;
@@ -364,6 +376,24 @@ static void handle_ws_message(struct mg_connection *c,
                                      st->width, st->height,
                                      st->canvas) < 0)
                 fprintf(stderr, "[daemon] panel_display_bitmap failed\n");
+        }
+    }
+
+    if (has_canvas_get) {
+        int ok = do_canvas_get(one_result, one_cap, st);
+        if (ok < 0)
+            dany_error = 1;
+
+        if (dresults_len > 0 && dresults_len + 1 < dresults_cap)
+            dresults[dresults_len++] = ',';
+
+        {
+            size_t rlen = strlen(one_result);
+            if (dresults_len + rlen < dresults_cap) {
+                memcpy(dresults + dresults_len, one_result, rlen);
+                dresults_len += rlen;
+                dresults[dresults_len] = '\0';
+            }
         }
     }
 
