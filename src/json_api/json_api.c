@@ -278,6 +278,46 @@ static int do_render(xf_json_ctx_t *c, xf_encoder_t *enc,
     return 0;
 }
 
+static int do_list(xf_json_ctx_t *c, xf_encoder_t *enc, int idx)
+{
+    int i, page, page_on_page, page_count;
+    char data_buf[2048];
+
+    page_count = dashboard_page_count(c->dash);
+    xf_encoder_list_begin(enc, idx, c->reg.count, page_count);
+
+    for (i = 0; i < c->reg.count; i++) {
+        const xf_reg_entry_t *entry = &c->reg.entries[i];
+        char row_hdr[256];
+        int  n;
+
+        if (dashboard_comp_placement(c->dash, entry->comp, &page, &page_on_page) < 0) {
+            page = 0;
+            page_on_page = 0;
+        }
+
+        if (i > 0)
+            xf_encoder_raw(enc, ",", 1);
+
+        n = mjson_snprintf(row_hdr, sizeof row_hdr,
+            "{\"id\":%Q,\"kind\":%Q,\"page\":%d,\"index\":%d,\"dirty\":%d,\"data\":",
+            entry->id, entry->def->name, page, page_on_page,
+            entry->comp ? entry->comp->dirty : 0);
+        if (n > 0)
+            xf_encoder_raw(enc, row_hdr, n);
+
+        if (entry->def->encode(entry->data, data_buf, sizeof data_buf) == 0)
+            xf_encoder_raw(enc, data_buf, (int)strlen(data_buf));
+        else
+            xf_encoder_raw(enc, "{}", 2);
+
+        xf_encoder_raw(enc, "}", 1);
+    }
+
+    xf_encoder_list_end(enc);
+    return 0;
+}
+
 int xf_json_exec(xf_json_ctx_t *ctx,
                  const char *json, size_t json_len,
                  uint8_t *canvas, size_t canvas_cap,
@@ -315,6 +355,7 @@ int xf_json_exec(xf_json_ctx_t *ctx,
         else if (!strcmp(op, "row.remove"))    rc = do_remove(ctx, &enc, json+voff, vlen, idx);
         else if (!strcmp(op, "row.move_up"))   rc = do_move  (ctx, &enc, json+voff, vlen, idx, +1);
         else if (!strcmp(op, "row.move_down")) rc = do_move  (ctx, &enc, json+voff, vlen, idx, -1);
+        else if (!strcmp(op, "row.list"))      rc = do_list  (ctx, &enc, idx);
         else if (!strcmp(op, "page.render"))   rc = do_render(ctx, &enc, json+voff, vlen, idx, canvas, canvas_cap);
         else {
             xf_encoder_error(&enc, idx, op, NULL, "unknown op");

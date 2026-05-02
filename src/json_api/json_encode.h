@@ -20,6 +20,9 @@ void xf_encoder_render_result(xf_encoder_t *e, int idx, int page, int page_count
                               int x, int y, int w, int h);
 void xf_encoder_error        (xf_encoder_t *e, int idx, const char *op, const char *id,
                               const char *msg);
+void xf_encoder_list_begin   (xf_encoder_t *e, int idx, int count, int page_count);
+void xf_encoder_list_end     (xf_encoder_t *e);
+void xf_encoder_raw          (xf_encoder_t *e, const char *s, int n);
 void xf_encoder_end          (xf_encoder_t *e, int ok);
 
 #endif

@@ -346,6 +346,81 @@ void test_full_lifecycle(void)
 }
 
 /* ------------------------------------------------------------------ */
+/* 13. row.list — empty registry                                        */
+/* ------------------------------------------------------------------ */
+void test_row_list_empty(void)
+{
+    const char *s = "[{\"op\":\"row.list\"}]";
+    int rc = xf_json_exec(ctx, s, strlen(s),
+                          canvas, sizeof canvas, reply, sizeof reply);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"ok\":true"));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"count\":0"));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"rows\":[]"));
+}
+
+/* ------------------------------------------------------------------ */
+/* 14. row.list — after add, returns ids/kinds/data                    */
+/* ------------------------------------------------------------------ */
+void test_row_list_after_add(void)
+{
+    const char *add =
+        "[{\"op\":\"row.add\",\"id\":\"component.header.ls1\","
+        "  \"data\":{\"date\":\"Mon\",\"status_text\":\"ok\",\"status_dot\":\"#1D9E75\"}},"
+        " {\"op\":\"row.add\",\"id\":\"component.deploy.ls2\","
+        "  \"data\":{\"branch\":\"main\",\"time_ago\":\"1m\",\"label\":\"v1\"}}]";
+    xf_json_exec(ctx, add, strlen(add),
+                 canvas, sizeof canvas, reply, sizeof reply);
+
+    memset(reply, 0, sizeof reply);
+    const char *s = "[{\"op\":\"row.list\"}]";
+    int rc = xf_json_exec(ctx, s, strlen(s),
+                          canvas, sizeof canvas, reply, sizeof reply);
+    TEST_ASSERT_EQUAL_INT(0, rc);
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"ok\":true"));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"count\":2"));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "component.header.ls1"));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "component.deploy.ls2"));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"kind\":\"header\""));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"kind\":\"deploy\""));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"page_count\""));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"page\":0"));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"date\""));
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"branch\""));
+}
+
+/* ------------------------------------------------------------------ */
+/* 15. row.list — dirty flag reflects update without render             */
+/* ------------------------------------------------------------------ */
+void test_row_list_dirty_flag(void)
+{
+    const char *add =
+        "[{\"op\":\"row.add\",\"id\":\"component.header.ls3\","
+        "  \"data\":{\"date\":\"Mon\",\"status_text\":\"ok\",\"status_dot\":\"#1D9E75\"}},"
+        " {\"op\":\"page.render\",\"page\":0}]";
+    xf_json_exec(ctx, add, strlen(add),
+                 canvas, sizeof canvas, reply, sizeof reply);
+
+    memset(reply, 0, sizeof reply);
+    const char *list = "[{\"op\":\"row.list\"}]";
+    xf_json_exec(ctx, list, strlen(list),
+                 canvas, sizeof canvas, reply, sizeof reply);
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"dirty\":0"));
+
+    memset(reply, 0, sizeof reply);
+    const char *upd =
+        "[{\"op\":\"row.update\",\"id\":\"component.header.ls3\","
+        "  \"data\":{\"date\":\"Tue\"}}]";
+    xf_json_exec(ctx, upd, strlen(upd),
+                 canvas, sizeof canvas, reply, sizeof reply);
+
+    memset(reply, 0, sizeof reply);
+    xf_json_exec(ctx, list, strlen(list),
+                 canvas, sizeof canvas, reply, sizeof reply);
+    TEST_ASSERT_NOT_NULL(strstr(reply, "\"dirty\":1"));
+}
+
+/* ------------------------------------------------------------------ */
 int main(void)
 {
     UNITY_BEGIN();
@@ -361,5 +436,8 @@ int main(void)
     RUN_TEST(test_color_parsing);
     RUN_TEST(test_response_truncation);
     RUN_TEST(test_full_lifecycle);
+    RUN_TEST(test_row_list_empty);
+    RUN_TEST(test_row_list_after_add);
+    RUN_TEST(test_row_list_dirty_flag);
     return UNITY_END();
 }

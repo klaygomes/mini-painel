@@ -69,6 +69,48 @@ Removes the row, frees its memory, and unregisters the id.
 
 Shifts the component one position within its page.
 
+### `row.list`
+
+```json
+{"op":"row.list"}
+```
+
+Returns the full current state of the registry: every registered row, its kind, page placement, and data payload. No canvas buffer is required.
+
+Response result shape:
+
+```json
+{
+  "op": "row.list",
+  "count": 2,
+  "page_count": 1,
+  "rows": [
+    {
+      "id": "component.header.main",
+      "kind": "header",
+      "page": 0,
+      "index": 0,
+      "dirty": 0,
+      "data": {"date":"Mon","status_text":"ok","status_dot":"#1d9e75ff"}
+    },
+    ...
+  ]
+}
+```
+
+Fields:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `count` | int | Number of registered rows |
+| `page_count` | int | Total pages the current layout produces |
+| `rows[].id` | string | Component id |
+| `rows[].kind` | string | Component kind (matches `json_kinds.def`) |
+| `rows[].page` | int | 0-based page the row appears on |
+| `rows[].index` | int | 0-based position within that page |
+| `rows[].dirty` | int | 1 if the component has unsent changes |
+| `rows[].data` | object | Current data payload (all fields, colours as `#rrggbbaa`) |
+
 ### `page.render`
 
 ```json
@@ -132,9 +174,9 @@ A successful render op emits:
 1. Add a row to `src/json_api/json_kinds.def`:
    ```c
    XF_KIND(my_kind, sizeof(comp_my_kind_data_t), COMP_MY_KIND_HEIGHT,
-           create_my_kind, decode_my_kind, 0)
+           create_my_kind, decode_my_kind, encode_my_kind, 0)
    ```
-2. Create `src/json_api/kinds/decode_my_kind.c` implementing `create_my_kind` and `decode_my_kind`. Follow the pattern in any existing `decode_*.c`.
+2. Create `src/json_api/kinds/decode_my_kind.c` implementing `create_my_kind` and `decode_my_kind`, and `src/json_api/kinds/encode_my_kind.c` implementing `encode_my_kind`. Follow the pattern in any existing `decode_*.c` / `encode_*.c`.
 3. Add the component implementation to `src/components/` following `doc/components-agents.md`.
 4. The CMake glob (`file(GLOB JSON_KIND_SRC CONFIGURE_DEPENDS kinds/*.c)`) picks up the new file automatically.
 
@@ -151,7 +193,9 @@ src/json_api/
   json_registry.h/.c  fixed-capacity id→component registry (cap=64)
   json_decode_util.h/.c  mjson-based field helpers
   json_encode.h/.c    response JSON encoder
-  kinds/              one decode_<kind>.c per component
+  json_encode_util.h  rgba_to_hex helper + includes json_enc_buf.h
+  json_enc_buf.h      XF_ENC_APPEND macro (buffer cursor for encode_*.c)
+  kinds/              one decode_<kind>.c + encode_<kind>.c per component
 vendor/mjson/         vendored cesanta/mjson (MIT)
 ```
 
@@ -161,4 +205,4 @@ vendor/mjson/         vendored cesanta/mjson (MIT)
 - `doc/components-agents.md` — component conventions
 - `doc/dashboard-agents.md` — dashboard internals
 - `examples/json_demo.c` — minimal end-to-end usage
-- `tests/test_json_api.c` — Unity test suite (12 cases)
+- `tests/test_json_api.c` — Unity test suite (15 cases)

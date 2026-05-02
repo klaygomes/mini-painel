@@ -131,9 +131,33 @@
   /* ── main area ── */
   main {
     display: grid;
-    grid-template-rows: 1fr auto auto;
+    grid-template-rows: auto 1fr auto;
     overflow: hidden;
   }
+
+  /* canvas viewport */
+  #preview-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+  #preview {
+    image-rendering: pixelated;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    max-width: 100%;
+    max-height: 50vh;
+    width: auto;
+    height: auto;
+    background: #000;
+    display: block;
+  }
+  #preview-info { font-size: 11px; color: var(--muted); }
 
   /* log */
   #log {
@@ -167,26 +191,6 @@
   .error  .log-dir  { color: var(--err); }
   .info   .log-dir  { color: var(--muted); }
   .log-body { white-space: pre-wrap; }
-
-  /* canvas preview */
-  #preview-wrap {
-    border-top: 1px solid var(--border);
-    padding: 10px 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--surface);
-  }
-  #preview-wrap label { font-size: 11px; color: var(--muted); flex: none; }
-  #preview {
-    image-rendering: pixelated;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    max-width: 100%;
-    height: 80px;
-    background: #000;
-  }
-  #preview-info { font-size: 11px; color: var(--muted); }
 
   /* raw input */
   #input-area {
@@ -266,13 +270,18 @@
     <button class="action" data-cmd='row.add.header'>row.add header</button>
     <button class="action" data-cmd='row.add.deploy'>row.add deploy</button>
     <button class="action" data-cmd='row.add.sparkline'>row.add sparkline</button>
-    <label>Row id
-      <input type="text" id="row-id" value="component.header.main" spellcheck="false">
+    <button class="action" data-cmd='row.list'>row.list</button>
+    <label>Row
+      <select id="row-select"><option value="">— none —</option></select>
     </label>
     <div class="row2">
       <button class="action" data-cmd='row.remove'>row.remove</button>
       <button class="action" data-cmd='row.move_up'>move_up</button>
     </div>
+    <label>Update data (JSON)
+      <textarea id="update-data" spellcheck="false" style="width:100%;min-height:60px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:var(--mono);resize:vertical;"></textarea>
+    </label>
+    <button class="action" data-cmd='row.update'>row.update</button>
   </div>
 
   <div class="panel">
@@ -293,13 +302,12 @@
 </aside>
 
 <main>
-  <div id="log"></div>
-
   <div id="preview-wrap">
-    <label>Preview</label>
     <canvas id="preview" width="480" height="320"></canvas>
     <span id="preview-info">no render yet</span>
   </div>
+
+  <div id="log"></div>
 
   <div id="input-area">
     <textarea id="raw-input" spellcheck="false"
@@ -313,6 +321,28 @@
   'use strict';
 
   let ws = null;
+  const trackedRows = new Map(); // id → last data object
+
+  function syncRowSelect() {
+    const sel = document.getElementById('row-select');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— none —</option>';
+    for (const id of trackedRows.keys()) {
+      const opt = document.createElement('option');
+      opt.value = opt.textContent = id;
+      sel.appendChild(opt);
+    }
+    if (trackedRows.has(prev)) sel.value = prev;
+    else if (trackedRows.size > 0) sel.value = [...trackedRows.keys()][trackedRows.size - 1];
+    prefillUpdateData();
+  }
+
+  function prefillUpdateData() {
+    const sel = document.getElementById('row-select');
+    const ta  = document.getElementById('update-data');
+    const data = trackedRows.get(sel.value);
+    ta.value = data ? JSON.stringify(data, null, 2) : '';
+  }
 
   const urlInput    = document.getElementById('url-input');
   const connectBtn  = document.getElementById('connect-btn');
@@ -324,6 +354,8 @@
   const previewInfo   = document.getElementById('preview-info');
   const brightnessEl  = document.getElementById('brightness');
   const brightnessVal = document.getElementById('brightness-val');
+
+  document.getElementById('row-select').addEventListener('change', prefillUpdateData);
 
   brightnessEl.addEventListener('input', () => {
     brightnessVal.textContent = brightnessEl.value;
@@ -402,6 +434,17 @@
 
   connectBtn.addEventListener('click', connect);
 
+  /* ── row tracking ── */
+  function trackAdd(id, data) {
+    trackedRows.set(id, data);
+    syncRowSelect();
+  }
+
+  function trackRemove(id) {
+    trackedRows.delete(id);
+    syncRowSelect();
+  }
+
   /* ── send ── */
   function send(payload) {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
@@ -450,6 +493,14 @@
       if (r.op === 'canvas.get' && r.ok && r.data) {
         renderCanvas(r.data, r.width, r.height);
       }
+      if (r.op === 'row.remove' && r.ok && r.id) {
+        trackRemove(r.id);
+      }
+      if (r.op === 'row.list' && r.ok && Array.isArray(r.rows)) {
+        trackedRows.clear();
+        for (const row of r.rows) trackedRows.set(row.id, row.data);
+        syncRowSelect();
+      }
     }
   }
 
@@ -462,7 +513,7 @@
       }
       const cmd = btn.dataset.cmd;
       const page = parseInt(document.getElementById('page-num').value, 10) || 0;
-      const rowId = document.getElementById('row-id').value.trim() || 'component.header.main';
+      const rowId = document.getElementById('row-select').value;
 
       switch (cmd) {
         case 'device.open': {
@@ -481,23 +532,46 @@
         case 'device.orientation':
           send([{ op: 'device.orientation', value: document.getElementById('orientation').value }]);
           break;
-        case 'row.add.header':
-          send([{ op: 'row.add', id: 'component.header.main',
-            data: { date: fmtDate(), status_text: 'all clear', status_dot: '#1D9E75' } }]);
+        case 'row.add.header': {
+          const id = 'component.header.main';
+          const data = { date: fmtDate(), status_text: 'all clear', status_dot: '#1D9E75' };
+          trackAdd(id, data);
+          send([{ op: 'row.add', id, data }]);
           break;
-        case 'row.add.deploy':
-          send([{ op: 'row.add', id: 'component.deploy.latest',
-            data: { service: 'api', version: 'v1.2.3', status: 'ok' } }]);
+        }
+        case 'row.add.deploy': {
+          const id = 'component.deploy.latest';
+          const data = { service: 'api', version: 'v1.2.3', status: 'ok' };
+          trackAdd(id, data);
+          send([{ op: 'row.add', id, data }]);
           break;
-        case 'row.add.sparkline':
-          send([{ op: 'row.add', id: 'component.sparkline.cpu',
-            data: { label: 'CPU', values: [10,20,15,30,25,40,35,50,45,60] } }]);
+        }
+        case 'row.add.sparkline': {
+          const id = 'component.sparkline.cpu';
+          const data = { label: 'CPU', values: [10,20,15,30,25,40,35,50,45,60] };
+          trackAdd(id, data);
+          send([{ op: 'row.add', id, data }]);
           break;
+        }
         case 'row.remove':
+          if (!rowId) { log('✗', 'no row selected', 'error'); return; }
           send([{ op: 'row.remove', id: rowId }]);
           break;
         case 'row.move_up':
+          if (!rowId) { log('✗', 'no row selected', 'error'); return; }
           send([{ op: 'row.move_up', id: rowId }]);
+          break;
+        case 'row.update': {
+          if (!rowId) { log('✗', 'no row selected', 'error'); return; }
+          const ta = document.getElementById('update-data');
+          let data;
+          try { data = JSON.parse(ta.value); } catch { log('✗', 'invalid JSON in update data', 'error'); return; }
+          trackedRows.set(rowId, data);
+          send([{ op: 'row.update', id: rowId, data }]);
+          break;
+        }
+        case 'row.list':
+          send([{ op: 'row.list' }]);
           break;
         case 'page.render':
           send([{ op: 'page.render', page }]);

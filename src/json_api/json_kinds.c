@@ -20,16 +20,17 @@
 #include "comp_pr_review.h"
 #include "comp_checklist.h"
 
-/* Forward-declare every create wrapper and decode function. */
-#define XF_KIND(name, dsz, h, create, dec, st) \
-    extern xf_component_t create(void *);      \
-    extern int dec(const char *, int, void *, int);
+/* Forward-declare every create wrapper, decode, and encode function. */
+#define XF_KIND(name, dsz, h, create, dec, enc, st) \
+    extern xf_component_t create(void *);           \
+    extern int dec(const char *, int, void *, int);  \
+    extern int enc(const void *, char *, size_t);
 #include "json_kinds.def"
 #undef XF_KIND
 
 static const xf_kind_def_t TABLE[] = {
-#define XF_KIND(name, dsz, h, create, dec, st) \
-    { #name, (size_t)(dsz), (h), create, dec, (st) },
+#define XF_KIND(name, dsz, h, create, dec, enc, st) \
+    { #name, (size_t)(dsz), (h), create, dec, enc, (st) },
 #include "json_kinds.def"
 #undef XF_KIND
 };

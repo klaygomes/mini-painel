@@ -414,3 +414,49 @@ int dashboard_find_row(const xf_dashboard_t *dash, const xf_component_t *comp)
     }
     return -1;
 }
+
+int dashboard_comp_placement(const xf_dashboard_t *dash,
+                             const xf_component_t *comp,
+                             int *out_page, int *out_index)
+{
+    int *page_of_row;
+    int  r, c, row_idx, comp_page, i, idx_on_page;
+
+    if (!dash || !comp || !out_page || !out_index)
+        return -1;
+    if (dash->row_count == 0)
+        return -1;
+
+    page_of_row = malloc((size_t)dash->row_count * sizeof(int));
+    if (!page_of_row)
+        return -1;
+
+    page_layout(dash, page_of_row, NULL);
+
+    row_idx = -1;
+    for (r = 0; r < dash->row_count && row_idx < 0; r++) {
+        for (c = 0; c < dash->rows[r].count; c++) {
+            if (dash->rows[r].components[c] == comp) {
+                row_idx = r;
+                break;
+            }
+        }
+    }
+
+    if (row_idx < 0) {
+        free(page_of_row);
+        return -1;
+    }
+
+    comp_page   = page_of_row[row_idx];
+    idx_on_page = 0;
+    for (i = 0; i < row_idx; i++) {
+        if (page_of_row[i] == comp_page)
+            idx_on_page++;
+    }
+
+    free(page_of_row);
+    *out_page  = comp_page;
+    *out_index = idx_on_page;
+    return 0;
+}

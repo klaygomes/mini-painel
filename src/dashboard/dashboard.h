@@ -136,4 +136,13 @@ int dashboard_visit_dirty_rects(xf_dashboard_t *dash, int page,
  */
 int dashboard_find_row(const xf_dashboard_t *dash, const xf_component_t *comp);
 
+/*
+ * Returns the page (0-based) and the row's index within that page (0-based)
+ * for the component comp. Calls the layout engine once; both values are set
+ * atomically. Returns 0 on success, -1 if comp is not found or args are NULL.
+ */
+int dashboard_comp_placement(const xf_dashboard_t *dash,
+                             const xf_component_t *comp,
+                             int *out_page, int *out_index);
+
 #endif /* DASHBOARD_H */

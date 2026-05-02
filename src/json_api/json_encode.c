@@ -131,3 +131,26 @@ void xf_encoder_end(xf_encoder_t *e, int ok)
         e->len++;
     }
 }
+
+void xf_encoder_list_begin(xf_encoder_t *e, int idx, int count, int page_count)
+{
+    char tmp[128];
+    int  n;
+    (void)idx;
+    enc_sep(e);
+    n = snprintf(tmp, sizeof tmp,
+                 "{\"op\":\"row.list\",\"count\":%d,\"page_count\":%d,\"rows\":[",
+                 count, page_count);
+    if (n > 0)
+        enc_append(e, tmp, n);
+}
+
+void xf_encoder_list_end(xf_encoder_t *e)
+{
+    enc_append(e, "]}", 2);
+}
+
+void xf_encoder_raw(xf_encoder_t *e, const char *s, int n)
+{
+    enc_append(e, s, n);
+}
