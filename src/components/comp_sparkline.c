@@ -14,7 +14,7 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
     xf_gfx_section_label(ctx, d->title, 12.0);
 
     xf_draw_text(ctx, d->value, (double)xf_draw_width(ctx) - LAY_PAD_X, 12.0, &(xf_text_opts_t){
-        .size = FONT_MD, .weight = WEIGHT_BOLD, .color = t->info_dark, .align = XF_TEXT_RIGHT
+        .size = FONT_MD, .weight = WEIGHT_BOLD, .color = t->info_emphasis, .align = XF_TEXT_RIGHT
     });
 
     if (d->count < 2)
@@ -36,7 +36,7 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
     }
     xf_draw_line_to(ctx, chart_x + (double)(d->count - 1) * step, bottom);
     xf_draw_close_path(ctx);
-    xf_draw_fill(ctx, t->info_fill);
+    xf_draw_fill(ctx, t->info_subtle);
 
     xf_draw_begin_path(ctx);
     xf_draw_move_to(ctx, chart_x,

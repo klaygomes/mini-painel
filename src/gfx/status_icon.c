@@ -11,7 +11,7 @@ void xf_gfx_status_icon(xf_draw_ctx_t *ctx, double cx, double cy, double r,
         case XF_STATUS_RUNNING: color = t->info;    break;
         case XF_STATUS_IDLE:    color = t->warning; break;
         case XF_STATUS_DONE:    color = t->success; break;
-        default:                color = t->offline; break;
+        default:                color = t->status_offline; break;
     }
 
     xf_gfx_dot(ctx, cx, cy, r, color);

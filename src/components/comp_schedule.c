@@ -20,7 +20,7 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
                                 1.5, r->bar);
 
         xf_draw_text(ctx, r->time, 12.0, y + 13.0, &(xf_text_opts_t){
-            .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->text_faint, .max_width = 68.0
+            .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->text_subtle, .max_width = 68.0
         });
 
         xf_draw_text(ctx, r->event, 84.0, y + 13.0, &(xf_text_opts_t){

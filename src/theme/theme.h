@@ -35,53 +35,77 @@ typedef struct {
  * No colour literal may appear in component source — every colour is a field
  * reference such as t->danger. A full retheme requires only a new xf_theme_t
  * value passed to xf_set_theme.
+ *
+ * Token naming conventions:
+ *   {role}            — primary indicator/accent (icon, dot, border)
+ *   {role}_bg         — subtle tinted background (card, row)
+ *   {role}_fg         — body text on {role}_bg
+ *   {role}_badge_bg   — opaque badge/tag background (denser tint than _bg)
+ *   {role}_badge_fg   — text inside badge/tag
+ *   {role}_emphasis   — darkest shade: heading text, high-contrast labels
+ *   {role}_subtle     — semi-transparent area fill (charts, indicators)
  */
 typedef struct {
+    /* Canvas */
     xf_rgba_t background;
-    xf_rgba_t text_primary;
-    xf_rgba_t text_secondary;
-    xf_rgba_t text_muted;
-    xf_rgba_t text_faint;
-    xf_rgba_t text_dimmed;
 
+    /* Text scale — ordered from highest to lowest contrast */
+    xf_rgba_t text_primary;    /* main body copy */
+    xf_rgba_t text_secondary;  /* supporting / meta text */
+    xf_rgba_t text_muted;      /* section labels, captions */
+    xf_rgba_t text_subtle;     /* timestamps, counts, de-emphasised labels */
+
+    /* Surfaces */
     xf_rgba_t surface_card;
     xf_rgba_t surface_separator;
     xf_rgba_t surface_border;
-    xf_rgba_t white;
-    xf_rgba_t offline;
+    xf_rgba_t on_color;        /* foreground drawn on any filled/coloured surface */
+    xf_rgba_t status_offline;  /* avatar background for offline / unknown state */
 
+    /* Danger (errors, failures, critical) */
     xf_rgba_t danger;
     xf_rgba_t danger_bg;
-    xf_rgba_t danger_pill_bg;
-    xf_rgba_t danger_pill_fg;
-    xf_rgba_t danger_title_fg;
+    xf_rgba_t danger_badge_bg;
+    xf_rgba_t danger_badge_fg;
+    xf_rgba_t danger_emphasis;
 
+    /* Warning (degraded, at-risk, idle) */
     xf_rgba_t warning;
     xf_rgba_t warning_bg;
-    xf_rgba_t warning_pill_bg;
-    xf_rgba_t warning_pill_fg;
-    xf_rgba_t warning_title_fg;
+    xf_rgba_t warning_badge_bg;
+    xf_rgba_t warning_badge_fg;
+    xf_rgba_t warning_emphasis;
 
+    /* Success (passing, online, deployed) */
     xf_rgba_t success;
     xf_rgba_t success_bg;
     xf_rgba_t success_fg;
+    xf_rgba_t success_badge_bg;
+    xf_rgba_t success_badge_fg;
 
+    /* Info (running, informational, neutral metric) */
     xf_rgba_t info;
     xf_rgba_t info_bg;
     xf_rgba_t info_fg;
-    xf_rgba_t info_dark;
-    xf_rgba_t info_fill;
+    xf_rgba_t info_emphasis;   /* darkest info shade: prominent value labels */
+    xf_rgba_t info_subtle;     /* semi-transparent area fill for sparklines etc. */
 
+    /* Accent (brand, highlights) */
     xf_rgba_t accent;
     xf_rgba_t accent_bg;
     xf_rgba_t accent_fg;
 
-    xf_rgba_t orange;
-    xf_rgba_t purple_bar;
-    xf_rgba_t deploy_bar;
-    xf_rgba_t deploy_chip_bg;
-    xf_rgba_t deploy_text;
-    xf_rgba_t deploy_text_dark;
+    /* Caution (a distinct orange tone, between warning and danger) */
+    xf_rgba_t caution;
+
+    /* Chart colours */
+    xf_rgba_t chart_accent;    /* primary bar / progress fill */
+
+    /* Deploy domain */
+    xf_rgba_t deploy_bg;       /* deploy bar background */
+    xf_rgba_t deploy_surface;  /* subtle deploy chip/badge fill */
+    xf_rgba_t deploy_fg;       /* primary deploy text */
+    xf_rgba_t deploy_fg_emphasis; /* high-contrast deploy text */
 
     const char *font_sans;
     const char *font_mono;

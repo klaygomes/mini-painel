@@ -196,18 +196,18 @@ static void test_outages(void)
     snprintf(d.rows[0].duration, sizeof(d.rows[0].duration), "2h 14m");
     snprintf(d.rows[0].status,   sizeof(d.rows[0].status),   "partial outage");
     d.rows[0].row_bg    = t->danger_bg;
-    d.rows[0].pill_bg   = t->danger_pill_bg;
-    d.rows[0].pill_fg   = t->danger_pill_fg;
-    d.rows[0].title_fg  = t->danger_title_fg;
+    d.rows[0].pill_bg   = t->danger_badge_bg;
+    d.rows[0].pill_fg   = t->danger_badge_fg;
+    d.rows[0].title_fg  = t->danger_emphasis;
     d.rows[0].dot       = t->danger;
 
     snprintf(d.rows[1].service,  sizeof(d.rows[1].service),  "cdn-edge");
     snprintf(d.rows[1].duration, sizeof(d.rows[1].duration), "34m");
     snprintf(d.rows[1].status,   sizeof(d.rows[1].status),   "degraded");
     d.rows[1].row_bg    = t->warning_bg;
-    d.rows[1].pill_bg   = t->warning_pill_bg;
-    d.rows[1].pill_fg   = t->warning_pill_fg;
-    d.rows[1].title_fg  = t->warning_title_fg;
+    d.rows[1].pill_bg   = t->warning_badge_bg;
+    d.rows[1].pill_fg   = t->warning_badge_fg;
+    d.rows[1].title_fg  = t->warning_emphasis;
     d.rows[1].dot       = t->warning;
 
     xf_component_t comp = comp_outages_create(&d);
@@ -226,7 +226,7 @@ static void test_schedule(void)
 
     snprintf(d.rows[0].time,  sizeof(d.rows[0].time),  "09:00-10:00");
     snprintf(d.rows[0].event, sizeof(d.rows[0].event), "Deploy freeze");
-    d.rows[0].bar = t->orange;
+    d.rows[0].bar = t->caution;
 
     snprintf(d.rows[1].time,  sizeof(d.rows[1].time),  "14:00-15:00");
     snprintf(d.rows[1].event, sizeof(d.rows[1].event), "Incident review");
@@ -397,7 +397,7 @@ static void test_team_status(void)
 
     snprintf(d.members[2].initials, sizeof(d.members[2].initials), "JB");
     snprintf(d.members[2].name,     sizeof(d.members[2].name),     "James Brown");
-    d.members[2].avatar_color = t->orange;
+    d.members[2].avatar_color = t->caution;
     d.members[2].online       = 0;
 
     snprintf(d.members[3].initials, sizeof(d.members[3].initials), "AP");

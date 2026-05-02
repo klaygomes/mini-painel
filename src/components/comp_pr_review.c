@@ -29,7 +29,7 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
         });
 
         xf_draw_text(ctx, r->age, (double)xf_draw_width(ctx) - 8.0, cy + 5.0, &(xf_text_opts_t){
-            .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->text_faint, .align = XF_TEXT_RIGHT
+            .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->text_subtle, .align = XF_TEXT_RIGHT
         });
 
         if (r->reviews > 0) {

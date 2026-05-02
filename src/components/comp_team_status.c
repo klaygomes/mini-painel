@@ -26,7 +26,7 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
         const comp_team_member_t *m = &d->members[i];
 
         xf_gfx_avatar(ctx, x, cy, AVATAR_R,
-                      m->online ? m->avatar_color : t->offline, m->initials);
+                      m->online ? m->avatar_color : t->status_offline, m->initials);
 
         if (m->online)
             xf_gfx_online_dot(ctx, x + AVATAR_R - 3.5, cy + AVATAR_R - 3.5, t->success);

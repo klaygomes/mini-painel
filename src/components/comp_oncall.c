@@ -19,7 +19,7 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
     });
 
     xf_draw_text(ctx, d->phone, xf_draw_width(ctx) - 8.0, cy + 4.0, &(xf_text_opts_t){
-        .size = FONT_LG, .weight = WEIGHT_NORMAL, .color = t->text_faint, .align = XF_TEXT_RIGHT
+        .size = FONT_LG, .weight = WEIGHT_NORMAL, .color = t->text_subtle, .align = XF_TEXT_RIGHT
     });
 }
 

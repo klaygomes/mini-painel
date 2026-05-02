@@ -15,7 +15,7 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
     });
 
     xf_draw_text(ctx, d->duration, LAY_PAD_X, 31.0, &(xf_text_opts_t){
-        .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->text_faint
+        .size = FONT_MD, .weight = WEIGHT_NORMAL, .color = t->text_subtle
     });
 
     double pill_cx = (double)xf_draw_width(ctx) - LAY_PAD_X

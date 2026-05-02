@@ -29,7 +29,7 @@ static void draw(xf_draw_ctx_t *ctx, void *user_data)
 
             double tw = xf_draw_measure_text(ctx, item->item, FONT_SIZE, WEIGHT_NORMAL);
             xf_draw_text(ctx, item->item, TEXT_X, baseline, &(xf_text_opts_t){
-                .size = FONT_SIZE, .weight = WEIGHT_NORMAL, .color = t->text_faint,
+                .size = FONT_SIZE, .weight = WEIGHT_NORMAL, .color = t->text_subtle,
                 .max_width = (double)xf_draw_width(ctx) - TEXT_X - LAY_PAD_X
             });
 

@@ -19,6 +19,6 @@ void xf_gfx_avatar(xf_draw_ctx_t *ctx, double cx, double cy, double r,
     }
 
     xf_draw_text(ctx, initials, cx, cy + offset, &(xf_text_opts_t){
-        .size = font_size, .weight = WEIGHT_BOLD, .color = t->white, .align = XF_TEXT_CENTER
+        .size = font_size, .weight = WEIGHT_BOLD, .color = t->on_color, .align = XF_TEXT_CENTER
     });
 }
