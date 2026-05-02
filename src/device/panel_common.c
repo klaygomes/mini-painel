@@ -19,8 +19,12 @@ int panel_base_effective_height(const xf_device_base_t *base)
 
 void panel_close(xf_device_t *dev)
 {
+    xf_device_base_t *base;
     if (!dev) return;
-    close(((xf_device_base_t *)dev)->fd);
+    base = (xf_device_base_t *)dev;
+    if (base->cleanup)
+        base->cleanup(dev);
+    close(base->fd);
     free(dev);
 }
 

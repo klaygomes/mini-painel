@@ -15,6 +15,8 @@ typedef enum {
 struct xf_device {
     xf_device_base_t  base;           /* must stay first */
     turing_variant_t  variant;
+    uint8_t          *img_scratch;    /* display_width * display_height * 3, rotation workspace */
+    uint8_t          *img_rgb565;     /* display_width * display_height * 2, RGB565 workspace */
 };
 
 #endif /* TURING_DEVICE_INTERNAL_H */

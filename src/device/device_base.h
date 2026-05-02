@@ -10,6 +10,7 @@ typedef struct {
     xf_orientation_t orientation;
     int              display_width;
     int              display_height;
+    void           (*cleanup)(xf_device_t *); /* called by panel_close before free */
 } xf_device_base_t;
 
 #endif /* DEVICE_BASE_H */

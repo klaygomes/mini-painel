@@ -47,6 +47,12 @@ static int hello(xf_device_t *dev)
     return 0;
 }
 
+static void turing_panel_cleanup(xf_device_t *dev)
+{
+    free(dev->img_scratch);
+    free(dev->img_rgb565);
+}
+
 xf_device_t *panel_open(const char *port)
 {
     int fd = serial_open(port);
@@ -64,13 +70,27 @@ xf_device_t *panel_open(const char *port)
     }
 
     dev->base.fd             = fd;
+    dev->base.cleanup        = turing_panel_cleanup;
     dev->variant             = TURING_VARIANT_UNKNOWN;
     dev->base.orientation    = XF_ORIENT_PORTRAIT;
     dev->base.display_width  = 320;
     dev->base.display_height = 480;
+    dev->img_scratch         = NULL;
+    dev->img_rgb565          = NULL;
 
     if (hello(dev) < 0) {
         fprintf(stderr, "panel_open: HELLO failed on %s\n", port);
+        free(dev);
+        close(fd);
+        return NULL;
+    }
+
+    dev->img_scratch = (uint8_t *)malloc(
+        (size_t)(dev->base.display_width * dev->base.display_height * 3));
+    dev->img_rgb565  = (uint8_t *)malloc(
+        (size_t)(dev->base.display_width * dev->base.display_height * 2));
+    if (!dev->img_scratch || !dev->img_rgb565) {
+        turing_panel_cleanup(dev);
         free(dev);
         close(fd);
         return NULL;
@@ -181,8 +201,7 @@ int panel_display_bitmap(xf_device_t *dev,
         x1 = dev->base.display_width  - x - 1;
         y1 = dev->base.display_height - y - 1;
 
-        rotated = (uint8_t *)malloc((size_t)(width * height * 3));
-        if (!rotated) return -1;
+        rotated = dev->img_scratch;
         image_rotate_180(rgb888, width, height, rotated);
         pixels = rotated;
     }
@@ -190,11 +209,7 @@ int panel_display_bitmap(xf_device_t *dev,
     turing_proto_send_cmd(dev->base.fd, TURING_CMD_DISPLAY_BITMAP, x0, y0, x1, y1);
 
     int pixel_count = width * height;
-    uint8_t *rgb565 = (uint8_t *)malloc((size_t)(pixel_count * 2));
-    if (!rgb565) {
-        free(rotated);
-        return -1;
-    }
+    uint8_t *rgb565 = dev->img_rgb565;
     image_rgb888_to_rgb565le(pixels, pixel_count, rgb565);
 
     size_t offset = 0;
@@ -205,9 +220,6 @@ int panel_display_bitmap(xf_device_t *dev,
         turing_proto_send_raw(dev->base.fd, rgb565 + offset, chunk);
         offset += chunk;
     }
-
-    free(rgb565);
-    free(rotated);
 
     /* 50 ms cooldown prevents bitmap corruption on macOS. */
     usleep(TURING_COOLDOWN_US);

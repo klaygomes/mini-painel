@@ -39,6 +39,12 @@ static int hello(xf_device_t *dev)
     return 0;
 }
 
+static void panel_cleanup(xf_device_t *dev)
+{
+    free(dev->img_scratch);
+    free(dev->img_rgb565);
+}
+
 xf_device_t *panel_open(const char *port)
 {
     int fd = serial_open(port);
@@ -56,13 +62,25 @@ xf_device_t *panel_open(const char *port)
     }
 
     dev->base.fd             = fd;
+    dev->base.cleanup        = panel_cleanup;
     dev->sub_revision        = XF_SUB_REV_UNKNOWN;
     dev->base.orientation    = XF_ORIENT_PORTRAIT;
     dev->base.display_width  = DISPLAY_WIDTH;
     dev->base.display_height = DISPLAY_HEIGHT;
+    dev->img_scratch         = NULL;
+    dev->img_rgb565          = NULL;
 
     if (hello(dev) < 0) {
         fprintf(stderr, "panel_open: HELLO handshake failed on %s\n", port);
+        free(dev);
+        close(fd);
+        return NULL;
+    }
+
+    dev->img_scratch = (uint8_t *)malloc((size_t)(DISPLAY_WIDTH * DISPLAY_HEIGHT * 3));
+    dev->img_rgb565  = (uint8_t *)malloc((size_t)(DISPLAY_WIDTH * DISPLAY_HEIGHT * 2));
+    if (!dev->img_scratch || !dev->img_rgb565) {
+        panel_cleanup(dev);
         free(dev);
         close(fd);
         return NULL;
@@ -182,8 +200,7 @@ int panel_display_bitmap(xf_device_t *dev,
         x1 = dev->base.display_width  - x - 1;
         y1 = dev->base.display_height - y - 1;
 
-        rotated = (uint8_t *)malloc((size_t)(width * height * 3));
-        if (!rotated) return -1;
+        rotated = dev->img_scratch;
         image_rotate_180(rgb888, width, height, rotated);
         pixels = rotated;
     }
@@ -197,11 +214,7 @@ int panel_display_bitmap(xf_device_t *dev,
     proto_send_cmd(dev->base.fd, CMD_DISPLAY_BITMAP, payload);
 
     int pixel_count = width * height;
-    uint8_t *rgb565 = (uint8_t *)malloc((size_t)(pixel_count * 2));
-    if (!rgb565) {
-        free(rotated);
-        return -1;
-    }
+    uint8_t *rgb565 = dev->img_rgb565;
     image_rgb888_to_rgb565be(pixels, pixel_count, rgb565);
 
     size_t offset = 0;
@@ -212,9 +225,6 @@ int panel_display_bitmap(xf_device_t *dev,
         proto_send_raw(dev->base.fd, rgb565 + offset, chunk);
         offset += chunk;
     }
-
-    free(rgb565);
-    free(rotated);
 
     /* 50 ms cooldown prevents bitmap corruption on macOS. */
     usleep(COOLDOWN_US);

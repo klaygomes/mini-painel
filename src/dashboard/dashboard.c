@@ -18,8 +18,11 @@ struct xf_dashboard {
     int      width;
     int      height;
     int      padding;
-    uint8_t *framebuffer; /* width * height * 3, owned */
-    row_t   *rows;        /* dynamic array, owned */
+    uint8_t *framebuffer;  /* width * height * 3, owned */
+    uint8_t *comp_scratch; /* reusable per-component render buffer, width * height * 3 */
+    int     *page_of_row;  /* per-row page index, capacity = row_cap */
+    int     *y_of_row;     /* per-row y offset,   capacity = row_cap */
+    row_t   *rows;         /* dynamic array, owned */
     int      row_count;
     int      row_cap;
 };
@@ -41,6 +44,13 @@ xf_dashboard_t *dashboard_create(int width, int height, int padding)
         return NULL;
     }
 
+    dash->comp_scratch = malloc((size_t)(width * height * 3));
+    if (!dash->comp_scratch) {
+        free(dash->framebuffer);
+        free(dash);
+        return NULL;
+    }
+
     dash->width   = width;
     dash->height  = height;
     dash->padding = padding;
@@ -57,6 +67,9 @@ void dashboard_destroy(xf_dashboard_t *dash)
         free(dash->rows[i].widths);
     }
     free(dash->rows);
+    free(dash->page_of_row);
+    free(dash->y_of_row);
+    free(dash->comp_scratch);
     free(dash->framebuffer);
     free(dash);
 }
@@ -81,11 +94,19 @@ int dashboard_add_row(xf_dashboard_t  *dash,
 
     if (dash->row_count == dash->row_cap) {
         int new_cap = dash->row_cap ? dash->row_cap * 2 : 4;
-        row_t *tmp = realloc(dash->rows, (size_t)new_cap * sizeof(*dash->rows));
-        if (!tmp)
+        row_t *tmp_rows = realloc(dash->rows,        (size_t)new_cap * sizeof(*dash->rows));
+        int   *tmp_por  = realloc(dash->page_of_row, (size_t)new_cap * sizeof(int));
+        int   *tmp_yor  = realloc(dash->y_of_row,    (size_t)new_cap * sizeof(int));
+        if (!tmp_rows || !tmp_por || !tmp_yor) {
+            if (tmp_rows) dash->rows        = tmp_rows;
+            if (tmp_por)  dash->page_of_row = tmp_por;
+            if (tmp_yor)  dash->y_of_row    = tmp_yor;
             return -1;
-        dash->rows    = tmp;
-        dash->row_cap = new_cap;
+        }
+        dash->rows        = tmp_rows;
+        dash->page_of_row = tmp_por;
+        dash->y_of_row    = tmp_yor;
+        dash->row_cap     = new_cap;
     }
 
     row = &dash->rows[dash->row_count];
@@ -189,23 +210,18 @@ static int render_row(xf_dashboard_t *dash, const row_t *row, int pad, int y)
         xf_component_t *comp = row->components[c];
         int w = row->widths[c];
         int h = row->height;
-        uint8_t *sub = malloc((size_t)(w * h * 3));
+        uint8_t *sub = dash->comp_scratch;
         int rc;
 
-        if (!sub)
-            return XF_RES_ERR_NOMEM;
+        memset(sub, 0, (size_t)(w * h * 3));
 
         rc = comp_fetch(comp);
-        if (rc < 0) {
-            free(sub);
+        if (rc < 0)
             return rc;
-        }
 
         rc = comp_render(comp, sub, w, h);
-        if (rc < 0) {
-            free(sub);
+        if (rc < 0)
             return rc;
-        }
 
         DEBUG_LOG("row comp=%p render=%p ctx=%p w=%d h=%d rc=%d",
                   (void *)comp, (void *)comp->render, comp->ctx, w, h, rc);
@@ -216,7 +232,6 @@ static int render_row(xf_dashboard_t *dash, const row_t *row, int pad, int y)
             memcpy(dash->framebuffer + fb_off, sub + sub_off, (size_t)(w * 3));
         }
 
-        free(sub);
         x += w;
     }
 
@@ -298,13 +313,8 @@ int dashboard_dirty_rect(xf_dashboard_t *dash, int page,
     if (dash->row_count == 0)
         return 0;
 
-    page_of_row = malloc((size_t)dash->row_count * sizeof(int));
-    y_of_row    = malloc((size_t)dash->row_count * sizeof(int));
-    if (!page_of_row || !y_of_row) {
-        free(page_of_row);
-        free(y_of_row);
-        return -1;
-    }
+    page_of_row = dash->page_of_row;
+    y_of_row    = dash->y_of_row;
     page_layout(dash, page_of_row, y_of_row);
 
     found = 0;
@@ -340,9 +350,6 @@ int dashboard_dirty_rect(xf_dashboard_t *dash, int page,
         }
     }
 
-    free(page_of_row);
-    free(y_of_row);
-
     if (!found)
         return 0;
 
@@ -364,13 +371,8 @@ int dashboard_visit_dirty_rects(xf_dashboard_t *dash, int page,
     if (dash->row_count == 0)
         return 0;
 
-    page_of_row = malloc((size_t)dash->row_count * sizeof(int));
-    y_of_row    = malloc((size_t)dash->row_count * sizeof(int));
-    if (!page_of_row || !y_of_row) {
-        free(page_of_row);
-        free(y_of_row);
-        return -1;
-    }
+    page_of_row = dash->page_of_row;
+    y_of_row    = dash->y_of_row;
     page_layout(dash, page_of_row, y_of_row);
 
     count = 0;
@@ -396,8 +398,6 @@ int dashboard_visit_dirty_rects(xf_dashboard_t *dash, int page,
         }
     }
 
-    free(page_of_row);
-    free(y_of_row);
     return count;
 }
 
@@ -427,10 +427,7 @@ int dashboard_comp_placement(const xf_dashboard_t *dash,
     if (dash->row_count == 0)
         return -1;
 
-    page_of_row = malloc((size_t)dash->row_count * sizeof(int));
-    if (!page_of_row)
-        return -1;
-
+    page_of_row = dash->page_of_row;
     page_layout(dash, page_of_row, NULL);
 
     row_idx = -1;
@@ -443,10 +440,8 @@ int dashboard_comp_placement(const xf_dashboard_t *dash,
         }
     }
 
-    if (row_idx < 0) {
-        free(page_of_row);
+    if (row_idx < 0)
         return -1;
-    }
 
     comp_page   = page_of_row[row_idx];
     idx_on_page = 0;
@@ -455,7 +450,6 @@ int dashboard_comp_placement(const xf_dashboard_t *dash,
             idx_on_page++;
     }
 
-    free(page_of_row);
     *out_page  = comp_page;
     *out_index = idx_on_page;
     return 0;
