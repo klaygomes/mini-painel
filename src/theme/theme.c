@@ -1,6 +1,6 @@
 #include "theme.h"
 
-static const xf_theme_t *g_theme = &xf_theme_default;
+static const xf_theme_t *g_theme = &xf_theme;
 
 void xf_set_theme(const xf_theme_t *theme)
 {

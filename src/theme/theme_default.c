@@ -1,6 +1,6 @@
 #include "theme.h"
 
-const xf_theme_t xf_theme_default = {
+const xf_theme_t xf_theme = {
     .background     = XF_RGB(0xFFFFFF),
     .text_primary   = XF_RGB(0x1a1a1a),
     .text_secondary = XF_RGB(0x444441),

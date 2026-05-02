@@ -43,7 +43,7 @@
    so each PPM file contains exactly one component — easier to inspect. */
 #define DISPLAY_W 320
 
-void setUp(void)   { xf_set_theme(&xf_theme_default); }
+void setUp(void)   { xf_set_theme(&xf_theme); }
 void tearDown(void) {}
 
 static const uint8_t *render_or_null(xf_dashboard_t *dash)
@@ -457,11 +457,11 @@ static void test_build_status(void)
    visually distinct theme should still produce a non-zero buffer. */
 static void test_custom_theme(void)
 {
-    xf_theme_t dark = xf_theme_default;
-    dark.text_primary   = (xf_rgba_t)XF_RGB(0xEEEEEE);
-    dark.text_secondary = (xf_rgba_t)XF_RGB(0xCCCCCC);
-    dark.text_muted     = (xf_rgba_t)XF_RGB(0x999999);
-    dark.surface_card   = (xf_rgba_t)XF_RGB(0x2A2A2A);
+    xf_theme_t dark = xf_theme;
+    dark.text_primary   = xf_theme.on_color;
+    dark.text_secondary = xf_theme.accent_fg;
+    dark.text_muted     = xf_theme.info_fg;
+    dark.surface_card   = xf_theme.accent;
     xf_set_theme(&dark);
 
     comp_header_data_t hdr = {0};
@@ -472,7 +472,7 @@ static void test_custom_theme(void)
     xf_component_t comp = comp_header_create(&hdr);
     TEST_ASSERT_TRUE(render_component(&comp, COMP_HEADER_HEIGHT, "bin/test_header_dark.ppm"));
 
-    xf_set_theme(&xf_theme_default);
+    xf_set_theme(&xf_theme);
 }
 
 int main(void)

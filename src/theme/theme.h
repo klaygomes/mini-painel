@@ -118,7 +118,7 @@ typedef struct {
  * XF_THEME CMake cache variable (default: "default").  Pass -DXF_THEME=dark to
  * cmake to compile theme_dark.c instead.
  */
-extern const xf_theme_t xf_theme_default;
+extern const xf_theme_t xf_theme;
 
 /**
  * Set the active theme for all subsequent draw operations.

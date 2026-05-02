@@ -57,7 +57,7 @@ static libraries do not embed their dependencies.
 - `xf_rgba_t` — normalized RGBA (double channels in [0.0, 1.0]) *(from theme.h)*
 - `XF_RGB(0xRRGGBB)` / `XF_RGBA(0xRRGGBB, alpha)` macros *(from theme.h)*
 - `xf_theme_t` — full colour and typography palette *(from theme.h)*
-- `xf_theme_default` — default light theme *(from theme.h)*
+- `xf_theme` — default light theme *(from theme.h)*
 - `xf_set_theme` / `xf_get_theme` — module-level theme pointer *(from theme.h)*
 - `xf_draw_ctx_t` — opaque draw context (components never inspect it)
 - Shape and text draw functions: `xf_draw_fill_round_rect`, `xf_draw_circle`, `xf_draw_text`, etc.
@@ -248,7 +248,7 @@ The render function applies them without any switch-on-severity logic.
 ## Theme
 
 `xf_set_theme` must be called before the first render. Omitting it falls back
-to `xf_theme_default` (the call to `xf_get_theme` inside `draw.c` returns the
+to `xf_theme` (the call to `xf_get_theme` inside `draw.c` returns the
 default if the pointer was never set).
 
 ### Token naming tiers
@@ -283,17 +283,17 @@ Enforcement: `doc/theme-tokens.instructions.md` (for `src/theme/**`) and `doc/co
 Call it once at startup:
 
 ```c
-xf_set_theme(&xf_theme_default);
+xf_set_theme(&xf_theme);
 ```
 
 To test a custom theme, assign a modified copy and set it:
 
 ```c
-xf_theme_t dark = xf_theme_default;
+xf_theme_t dark = xf_theme;
 dark.text_primary = (xf_rgba_t)XF_RGB(0xEEEEEE);
 xf_set_theme(&dark);
 /* ... render ... */
-xf_set_theme(&xf_theme_default);  /* restore */
+xf_set_theme(&xf_theme);  /* restore */
 ```
 
 ## Testing
@@ -303,7 +303,7 @@ Tests live in `tests/test_components.c`.
 ### Pattern
 
 ```c
-void setUp(void) { xf_set_theme(&xf_theme_default); }
+void setUp(void) { xf_set_theme(&xf_theme); }
 
 static void test_metrics(void)
 {
@@ -360,6 +360,20 @@ To open all at once:
 
 ```sh
 open bin/*.ppm
+```
+
+To convert one component capture to PNG on macOS:
+
+```sh
+sips -s format png bin/test_alerts.ppm --out /tmp/test_alerts.png
+```
+
+To batch-convert all component captures on macOS:
+
+```sh
+for f in bin/test_*.ppm; do
+    sips -s format png "$f" --out "/tmp/$(basename "${f%.ppm}").png"
+done
 ```
 
 ### PPM output
