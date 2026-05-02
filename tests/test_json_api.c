@@ -32,9 +32,9 @@ void tearDown(void)
 void test_add_render_minimal(void)
 {
     const char *script =
-        "[{\"op\":\"add\",\"id\":\"component.header.h1\","
+        "[{\"op\":\"row.add\",\"id\":\"component.header.h1\","
         "  \"data\":{\"date\":\"Mon\",\"status_text\":\"ok\",\"status_dot\":\"#1D9E75\"}},"
-        " {\"op\":\"render\",\"page\":0}]";
+        " {\"op\":\"page.render\",\"page\":0}]";
 
     int rc = xf_json_exec(ctx, script, strlen(script),
                           canvas, sizeof canvas, reply, sizeof reply);
@@ -54,9 +54,9 @@ void test_add_render_minimal(void)
 void test_update_changes_pixels(void)
 {
     const char *add =
-        "[{\"op\":\"add\",\"id\":\"component.header.h2\","
+        "[{\"op\":\"row.add\",\"id\":\"component.header.h2\","
         "  \"data\":{\"date\":\"Day1\",\"status_text\":\"ok\",\"status_dot\":\"#1D9E75\"}},"
-        " {\"op\":\"render\",\"page\":0}]";
+        " {\"op\":\"page.render\",\"page\":0}]";
 
     xf_json_exec(ctx, add, strlen(add),
                  canvas, sizeof canvas, reply, sizeof reply);
@@ -67,9 +67,9 @@ void test_update_changes_pixels(void)
 
     /* Update with very different content */
     const char *upd =
-        "[{\"op\":\"update\",\"id\":\"component.header.h2\","
+        "[{\"op\":\"row.update\",\"id\":\"component.header.h2\","
         "  \"data\":{\"date\":\"ZZZZZZ\",\"status_text\":\"err\",\"status_dot\":\"#FF0000\"}},"
-        " {\"op\":\"render\",\"page\":0}]";
+        " {\"op\":\"page.render\",\"page\":0}]";
     memset(canvas, 0, sizeof canvas);
     int rc = xf_json_exec(ctx, upd, strlen(upd),
                           canvas, sizeof canvas, reply, sizeof reply);
@@ -93,16 +93,16 @@ void test_update_changes_pixels(void)
 void test_remove_drops_row(void)
 {
     const char *setup =
-        "[{\"op\":\"add\",\"id\":\"component.header.r1\",\"data\":{}},"
-        " {\"op\":\"add\",\"id\":\"component.spacer.r2\",\"data\":{}},"
-        " {\"op\":\"add\",\"id\":\"component.deploy.r3\","
+        "[{\"op\":\"row.add\",\"id\":\"component.header.r1\",\"data\":{}},"
+        " {\"op\":\"row.add\",\"id\":\"component.spacer.r2\",\"data\":{}},"
+        " {\"op\":\"row.add\",\"id\":\"component.deploy.r3\","
         "  \"data\":{\"branch\":\"b\",\"time_ago\":\"1m\",\"label\":\"ok\"}}]";
     xf_json_exec(ctx, setup, strlen(setup),
                  canvas, sizeof canvas, reply, sizeof reply);
 
     int before = xf_json_page_count(ctx);
 
-    const char *rem = "[{\"op\":\"remove\",\"id\":\"component.spacer.r2\"}]";
+    const char *rem = "[{\"op\":\"row.remove\",\"id\":\"component.spacer.r2\"}]";
     int rc = xf_json_exec(ctx, rem, strlen(rem),
                           canvas, sizeof canvas, reply, sizeof reply);
     TEST_ASSERT_EQUAL_INT(0, rc);
@@ -120,8 +120,8 @@ void test_remove_drops_row(void)
 void test_duplicate_id_errors(void)
 {
     const char *s =
-        "[{\"op\":\"add\",\"id\":\"component.header.dup\",\"data\":{}},"
-        " {\"op\":\"add\",\"id\":\"component.header.dup\",\"data\":{}}]";
+        "[{\"op\":\"row.add\",\"id\":\"component.header.dup\",\"data\":{}},"
+        " {\"op\":\"row.add\",\"id\":\"component.header.dup\",\"data\":{}}]";
     int rc = xf_json_exec(ctx, s, strlen(s),
                           canvas, sizeof canvas, reply, sizeof reply);
     TEST_ASSERT_EQUAL_INT(-1, rc);
@@ -129,7 +129,7 @@ void test_duplicate_id_errors(void)
 
     /* First add still in registry — probe via update */
     const char *upd =
-        "[{\"op\":\"update\",\"id\":\"component.header.dup\",\"data\":{}}]";
+        "[{\"op\":\"row.update\",\"id\":\"component.header.dup\",\"data\":{}}]";
     memset(reply, 0, sizeof reply);
     rc = xf_json_exec(ctx, upd, strlen(upd),
                       canvas, sizeof canvas, reply, sizeof reply);
@@ -142,14 +142,14 @@ void test_duplicate_id_errors(void)
 /* ------------------------------------------------------------------ */
 void test_invalid_id_errors(void)
 {
-    const char *s1 = "[{\"op\":\"add\",\"id\":\"component.bogus.x\",\"data\":{}}]";
+    const char *s1 = "[{\"op\":\"row.add\",\"id\":\"component.bogus.x\",\"data\":{}}]";
     int rc = xf_json_exec(ctx, s1, strlen(s1),
                           canvas, sizeof canvas, reply, sizeof reply);
     TEST_ASSERT_EQUAL_INT(-1, rc);
     TEST_ASSERT_NOT_NULL(strstr(reply, "error"));
 
     memset(reply, 0, sizeof reply);
-    const char *s2 = "[{\"op\":\"add\",\"id\":\"my-thing\",\"data\":{}}]";
+    const char *s2 = "[{\"op\":\"row.add\",\"id\":\"my-thing\",\"data\":{}}]";
     rc = xf_json_exec(ctx, s2, strlen(s2),
                       canvas, sizeof canvas, reply, sizeof reply);
     TEST_ASSERT_EQUAL_INT(-1, rc);
@@ -173,7 +173,7 @@ void test_unknown_op(void)
 /* ------------------------------------------------------------------ */
 void test_render_without_canvas(void)
 {
-    const char *s = "[{\"op\":\"render\",\"page\":0}]";
+    const char *s = "[{\"op\":\"page.render\",\"page\":0}]";
     int rc = xf_json_exec(ctx, s, strlen(s),
                           NULL, sizeof canvas, reply, sizeof reply);
     TEST_ASSERT_EQUAL_INT(-1, rc);
@@ -185,7 +185,7 @@ void test_render_without_canvas(void)
 /* ------------------------------------------------------------------ */
 void test_render_canvas_too_small(void)
 {
-    const char *s = "[{\"op\":\"render\",\"page\":0}]";
+    const char *s = "[{\"op\":\"page.render\",\"page\":0}]";
     int rc = xf_json_exec(ctx, s, strlen(s),
                           canvas, 10, reply, sizeof reply);
     TEST_ASSERT_EQUAL_INT(-1, rc);
@@ -203,7 +203,7 @@ void test_string_truncation(void)
     memset(longdate, 'A', 200);
     longdate[200] = '\0';
     snprintf(script, sizeof script,
-             "[{\"op\":\"add\",\"id\":\"component.header.trunc\","
+             "[{\"op\":\"row.add\",\"id\":\"component.header.trunc\","
              "  \"data\":{\"date\":\"%s\"}}]", longdate);
     int rc = xf_json_exec(ctx, script, strlen(script),
                           canvas, sizeof canvas, reply, sizeof reply);
@@ -220,7 +220,7 @@ void test_color_parsing(void)
     /* Valid 7-char */
     {
         const char *s =
-            "[{\"op\":\"add\",\"id\":\"component.header.c1\","
+            "[{\"op\":\"row.add\",\"id\":\"component.header.c1\","
             "  \"data\":{\"status_dot\":\"#1D9E75\"}}]";
         int rc = xf_json_exec(ctx, s, strlen(s),
                               canvas, sizeof canvas, reply, sizeof reply);
@@ -230,7 +230,7 @@ void test_color_parsing(void)
     /* Valid 9-char with alpha */
     {
         const char *s =
-            "[{\"op\":\"add\",\"id\":\"component.header.c2\","
+            "[{\"op\":\"row.add\",\"id\":\"component.header.c2\","
             "  \"data\":{\"status_dot\":\"#1D9E7580\"}}]";
         int rc = xf_json_exec(ctx, s, strlen(s),
                               canvas, sizeof canvas, reply, sizeof reply);
@@ -240,7 +240,7 @@ void test_color_parsing(void)
     /* Valid 3-char shorthand */
     {
         const char *s =
-            "[{\"op\":\"add\",\"id\":\"component.header.c3\","
+            "[{\"op\":\"row.add\",\"id\":\"component.header.c3\","
             "  \"data\":{\"status_dot\":\"#abc\"}}]";
         int rc = xf_json_exec(ctx, s, strlen(s),
                               canvas, sizeof canvas, reply, sizeof reply);
@@ -250,7 +250,7 @@ void test_color_parsing(void)
     /* Invalid — decode should fail, command should error */
     {
         const char *s =
-            "[{\"op\":\"add\",\"id\":\"component.header.c4\","
+            "[{\"op\":\"row.add\",\"id\":\"component.header.c4\","
             "  \"data\":{\"status_dot\":\"not-a-color\"}}]";
         int rc = xf_json_exec(ctx, s, strlen(s),
                               canvas, sizeof canvas, reply, sizeof reply);
@@ -268,9 +268,9 @@ void test_response_truncation(void)
     memset(small_reply, 0, sizeof small_reply);
 
     const char *s =
-        "[{\"op\":\"add\",\"id\":\"component.header.trunc2\","
+        "[{\"op\":\"row.add\",\"id\":\"component.header.trunc2\","
         "  \"data\":{\"date\":\"X\"}},"
-        " {\"op\":\"render\",\"page\":0}]";
+        " {\"op\":\"page.render\",\"page\":0}]";
 
     xf_json_exec(ctx, s, strlen(s),
                  canvas, sizeof canvas, small_reply, sizeof small_reply);
@@ -288,13 +288,13 @@ void test_full_lifecycle(void)
 {
     /* Add 5 mixed kinds */
     const char *add5 =
-        "[{\"op\":\"add\",\"id\":\"component.header.lc1\","
+        "[{\"op\":\"row.add\",\"id\":\"component.header.lc1\","
         "  \"data\":{\"date\":\"Thu\",\"status_text\":\"ok\",\"status_dot\":\"#1D9E75\"}},"
-        " {\"op\":\"add\",\"id\":\"component.spacer.lc2\",\"data\":{}},"
-        " {\"op\":\"add\",\"id\":\"component.deploy.lc3\","
+        " {\"op\":\"row.add\",\"id\":\"component.spacer.lc2\",\"data\":{}},"
+        " {\"op\":\"row.add\",\"id\":\"component.deploy.lc3\","
         "  \"data\":{\"branch\":\"main\",\"time_ago\":\"1m\",\"label\":\"green\"}},"
-        " {\"op\":\"add\",\"id\":\"component.divider.lc4\",\"data\":{}},"
-        " {\"op\":\"add\",\"id\":\"component.sprint.lc5\","
+        " {\"op\":\"row.add\",\"id\":\"component.divider.lc4\",\"data\":{}},"
+        " {\"op\":\"row.add\",\"id\":\"component.sprint.lc5\","
         "  \"data\":{\"title\":\"Sprint 42\",\"progress_label\":\"80%\","
         "           \"time_left\":\"2d\",\"percent\":0.8}}]";
     int rc = xf_json_exec(ctx, add5, strlen(add5),
@@ -303,7 +303,7 @@ void test_full_lifecycle(void)
 
     /* Render page 0 */
     memset(reply, 0, sizeof reply);
-    const char *r0 = "[{\"op\":\"render\",\"page\":0}]";
+    const char *r0 = "[{\"op\":\"page.render\",\"page\":0}]";
     rc = xf_json_exec(ctx, r0, strlen(r0),
                       canvas, sizeof canvas, reply, sizeof reply);
     TEST_ASSERT_EQUAL_INT(0, rc);
@@ -312,9 +312,9 @@ void test_full_lifecycle(void)
     /* Update two */
     memset(reply, 0, sizeof reply);
     const char *upd =
-        "[{\"op\":\"update\",\"id\":\"component.header.lc1\","
+        "[{\"op\":\"row.update\",\"id\":\"component.header.lc1\","
         "  \"data\":{\"date\":\"Fri\"}},"
-        " {\"op\":\"update\",\"id\":\"component.sprint.lc5\","
+        " {\"op\":\"row.update\",\"id\":\"component.sprint.lc5\","
         "  \"data\":{\"percent\":0.9}}]";
     rc = xf_json_exec(ctx, upd, strlen(upd),
                       canvas, sizeof canvas, reply, sizeof reply);
@@ -323,7 +323,7 @@ void test_full_lifecycle(void)
     /* Move one up */
     memset(reply, 0, sizeof reply);
     const char *mv =
-        "[{\"op\":\"move_up\",\"id\":\"component.deploy.lc3\"}]";
+        "[{\"op\":\"row.move_up\",\"id\":\"component.deploy.lc3\"}]";
     rc = xf_json_exec(ctx, mv, strlen(mv),
                       canvas, sizeof canvas, reply, sizeof reply);
     TEST_ASSERT_EQUAL_INT(0, rc);
@@ -331,7 +331,7 @@ void test_full_lifecycle(void)
     /* Remove one */
     memset(reply, 0, sizeof reply);
     const char *rem =
-        "[{\"op\":\"remove\",\"id\":\"component.divider.lc4\"}]";
+        "[{\"op\":\"row.remove\",\"id\":\"component.divider.lc4\"}]";
     rc = xf_json_exec(ctx, rem, strlen(rem),
                       canvas, sizeof canvas, reply, sizeof reply);
     TEST_ASSERT_EQUAL_INT(0, rc);

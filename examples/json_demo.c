@@ -14,9 +14,9 @@ static char    reply[4096];
 
 static const char SCRIPT[] =
 "["
-" {\"op\":\"add\",\"id\":\"component.header.main\","
+" {\"op\":\"row.add\",\"id\":\"component.header.main\","
 "  \"data\":{\"date\":\"Thu \\u00b7 Apr 23\",\"status_text\":\"all clear\",\"status_dot\":\"#1D9E75\"}},"
-" {\"op\":\"render\"}"
+" {\"op\":\"page.render\"}"
 "]";
 
 static void write_ppm(const char *path, const uint8_t *fb, int w, int h)

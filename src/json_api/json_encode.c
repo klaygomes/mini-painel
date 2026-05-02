@@ -72,7 +72,7 @@ void xf_encoder_render_result(xf_encoder_t *e, int idx, int page, int page_count
     (void)idx;
     enc_sep(e);
     n = mjson_snprintf(tmp, sizeof(tmp),
-                       "{\"op\":\"render\",\"page\":%d,\"page_count\":%d,"
+                       "{\"op\":\"page.render\",\"page\":%d,\"page_count\":%d,"
                        "\"dirty\":[%d,%d,%d,%d]}",
                        page, page_count, x, y, w, h);
     if (n > 0)

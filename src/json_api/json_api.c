@@ -67,19 +67,19 @@ static int do_add(xf_json_ctx_t *c, xf_encoder_t *enc,
     int                   sublen;
 
     if (mjson_get_string(cmd, cmdlen, "$.id", id, (int)sizeof(id)) <= 0) {
-        xf_encoder_error(enc, idx, "add", NULL, "missing id");
+        xf_encoder_error(enc, idx, "row.add", NULL, "missing id");
         return -1;
     }
 
     def = xf_registry_kind_from_id(id);
     if (!def) {
-        xf_encoder_error(enc, idx, "add", id, "invalid id");
+        xf_encoder_error(enc, idx, "row.add", id, "invalid id");
         return -1;
     }
 
     entry = xf_registry_add(&c->reg, id);
     if (!entry) {
-        xf_encoder_error(enc, idx, "add", id, "duplicate id or registry full");
+        xf_encoder_error(enc, idx, "row.add", id, "duplicate id or registry full");
         return -1;
     }
 
@@ -87,14 +87,14 @@ static int do_add(xf_json_ctx_t *c, xf_encoder_t *enc,
         data = calloc(1, def->data_size);
         if (!data) {
             xf_registry_remove(&c->reg, id);
-            xf_encoder_error(enc, idx, "add", id, "out of memory");
+            xf_encoder_error(enc, idx, "row.add", id, "out of memory");
             return -1;
         }
         if (mjson_find(cmd, cmdlen, "$.data", &sub, &sublen) == MJSON_TOK_OBJECT) {
             if (def->decode(sub, sublen, data, 0) < 0) {
                 free(data);
                 xf_registry_remove(&c->reg, id);
-                xf_encoder_error(enc, idx, "add", id, "decode error");
+                xf_encoder_error(enc, idx, "row.add", id, "decode error");
                 return -1;
             }
         }
@@ -104,7 +104,7 @@ static int do_add(xf_json_ctx_t *c, xf_encoder_t *enc,
     if (!comp) {
         free(data);
         xf_registry_remove(&c->reg, id);
-        xf_encoder_error(enc, idx, "add", id, "out of memory");
+        xf_encoder_error(enc, idx, "row.add", id, "out of memory");
         return -1;
     }
     *comp = def->create(data);
@@ -119,7 +119,7 @@ static int do_add(xf_json_ctx_t *c, xf_encoder_t *enc,
         free(comp);
         free(data);
         xf_registry_remove(&c->reg, id);
-        xf_encoder_error(enc, idx, "add", id, "dashboard add failed");
+        xf_encoder_error(enc, idx, "row.add", id, "dashboard add failed");
         return -1;
     }
 
@@ -127,7 +127,7 @@ static int do_add(xf_json_ctx_t *c, xf_encoder_t *enc,
     entry->comp = comp;
     entry->data = data;
 
-    xf_encoder_result(enc, idx, "add", id);
+    xf_encoder_result(enc, idx, "row.add", id);
     return 0;
 }
 
@@ -140,27 +140,27 @@ static int do_update(xf_json_ctx_t *c, xf_encoder_t *enc,
     int             sublen;
 
     if (mjson_get_string(cmd, cmdlen, "$.id", id, (int)sizeof(id)) <= 0) {
-        xf_encoder_error(enc, idx, "update", NULL, "missing id");
+        xf_encoder_error(enc, idx, "row.update", NULL, "missing id");
         return -1;
     }
 
     entry = xf_registry_find(&c->reg, id);
     if (!entry) {
-        xf_encoder_error(enc, idx, "update", id, "id not found");
+        xf_encoder_error(enc, idx, "row.update", id, "id not found");
         return -1;
     }
 
     if (!entry->def->stateless && entry->data) {
         if (mjson_find(cmd, cmdlen, "$.data", &sub, &sublen) == MJSON_TOK_OBJECT) {
             if (entry->def->decode(sub, sublen, entry->data, 1) < 0) {
-                xf_encoder_error(enc, idx, "update", id, "decode error");
+                xf_encoder_error(enc, idx, "row.update", id, "decode error");
                 return -1;
             }
         }
     }
     entry->comp->dirty = 1;
 
-    xf_encoder_result(enc, idx, "update", id);
+    xf_encoder_result(enc, idx, "row.update", id);
     return 0;
 }
 
@@ -174,19 +174,19 @@ static int do_remove(xf_json_ctx_t *c, xf_encoder_t *enc,
     void           *data;
 
     if (mjson_get_string(cmd, cmdlen, "$.id", id, (int)sizeof(id)) <= 0) {
-        xf_encoder_error(enc, idx, "remove", NULL, "missing id");
+        xf_encoder_error(enc, idx, "row.remove", NULL, "missing id");
         return -1;
     }
 
     entry = xf_registry_find(&c->reg, id);
     if (!entry) {
-        xf_encoder_error(enc, idx, "remove", id, "id not found");
+        xf_encoder_error(enc, idx, "row.remove", id, "id not found");
         return -1;
     }
 
     row_idx = dashboard_find_row(c->dash, entry->comp);
     if (row_idx < 0) {
-        xf_encoder_error(enc, idx, "remove", id, "row not found");
+        xf_encoder_error(enc, idx, "row.remove", id, "row not found");
         return -1;
     }
 
@@ -199,7 +199,7 @@ static int do_remove(xf_json_ctx_t *c, xf_encoder_t *enc,
     free(comp);
     free(data);
 
-    xf_encoder_result(enc, idx, "remove", id);
+    xf_encoder_result(enc, idx, "row.remove", id);
     return 0;
 }
 
@@ -212,30 +212,30 @@ static int do_move(xf_json_ctx_t *c, xf_encoder_t *enc,
     int             rc;
 
     if (mjson_get_string(cmd, cmdlen, "$.id", id, (int)sizeof(id)) <= 0) {
-        xf_encoder_error(enc, idx, dir > 0 ? "move_up" : "move_down", NULL, "missing id");
+        xf_encoder_error(enc, idx, dir > 0 ? "row.move_up" : "row.move_down", NULL, "missing id");
         return -1;
     }
 
     entry = xf_registry_find(&c->reg, id);
     if (!entry) {
-        xf_encoder_error(enc, idx, dir > 0 ? "move_up" : "move_down", id, "id not found");
+        xf_encoder_error(enc, idx, dir > 0 ? "row.move_up" : "row.move_down", id, "id not found");
         return -1;
     }
 
     row_idx = dashboard_find_row(c->dash, entry->comp);
     if (row_idx < 0) {
-        xf_encoder_error(enc, idx, dir > 0 ? "move_up" : "move_down", id, "row not found");
+        xf_encoder_error(enc, idx, dir > 0 ? "row.move_up" : "row.move_down", id, "row not found");
         return -1;
     }
 
     rc = (dir > 0) ? dashboard_move_row_up(c->dash, row_idx)
                    : dashboard_move_row_down(c->dash, row_idx);
     if (rc < 0) {
-        xf_encoder_error(enc, idx, dir > 0 ? "move_up" : "move_down", id, "cannot move");
+        xf_encoder_error(enc, idx, dir > 0 ? "row.move_up" : "row.move_down", id, "cannot move");
         return -1;
     }
 
-    xf_encoder_result(enc, idx, dir > 0 ? "move_up" : "move_down", id);
+    xf_encoder_result(enc, idx, dir > 0 ? "row.move_up" : "row.move_down", id);
     return 0;
 }
 
@@ -252,7 +252,7 @@ static int do_render(xf_json_ctx_t *c, xf_encoder_t *enc,
     int            rc;
 
     if (!canvas || canvas_cap < needed) {
-        xf_encoder_error(enc, idx, "render", NULL, "canvas too small or NULL");
+        xf_encoder_error(enc, idx, "page.render", NULL, "canvas too small or NULL");
         return -1;
     }
 
@@ -264,7 +264,7 @@ static int do_render(xf_json_ctx_t *c, xf_encoder_t *enc,
 
     rc = dashboard_render_page(c->dash, page, &frame);
     if (rc < 0) {
-        xf_encoder_error(enc, idx, "render", NULL, "render failed");
+        xf_encoder_error(enc, idx, "page.render", NULL, "render failed");
         return -1;
     }
 
@@ -295,7 +295,7 @@ int xf_json_exec(xf_json_ctx_t *ctx,
 
     while ((off = mjson_next(json, (int)json_len, off,
                              &koff, &klen, &voff, &vlen, &vtype)) != 0) {
-        char op[32];
+        char op[64];
         int  rc;
 
         if (vtype != MJSON_TOK_OBJECT) {
@@ -310,12 +310,12 @@ int xf_json_exec(xf_json_ctx_t *ctx,
             break;
         }
 
-        if      (!strcmp(op, "add"))       rc = do_add   (ctx, &enc, json+voff, vlen, idx);
-        else if (!strcmp(op, "update"))    rc = do_update(ctx, &enc, json+voff, vlen, idx);
-        else if (!strcmp(op, "remove"))    rc = do_remove(ctx, &enc, json+voff, vlen, idx);
-        else if (!strcmp(op, "move_up"))   rc = do_move  (ctx, &enc, json+voff, vlen, idx, +1);
-        else if (!strcmp(op, "move_down")) rc = do_move  (ctx, &enc, json+voff, vlen, idx, -1);
-        else if (!strcmp(op, "render"))    rc = do_render(ctx, &enc, json+voff, vlen, idx, canvas, canvas_cap);
+        if      (!strcmp(op, "row.add"))       rc = do_add   (ctx, &enc, json+voff, vlen, idx);
+        else if (!strcmp(op, "row.update"))    rc = do_update(ctx, &enc, json+voff, vlen, idx);
+        else if (!strcmp(op, "row.remove"))    rc = do_remove(ctx, &enc, json+voff, vlen, idx);
+        else if (!strcmp(op, "row.move_up"))   rc = do_move  (ctx, &enc, json+voff, vlen, idx, +1);
+        else if (!strcmp(op, "row.move_down")) rc = do_move  (ctx, &enc, json+voff, vlen, idx, -1);
+        else if (!strcmp(op, "page.render"))   rc = do_render(ctx, &enc, json+voff, vlen, idx, canvas, canvas_cap);
         else {
             xf_encoder_error(&enc, idx, op, NULL, "unknown op");
             rc = -1;

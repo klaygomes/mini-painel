@@ -10,6 +10,7 @@ This document governs every other `*agents*.md` file in the repo. Read it before
 - `doc/components-agents.md` — component module conventions.
 - `doc/dashboard-agents.md` — dashboard module conventions.
 - `doc/glossary.md` — naming conventions and terms.
+- `doc/daemon-agents.md` — WebSocket daemon conventions and daemon op catalog.
 - `doc/meta-agents.md` — this file.
 
 If you create another `*-agents.md`, list it here in the same edit.
@@ -87,6 +88,7 @@ Bump the relevant agent doc in the same commit. Common triggers and what to upda
 | New component | `doc/components-agents.md` "Adding a new component" stays valid; no per-component listing. |
 | New gfx primitive | Same — pattern is documented; no listing. |
 | New device revision | `AGENTS.md` "Adding a new device revision" + the protocol family bullet at the top. |
+| New daemon op | `doc/daemon-agents.md` daemon op table + dispatch internals section. |
 | New theme field | `src/theme/theme.h` only. Do not enumerate fields in agent docs. |
 | Renamed file | Run validation command 3 above and fix every match. |
 | New `*-agents.md` | Add it to the "Files this governs" list in this file. |

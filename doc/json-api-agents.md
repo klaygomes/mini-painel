@@ -28,47 +28,51 @@ int            xf_json_page_count(const xf_json_ctx_t *ctx);
 - `canvas` must be at least `XF_JSON_CANVAS_SIZE(width, height)` bytes for render ops; pass NULL/0 to skip rendering.
 - `reply` and `reply_len` must always be non-NULL and > 0.
 
+## Op naming convention
+
+Op strings use dot notation: `<namespace>.<verb>`. The `row` namespace operates on dashboard rows; the `page` namespace operates on pages.
+
 ## Command shapes
 
 All commands are sent as a **JSON array** of objects. Each object must have `"op"` and (where applicable) `"id"` and `"data"` fields.
 
-### `add`
+### `row.add`
 
 ```json
-{"op":"add","id":"component.<kind>.<name>","data":{...}}
+{"op":"row.add","id":"component.<kind>.<name>","data":{...}}
 ```
 
 Creates a new dashboard row from the given component kind. `id` must be unique in the registry. Appends to the last page.
 
-### `update`
+### `row.update`
 
 ```json
-{"op":"update","id":"component.<kind>.<name>","data":{...}}
+{"op":"row.update","id":"component.<kind>.<name>","data":{...}}
 ```
 
 Patches the existing component's data. Only fields present in `data` are changed. Marks the component dirty.
 
-### `remove`
+### `row.remove`
 
 ```json
-{"op":"remove","id":"component.<kind>.<name>"}
+{"op":"row.remove","id":"component.<kind>.<name>"}
 ```
 
 Removes the row, frees its memory, and unregisters the id.
 
-### `move_up` / `move_down`
+### `row.move_up` / `row.move_down`
 
 ```json
-{"op":"move_up","id":"component.<kind>.<name>"}
-{"op":"move_down","id":"component.<kind>.<name>"}
+{"op":"row.move_up","id":"component.<kind>.<name>"}
+{"op":"row.move_down","id":"component.<kind>.<name>"}
 ```
 
 Shifts the component one position within its page.
 
-### `render`
+### `page.render`
 
 ```json
-{"op":"render","page":0}
+{"op":"page.render","page":0}
 ```
 
 Renders page `page` into the supplied canvas buffer. Returns dirty-rect coordinates in the result. `canvas` must be at least `XF_JSON_CANVAS_SIZE(w,h)` bytes.
@@ -91,7 +95,7 @@ component.<kind>.<name>
 
 On any op error:
 ```json
-{"ok":false,"results":[...{"op":"add","id":"...","error":"duplicate_id"}...]}
+{"ok":false,"results":[...{"op":"row.add","id":"...","error":"duplicate_id"}...]}
 ```
 
 If the reply buffer is too small to fit any output:
@@ -118,7 +122,7 @@ If the reply buffer is too small to fit any output:
 A successful render op emits:
 
 ```json
-{"op":"render","page":0,"page_count":1,"dirty":[x,y,w,h]}
+{"op":"page.render","page":0,"page_count":1,"dirty":[x,y,w,h]}
 ```
 
 `dirty` is `[0,0,0,0]` when nothing changed since the last render.

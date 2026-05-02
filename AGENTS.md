@@ -108,7 +108,9 @@ High-level responsibilities by directory:
 | `src/types.h` | Public types: `xf_orientation_t`, `xf_color_t`, `xf_device_t` (opaque). |
 | `src/status.h` | `xf_result_t` enum: shared result type for the render pipeline. Read the header for the full error-code catalogue. |
 | `src/debug.h` | `DEBUG_LOG` macro: compile-time-gated stderr tracing. Activated by `-DXF_ENABLE_DEBUG_LOG=ON`; zero overhead when off. |
-| `src/json_api/` | JSON command API (`json_api.h`). Accepts JSON arrays of ops (add/update/remove/move/render); returns a JSON reply. Backed by mjson (vendored). See `doc/json-api-agents.md`. |
+| `src/json_api/` | JSON command API (`json_api.h`). Accepts JSON arrays of ops (`row.*`, `page.*`); returns a JSON reply. Backed by mjson (vendored at `vendor/mjson/`). See `doc/json-api-agents.md`. |
+| `src/b64.h/.c` | Base64 encode utility. Used by the daemon's `canvas.get` op. |
+| `examples/panel_daemon.c` | WebSocket daemon wrapping `xf_json_api` + panel API. Backed by mongoose (vendored at `vendor/mongoose/`). See `doc/daemon-agents.md`. |
 | `tests/` | Unity-based offline tests. `fake_serial.c` mocks the serial port; `test_components.c` writes PPMs to `bin/` for visual review. |
 
 ## Adding a new device revision
@@ -138,5 +140,6 @@ Before editing this file or any `doc/*-agents.md`, read **`doc/meta-agents.md`**
 - `doc/dashboard-agents.md` — dashboard module internals and testing.
 - `doc/glossary.md` — naming conventions and terms.
 - `doc/json-api-agents.md` — JSON command API: command shapes, id format, response envelope, error catalog, how to add a kind.
+- `doc/daemon-agents.md` — WebSocket daemon: ops, CLI flags, dispatch internals, PPM debug artifact.
 </content>
 </invoke>

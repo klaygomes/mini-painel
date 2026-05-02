@@ -1,0 +1,517 @@
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "mongoose.h"
+#include "mjson.h"
+#include "json_api.h"
+#include "panel.h"
+#include "b64.h"
+
+#define DAEMON_DEFAULT_PORT       "8765"
+#define DAEMON_DEFAULT_WIDTH      480
+#define DAEMON_DEFAULT_HEIGHT     320
+#define DAEMON_DEFAULT_PADDING    0
+#define DAEMON_DEFAULT_BRIGHTNESS 80
+#define DAEMON_DEFAULT_ORIENT     XF_ORIENT_LANDSCAPE
+#define DAEMON_OUT_JSON_CAP       8192
+#define DAEMON_URL_MAX            64
+#define DAEMON_PPM_PATH_MAX       256
+#define DAEMON_PORT_BUF           128
+#define DAEMON_ORIENT_BUF         32
+#define DAEMON_OP_BUF             64
+#define DAEMON_POLL_MS            100
+#define FILTERED_CAP              (64 * 1024)
+
+/*
+ * Extra bytes reserved in the merged response buffer for the outer envelope:
+ * {"ok":false,"results":[,]} plus some slack.
+ */
+#define MERGE_ENVELOPE_EXTRA      64
+
+/*
+ * An empty JSON array "[]" is exactly two bytes.  Used to distinguish a
+ * non-empty array from an empty one without string parsing.
+ */
+#define JSON_EMPTY_ARRAY_LEN      2
+
+/* PPM binary-RGB max channel value (P6 format). */
+#define PPM_MAXVAL                255
+
+/* mongoose stores the WebSocket opcode in the lower nibble of flags. */
+#define MG_WS_OPCODE_MASK         0x0F
+
+static const char MSG_ALLOC_ERR[] = "{\"ok\":false,\"error\":\"alloc_failed\"}";
+
+typedef struct {
+    xf_json_ctx_t *json_ctx;
+    xf_device_t   *dev;
+    uint8_t       *canvas;
+    size_t         canvas_cap;
+    int            width;
+    int            height;
+    char           ppm_path[DAEMON_PPM_PATH_MAX];
+    char           out_json[DAEMON_OUT_JSON_CAP];
+} daemon_state_t;
+
+static daemon_state_t        g_state;
+static volatile sig_atomic_t g_stop = 0;
+
+static void handle_signal(int sig)
+{
+    (void)sig;
+    g_stop = 1;
+}
+
+static int configure_device(xf_device_t *dev)
+{
+    if (panel_set_orientation(dev, DAEMON_DEFAULT_ORIENT) < 0)
+        return -1;
+    if (panel_set_brightness(dev, DAEMON_DEFAULT_BRIGHTNESS) < 0)
+        return -1;
+    return 0;
+}
+
+static void write_ppm(daemon_state_t *st)
+{
+    FILE *f = fopen(st->ppm_path, "wb");
+    if (!f) {
+        fprintf(stderr, "[daemon] cannot write ppm to %s\n", st->ppm_path);
+        return;
+    }
+    fprintf(f, "P6\n%d %d\n%d\n", st->width, st->height, PPM_MAXVAL);
+    fwrite(st->canvas, 1, st->canvas_cap, f);
+    fclose(f);
+}
+
+static int memfind(const char *hay, size_t hlen, const char *needle, size_t nlen)
+{
+    size_t i;
+    if (hlen < nlen)
+        return 0;
+    for (i = 0; i <= hlen - nlen; i++)
+        if (memcmp(hay + i, needle, nlen) == 0)
+            return 1;
+    return 0;
+}
+
+static int payload_has_render(const char *json, size_t len)
+{
+    const char needle[] = "\"page.render\"";
+    return memfind(json, len, needle, sizeof(needle) - 1);
+}
+
+/*
+ * Each do_* handler writes one JSON result object to out[0..cap) and returns
+ * 0 on success or -1 on error.  Callers handle comma separation.
+ */
+
+static void result_ok(char *out, size_t cap, const char *op)
+{
+    mjson_snprintf(out, (int)cap, "{\"op\":%Q,\"ok\":true}", op);
+}
+
+static void result_err(char *out, size_t cap, const char *op, const char *msg)
+{
+    mjson_snprintf(out, (int)cap, "{\"op\":%Q,\"ok\":false,\"error\":%Q}", op, msg);
+}
+
+static int do_device_open(const char *cmd, int cmdlen, char *out, size_t cap,
+                           daemon_state_t *st)
+{
+    char port[DAEMON_PORT_BUF];
+    int  has_port;
+
+    if (st->dev) {
+        panel_close(st->dev);
+        st->dev = NULL;
+    }
+
+    has_port = mjson_get_string(cmd, cmdlen, "$.port", port, (int)sizeof(port)) > 0;
+    st->dev  = has_port ? panel_open(port) : panel_open_auto();
+
+    if (!st->dev) {
+        result_err(out, cap, "device.open", "device not found");
+        return -1;
+    }
+    if (configure_device(st->dev) < 0) {
+        panel_close(st->dev);
+        st->dev = NULL;
+        result_err(out, cap, "device.open", "configure failed");
+        return -1;
+    }
+    result_ok(out, cap, "device.open");
+    return 0;
+}
+
+static int do_device_close(char *out, size_t cap, daemon_state_t *st)
+{
+    if (st->dev) {
+        panel_close(st->dev);
+        st->dev = NULL;
+    }
+    result_ok(out, cap, "device.close");
+    return 0;
+}
+
+static int do_device_brightness(const char *cmd, int cmdlen, char *out, size_t cap,
+                                 daemon_state_t *st)
+{
+    double level_d = 0;
+
+    if (!st->dev) {
+        result_err(out, cap, "device.brightness", "no device");
+        return -1;
+    }
+    mjson_get_number(cmd, cmdlen, "$.level", &level_d);
+    if (panel_set_brightness(st->dev, (int)level_d) < 0) {
+        result_err(out, cap, "device.brightness", "set failed");
+        return -1;
+    }
+    result_ok(out, cap, "device.brightness");
+    return 0;
+}
+
+static int do_device_orientation(const char *cmd, int cmdlen, char *out, size_t cap,
+                                  daemon_state_t *st)
+{
+    char             val[DAEMON_ORIENT_BUF];
+    xf_orientation_t orient;
+
+    if (!st->dev) {
+        result_err(out, cap, "device.orientation", "no device");
+        return -1;
+    }
+
+    if (mjson_get_string(cmd, cmdlen, "$.value", val, (int)sizeof(val)) <= 0) {
+        result_err(out, cap, "device.orientation", "missing value");
+        return -1;
+    }
+
+    if      (!strcmp(val, "landscape"))         orient = XF_ORIENT_LANDSCAPE;
+    else if (!strcmp(val, "portrait"))          orient = XF_ORIENT_PORTRAIT;
+    else if (!strcmp(val, "reverse_landscape")) orient = XF_ORIENT_REVERSE_LANDSCAPE;
+    else if (!strcmp(val, "reverse_portrait"))  orient = XF_ORIENT_REVERSE_PORTRAIT;
+    else {
+        result_err(out, cap, "device.orientation", "unknown value");
+        return -1;
+    }
+
+    if (panel_set_orientation(st->dev, orient) < 0) {
+        result_err(out, cap, "device.orientation", "set failed");
+        return -1;
+    }
+    result_ok(out, cap, "device.orientation");
+    return 0;
+}
+
+static int do_canvas_get(char *out, size_t cap, daemon_state_t *st)
+{
+    size_t b64_cap = XF_B64_ENCODE_LEN(st->canvas_cap);
+    char  *b64;
+    int    b64_len;
+    int    n;
+
+    b64 = malloc(b64_cap);
+    if (!b64) {
+        result_err(out, cap, "canvas.get", "alloc failed");
+        return -1;
+    }
+
+    b64_len = xf_b64_encode(st->canvas, st->canvas_cap, b64, b64_cap);
+    if (b64_len < 0) {
+        free(b64);
+        result_err(out, cap, "canvas.get", "encode failed");
+        return -1;
+    }
+
+    n = mjson_snprintf(out, (int)cap,
+                       "{\"op\":%Q,\"ok\":true,\"width\":%d,\"height\":%d,"
+                       "\"encoding\":%Q,\"data\":%Q}",
+                       "canvas.get", st->width, st->height, "base64", b64);
+    free(b64);
+    return (n > 0 && (size_t)n < cap) ? 0 : -1;
+}
+
+static int is_daemon_op(const char *op)
+{
+    return !strcmp(op, "device.open")
+        || !strcmp(op, "device.close")
+        || !strcmp(op, "device.brightness")
+        || !strcmp(op, "device.orientation")
+        || !strcmp(op, "canvas.get");
+}
+
+static int dispatch_daemon_op(const char *op, const char *cmd, int cmdlen,
+                               char *out, size_t out_cap, daemon_state_t *st)
+{
+    if (!strcmp(op, "device.open"))
+        return do_device_open(cmd, cmdlen, out, out_cap, st);
+    if (!strcmp(op, "device.close"))
+        return do_device_close(out, out_cap, st);
+    if (!strcmp(op, "device.brightness"))
+        return do_device_brightness(cmd, cmdlen, out, out_cap, st);
+    if (!strcmp(op, "device.orientation"))
+        return do_device_orientation(cmd, cmdlen, out, out_cap, st);
+    if (!strcmp(op, "canvas.get"))
+        return do_canvas_get(out, out_cap, st);
+    result_err(out, out_cap, op, "unknown op");
+    return -1;
+}
+
+static void handle_ws_message(struct mg_connection *c,
+                               const char *data, size_t len,
+                               daemon_state_t *st)
+{
+    /*
+     * one_result and dresults must accommodate a canvas.get response whose
+     * base64 payload is XF_B64_ENCODE_LEN(canvas_cap) bytes.
+     */
+    size_t  one_cap      = XF_B64_ENCODE_LEN(st->canvas_cap) + DAEMON_OUT_JSON_CAP;
+    size_t  dresults_cap = one_cap;
+    char   *filtered;
+    char   *dresults;
+    char   *one_result;
+    int     dcount       = 0;
+    int     dany_error   = 0;
+    int     has_render;
+    int     flen         = 0;
+    size_t  dresults_len = 0;
+    int     off          = 0;
+    int     koff, klen, voff, vlen, vtype;
+    int     api_rc;
+
+    filtered   = malloc(FILTERED_CAP);
+    dresults   = malloc(dresults_cap);
+    one_result = malloc(one_cap);
+    if (!filtered || !dresults || !one_result) {
+        mg_ws_send(c, MSG_ALLOC_ERR, sizeof(MSG_ALLOC_ERR) - 1, WEBSOCKET_OP_TEXT);
+        free(filtered);
+        free(dresults);
+        free(one_result);
+        return;
+    }
+
+    filtered[0] = '[';
+    flen = 1;
+    dresults[0] = '\0';
+
+    while ((off = mjson_next(data, (int)len, off,
+                             &koff, &klen, &voff, &vlen, &vtype)) != 0) {
+        char op[DAEMON_OP_BUF];
+
+        if (vtype != MJSON_TOK_OBJECT)
+            continue;
+
+        if (mjson_get_string(data + voff, vlen, "$.op", op, (int)sizeof(op)) <= 0)
+            continue;
+
+        if (is_daemon_op(op)) {
+            int ok = dispatch_daemon_op(op, data + voff, vlen,
+                                        one_result, one_cap, st);
+            if (ok < 0)
+                dany_error = 1;
+
+            if (dcount > 0 && dresults_len + 1 < dresults_cap)
+                dresults[dresults_len++] = ',';
+
+            {
+                size_t rlen = strlen(one_result);
+                if (dresults_len + rlen < dresults_cap) {
+                    memcpy(dresults + dresults_len, one_result, rlen);
+                    dresults_len += rlen;
+                    dresults[dresults_len] = '\0';
+                }
+            }
+            dcount++;
+        } else {
+            if (flen > 1 && flen + 1 < FILTERED_CAP)
+                filtered[flen++] = ',';
+            if (flen + vlen + 1 < FILTERED_CAP) {
+                memcpy(filtered + flen, data + voff, (size_t)vlen);
+                flen += vlen;
+            }
+        }
+    }
+
+    if (flen < FILTERED_CAP)
+        filtered[flen++] = ']';
+    if (flen < FILTERED_CAP)
+        filtered[flen] = '\0';
+
+    has_render = payload_has_render(filtered, (size_t)flen);
+
+    if (flen > JSON_EMPTY_ARRAY_LEN) {
+        api_rc = xf_json_exec(st->json_ctx,
+                              filtered, (size_t)flen,
+                              st->canvas, st->canvas_cap,
+                              st->out_json, sizeof(st->out_json));
+    } else {
+        snprintf(st->out_json, sizeof(st->out_json), "{\"ok\":true,\"results\":[]}");
+        api_rc = 0;
+    }
+
+    if (api_rc == 0 && has_render) {
+        write_ppm(st);
+        if (st->dev) {
+            if (panel_display_bitmap(st->dev, 0, 0,
+                                     st->width, st->height,
+                                     st->canvas) < 0)
+                fprintf(stderr, "[daemon] panel_display_bitmap failed\n");
+        }
+    }
+
+    if (dcount == 0) {
+        mg_ws_send(c, st->out_json, strlen(st->out_json), WEBSOCKET_OP_TEXT);
+    } else {
+        const char *api_inner   = NULL;
+        int         api_inner_l = 0;
+        int         overall_ok  = !dany_error && (api_rc == 0);
+        char       *merged;
+        size_t      mcap = dresults_cap + DAEMON_OUT_JSON_CAP + MERGE_ENVELOPE_EXTRA;
+
+        merged = malloc(mcap);
+        if (!merged) {
+            mg_ws_send(c, MSG_ALLOC_ERR, sizeof(MSG_ALLOC_ERR) - 1, WEBSOCKET_OP_TEXT);
+            free(filtered);
+            free(dresults);
+            free(one_result);
+            return;
+        }
+
+        if (mjson_find(st->out_json, (int)strlen(st->out_json),
+                       "$.results", &api_inner, &api_inner_l) == MJSON_TOK_ARRAY
+            && api_inner_l > JSON_EMPTY_ARRAY_LEN) {
+            /* Strip the outer [ and ] from api_inner to splice its elements. */
+            snprintf(merged, mcap,
+                     "{\"ok\":%s,\"results\":[%s,%.*s]}",
+                     overall_ok ? "true" : "false",
+                     dresults,
+                     api_inner_l - JSON_EMPTY_ARRAY_LEN, api_inner + 1);
+        } else {
+            snprintf(merged, mcap,
+                     "{\"ok\":%s,\"results\":[%s]}",
+                     overall_ok ? "true" : "false",
+                     dresults);
+        }
+
+        mg_ws_send(c, merged, strlen(merged), WEBSOCKET_OP_TEXT);
+        free(merged);
+    }
+
+    free(filtered);
+    free(dresults);
+    free(one_result);
+}
+
+static void ev_handler(struct mg_connection *c, int ev, void *ev_data)
+{
+    daemon_state_t *st = (daemon_state_t *)c->fn_data;
+
+    if (ev == MG_EV_HTTP_MSG) {
+        mg_ws_upgrade(c, (struct mg_http_message *)ev_data, NULL);
+    } else if (ev == MG_EV_WS_MSG) {
+        struct mg_ws_message *wm = (struct mg_ws_message *)ev_data;
+        if ((wm->flags & MG_WS_OPCODE_MASK) == WEBSOCKET_OP_TEXT)
+            handle_ws_message(c, wm->data.buf, wm->data.len, st);
+    } else if (ev == MG_EV_ERROR) {
+        fprintf(stderr, "[daemon] connection error: %s\n", (char *)ev_data);
+    }
+}
+
+static void usage(const char *prog)
+{
+    fprintf(stderr,
+            "usage: %s [-p PORT] [-W WIDTH] [-H HEIGHT] [--padding N] "
+            "[--ppm-path PATH] [--no-device]\n",
+            prog);
+}
+
+int main(int argc, char *argv[])
+{
+    const char    *port      = DAEMON_DEFAULT_PORT;
+    int            width     = DAEMON_DEFAULT_WIDTH;
+    int            height    = DAEMON_DEFAULT_HEIGHT;
+    int            padding   = DAEMON_DEFAULT_PADDING;
+    int            no_device = 0;
+    const char    *ppm_path  = "panel_daemon_last.ppm";
+    struct mg_mgr  mgr;
+    char           url[DAEMON_URL_MAX];
+    int            i;
+
+    for (i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "-p") && i+1 < argc) {
+            port = argv[++i];
+        } else if (!strcmp(argv[i], "-W") && i+1 < argc) {
+            width = atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "-H") && i+1 < argc) {
+            height = atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "--padding") && i+1 < argc) {
+            padding = atoi(argv[++i]);
+        } else if (!strcmp(argv[i], "--ppm-path") && i+1 < argc) {
+            ppm_path = argv[++i];
+        } else if (!strcmp(argv[i], "--no-device")) {
+            no_device = 1;
+        } else {
+            usage(argv[0]);
+            return 1;
+        }
+    }
+
+    if (width <= 0 || height <= 0) {
+        fprintf(stderr, "[daemon] invalid dimensions %dx%d\n", width, height);
+        return 1;
+    }
+
+    signal(SIGINT,  handle_signal);
+    signal(SIGTERM, handle_signal);
+
+    g_state.width      = width;
+    g_state.height     = height;
+    g_state.canvas_cap = XF_JSON_CANVAS_SIZE(width, height);
+
+    g_state.canvas = calloc(1, g_state.canvas_cap);
+    if (!g_state.canvas) {
+        fprintf(stderr, "[daemon] canvas alloc failed\n");
+        return 1;
+    }
+
+    g_state.json_ctx = xf_json_create(width, height, padding);
+    if (!g_state.json_ctx) {
+        fprintf(stderr, "[daemon] xf_json_create failed\n");
+        free(g_state.canvas);
+        return 1;
+    }
+
+    snprintf(g_state.ppm_path, sizeof(g_state.ppm_path), "%s", ppm_path);
+
+    if (!no_device) {
+        g_state.dev = panel_open_auto();
+        if (!g_state.dev) {
+            fprintf(stderr, "[daemon] no device found, running headless\n");
+        } else if (configure_device(g_state.dev) < 0) {
+            fprintf(stderr, "[daemon] device configure failed, running headless\n");
+            panel_close(g_state.dev);
+            g_state.dev = NULL;
+        } else {
+            fprintf(stderr, "[daemon] device opened\n");
+        }
+    }
+
+    mg_mgr_init(&mgr);
+    snprintf(url, sizeof(url), "ws://0.0.0.0:%s", port);
+    mg_http_listen(&mgr, url, ev_handler, &g_state);
+    fprintf(stderr, "[daemon] listening on %s\n", url);
+
+    while (!g_stop)
+        mg_mgr_poll(&mgr, DAEMON_POLL_MS);
+
+    fprintf(stderr, "[daemon] shutting down\n");
+    mg_mgr_free(&mgr);
+    if (g_state.dev)
+        panel_close(g_state.dev);
+    xf_json_destroy(g_state.json_ctx);
+    free(g_state.canvas);
+    return 0;
+}
