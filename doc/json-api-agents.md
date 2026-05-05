@@ -193,8 +193,7 @@ A successful render op emits:
 
 1. Add a row to `src/json_api/json_kinds.def`:
    ```c
-   XF_KIND(my_kind, sizeof(comp_my_kind_data_t), COMP_MY_KIND_HEIGHT,
-           create_my_kind, decode_my_kind, encode_my_kind, 0)
+   XF_KIND(my_kind, sizeof(comp_my_kind_data_t), COMP_MY_KIND_HEIGHT)
    ```
 2. Create `src/json_api/kinds/decode_my_kind.c` implementing `create_my_kind` and `decode_my_kind`, and `src/json_api/kinds/encode_my_kind.c` implementing `encode_my_kind`. Follow the pattern in any existing `decode_*.c` / `encode_*.c`.
 3. Add the component implementation to `src/components/` following `doc/components-agents.md`.
