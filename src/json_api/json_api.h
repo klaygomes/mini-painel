@@ -8,13 +8,22 @@
 
 typedef struct xf_json_ctx xf_json_ctx_t;
 
+typedef struct {
+    const void *buf;
+    size_t      size;
+} xf_json_buf_t;
+
+typedef struct {
+    xf_json_ctx_t *ctx;
+    xf_json_buf_t  json;
+    xf_json_buf_t  canvas;
+    xf_json_buf_t  out_json;
+} xf_json_exec_req_t;
+
 xf_json_ctx_t *xf_json_create (int width, int height, int padding);
 void           xf_json_destroy(xf_json_ctx_t *ctx);
 
-int xf_json_exec(xf_json_ctx_t *ctx,
-                 const char *json, size_t json_len,
-                 uint8_t *canvas,  size_t canvas_cap,
-                 char    *out_json, size_t out_json_cap);
+int xf_json_exec(const xf_json_exec_req_t *req);
 
 int xf_json_page_count(const xf_json_ctx_t *ctx);
 

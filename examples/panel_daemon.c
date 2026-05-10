@@ -360,10 +360,22 @@ static void handle_ws_message(struct mg_connection *c,
     has_render = payload_has_render(filtered, (size_t)flen);
 
     if (flen > JSON_EMPTY_ARRAY_LEN) {
-        api_rc = xf_json_exec(st->json_ctx,
-                              filtered, (size_t)flen,
-                              st->canvas, st->canvas_cap,
-                              st->out_json, sizeof(st->out_json));
+        const xf_json_exec_req_t req = {
+            .ctx = st->json_ctx,
+            .json = {
+                .buf = filtered,
+                .size = (size_t)flen,
+            },
+            .canvas = {
+                .buf = st->canvas,
+                .size = st->canvas_cap,
+            },
+            .out_json = {
+                .buf = st->out_json,
+                .size = sizeof(st->out_json),
+            },
+        };
+        api_rc = xf_json_exec(&req);
     } else {
         snprintf(st->out_json, sizeof(st->out_json), "{\"ok\":true,\"results\":[]}");
         api_rc = 0;

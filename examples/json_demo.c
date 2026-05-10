@@ -42,8 +42,24 @@ int main(void)
         return 1;
     }
 
-    rc = xf_json_exec(c, SCRIPT, strlen(SCRIPT),
-                      canvas, sizeof canvas, reply, sizeof reply);
+    {
+        const xf_json_exec_req_t req = {
+            .ctx = c,
+            .json = {
+                .buf = SCRIPT,
+                .size = strlen(SCRIPT),
+            },
+            .canvas = {
+                .buf = canvas,
+                .size = sizeof canvas,
+            },
+            .out_json = {
+                .buf = reply,
+                .size = sizeof reply,
+            },
+        };
+        rc = xf_json_exec(&req);
+    }
     fprintf(stderr, "rc=%d reply=%s\n", rc, reply);
     {
         int nw = 0;
