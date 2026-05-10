@@ -19,6 +19,10 @@ compile_commands.json
 codedb.snapshot
 panel_daemon_last.ppm
 
+# Python bytecode cache
+__pycache__/
+*.pyc
+
 # macOS metadata
 .DS_Store
 
