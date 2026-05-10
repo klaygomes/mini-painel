@@ -336,8 +336,8 @@ int xf_json_exec(const xf_json_exec_req_t *req)
 
     while ((off = mjson_next(json, json_len_i, off,
                              &koff, &klen, &voff, &vlen, &vtype)) != 0) {
-        const char          *op_ptr;
-        int                  op_len;
+        const char          *op_ptr = NULL;
+        int                  op_len = 0;
         int                  op_type;
         char                 op_name[XF_JSON_OP_MAX_LEN + 1];
         const char          *cmd;
@@ -345,7 +345,12 @@ int xf_json_exec(const xf_json_exec_req_t *req)
         const xf_dispatch_t *entry;
         xf_cmd_env_t         env;
 
+        DEBUG_LOG("mjson_next off=%d koff=%d klen=%d voff=%d vlen=%d vtype=%d",
+                  off, koff, klen, voff, vlen, vtype);
+        DEBUG_LOG("mjson_next key=%.*s", klen, json + koff);
+
         cmd = json + voff;
+        DEBUG_LOG("mjson_next cmd=%.*s", vlen, cmd);
 
         if (vtype != MJSON_TOK_OBJECT) {
             xf_encoder_error(&enc, idx, "?", NULL, "command must be an object");
@@ -355,6 +360,11 @@ int xf_json_exec(const xf_json_exec_req_t *req)
         }
 
         op_type = mjson_find(cmd, vlen, "$.op", &op_ptr, &op_len);
+        DEBUG_LOG("op parse type=%d raw=%.*s len=%d",
+                  op_type,
+                  op_len > 0 ? op_len : 0,
+                  (op_ptr && op_len > 0) ? op_ptr : "",
+                  op_len);
         if (op_type == MJSON_TOK_INVALID) {
             xf_encoder_error(&enc, idx, "?", NULL, "missing op");
             ok = 0;
@@ -388,6 +398,7 @@ int xf_json_exec(const xf_json_exec_req_t *req)
 
         memcpy(op_name, op_ptr, (size_t)op_len);
         op_name[op_len] = '\0';
+        DEBUG_LOG("op normalized=%.*s len=%d", op_len, op_name, op_len);
 
         entry = find_handler(op_ptr, op_len);
         if (!entry) {
