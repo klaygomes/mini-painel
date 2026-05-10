@@ -1,0 +1,8 @@
+{
+  "owner/repo": {
+    "branch": "main",
+    "ignored_jobs": [
+      "optional-docs-check"
+    ]
+  }
+}
