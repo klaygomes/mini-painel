@@ -360,17 +360,14 @@ int xf_json_exec(const xf_json_exec_req_t *req)
         }
 
         op_type = mjson_find(cmd, vlen, "$.op", &op_ptr, &op_len);
-        DEBUG_LOG("op parse type=%d raw=%.*s len=%d",
-                  op_type,
-                  op_len > 0 ? op_len : 0,
-                  (op_ptr && op_len > 0) ? op_ptr : "",
-                  op_len);
+        DEBUG_LOG("op parse type=%d", op_type);
         if (op_type == MJSON_TOK_INVALID) {
             xf_encoder_error(&enc, idx, "?", NULL, "missing op");
             ok = 0;
             idx++;
             continue;
         }
+        DEBUG_LOG("op parse raw=%.*s len=%d", op_len, op_ptr, op_len);
 
         if (op_type != MJSON_TOK_STRING) {
             xf_encoder_error(&enc, idx, "?", NULL, "op must be a string");
