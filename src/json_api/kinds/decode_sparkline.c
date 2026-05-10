@@ -16,7 +16,7 @@ int decode_sparkline(const char *s, int len, void *vdata, int patch)
                               COMP_SPARKLINE_MAX_POINTS, &d->count, patch) < 0) return -1;
 
     /* Normalize to [0, 1] when raw values are outside that range.
-     * Callers may send either pre-normalized fractions or raw domain values
+     * Callers may send either pre-normalized fractions or raw-scale values
      * (e.g. percentages, counters). Dividing by the max preserves shape. */
     max_val = 0.0f;
     for (i = 0; i < d->count; i++)

@@ -2,6 +2,7 @@ file(GLOB JSON_KIND_SRC CONFIGURE_DEPENDS kinds/*.c)
 
 add_library(xf_json_api STATIC
     json_api.c
+    json_backend_dashboard.c
     json_registry.c
     json_kinds.c
     json_decode_util.c
