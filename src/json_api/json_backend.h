@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "json_kind.h"
+#include "json_str_slice.h" /* xf_str_slice_t */
 
 typedef struct xf_json_backend xf_json_backend_t;
 
@@ -25,14 +26,12 @@ int xf_json_backend_page_count(const xf_json_backend_t *backend);
 
 int xf_json_backend_row_add(xf_json_backend_t *backend,
                             const char *id,
-                            const char *data_json,
-                            int data_json_len,
+                            xf_str_slice_t data_json,
                             const char **err_msg);
 
 int xf_json_backend_row_update(xf_json_backend_t *backend,
                                const char *id,
-                               const char *data_json,
-                               int data_json_len,
+                               xf_str_slice_t data_json,
                                const char **err_msg);
 
 int xf_json_backend_row_remove(xf_json_backend_t *backend,

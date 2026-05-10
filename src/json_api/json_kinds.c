@@ -22,8 +22,8 @@
 
 /* Forward-declare every create, decode, and encode function. */
 #define XF_KIND(name, dsz, h) \
-    extern xf_component_t create_##name(void *);                  \
-    extern int decode_##name(const char *, int, void *, int);     \
+    extern xf_component_t create_##name(void *);                       \
+    extern int decode_##name(xf_str_slice_t, void *, int);             \
     extern int encode_##name(const void *, char *, size_t);
 #include "json_kinds.def"
 #undef XF_KIND

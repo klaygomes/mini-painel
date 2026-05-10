@@ -5,6 +5,7 @@
 
 #include "json_api.h"
 #include "json_backend.h"
+#include "json_str_slice.h"
 #include "json_encode.h"
 #include "json_decode_util.h"
 #include "mjson.h"
@@ -41,8 +42,7 @@ typedef struct {
     const char *op;
     int (*backend_fn)(xf_json_backend_t *backend,
                       const char *id,
-                      const char *data_json,
-                      int data_json_len,
+                      xf_str_slice_t data_json,
                       const char **err_msg);
 } xf_row_data_op_t;
 
@@ -56,20 +56,17 @@ static int xf_cmd_get_id(const xf_cmd_env_t *env, char *id, size_t id_size)
     return mjson_get_string(env->cmd, env->cmdlen, "$.id", id, (int)id_size) > 0 ? 0 : -1;
 }
 
-static void xf_cmd_get_data_object(const xf_cmd_env_t *env,
-                                   const char **data_json,
-                                   int *data_json_len)
+static xf_str_slice_t xf_cmd_get_data_object(const xf_cmd_env_t *env)
 {
-    const char *sub;
-    int         sublen;
-
-    *data_json = NULL;
-    *data_json_len = 0;
+    const char     *sub;
+    int             sublen;
+    xf_str_slice_t  result = {NULL, 0};
 
     if (mjson_find(env->cmd, env->cmdlen, "$.data", &sub, &sublen) == MJSON_TOK_OBJECT) {
-        *data_json = sub;
-        *data_json_len = sublen;
+        result.ptr = sub;
+        result.len = sublen;
     }
+    return result;
 }
 
 static int xf_handler_missing_id(const xf_handler_ctx_t *hctx, const char *op)
@@ -130,18 +127,17 @@ int xf_json_page_count(const xf_json_ctx_t *ctx)
 static int handle_row_data_op(const xf_handler_ctx_t *hctx, const void *arg)
 {
     const xf_row_data_op_t *op = (const xf_row_data_op_t *)arg;
-    char                    id[64];
-    const char             *data_json;
-    int                     data_json_len;
-    const char             *err_msg;
+    char            id[64];
+    xf_str_slice_t  data_json;
+    const char     *err_msg;
 
     if (xf_cmd_get_id(hctx->env, id, sizeof(id)) < 0)
         return xf_handler_missing_id(hctx, op->op);
 
-    xf_cmd_get_data_object(hctx->env, &data_json, &data_json_len);
+    data_json = xf_cmd_get_data_object(hctx->env);
 
     err_msg = op->op;
-    if (op->backend_fn(hctx->ctx->backend, id, data_json, data_json_len, &err_msg) < 0)
+    if (op->backend_fn(hctx->ctx->backend, id, data_json, &err_msg) < 0)
         return xf_handler_error(hctx, op->op, id, err_msg);
 
     return xf_handler_result(hctx, op->op, id);

@@ -3,8 +3,9 @@
 
 #include <stddef.h>
 #include "comp_base.h"
+#include "json_str_slice.h" /* xf_str_slice_t */
 
-typedef int            (*xf_decode_fn)(const char *json, int len, void *data, int patch);
+typedef int            (*xf_decode_fn)(xf_str_slice_t json, void *data, int patch);
 typedef int            (*xf_encode_fn)(const void *data, char *buf, size_t cap);
 typedef xf_component_t (*xf_create_fn)(void *data);
 
