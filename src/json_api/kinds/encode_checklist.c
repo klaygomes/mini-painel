@@ -5,7 +5,7 @@
 #include "comp_checklist.h"
 #include "mjson.h"
 
-int encode_checklist(const void *vdata, xf_out_buf_t out)
+int encode_checklist(const void *vdata, xf_str_buf_t out)
 {
     const comp_checklist_data_t *d = vdata;
     char tmp[256];

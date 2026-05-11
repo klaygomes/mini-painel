@@ -7,84 +7,84 @@
 #include "mjson.h"
 #include "debug.h"
 
-static int utf8_is_valid(const unsigned char *s, size_t len)
+static int utf8_is_valid(xf_byte_slice_t s)
 {
     size_t i = 0;
 
-    while (i < len) {
-        unsigned char c = s[i++];
+    while (i < s.len) {
+        unsigned char c = s.ptr[i++];
 
         if (c <= 0x7F)
             continue;
 
         if (c >= 0xC2 && c <= 0xDF) {
-            if (i >= len || (s[i] & 0xC0) != 0x80)
+            if (i >= s.len || (s.ptr[i] & 0xC0) != 0x80)
                 return 0;
             i += 1;
             continue;
         }
 
         if (c == 0xE0) {
-            if (i + 1 >= len)
+            if (i + 1 >= s.len)
                 return 0;
-            if (s[i] < 0xA0 || s[i] > 0xBF || (s[i + 1] & 0xC0) != 0x80)
+            if (s.ptr[i] < 0xA0 || s.ptr[i] > 0xBF || (s.ptr[i + 1] & 0xC0) != 0x80)
                 return 0;
             i += 2;
             continue;
         }
 
         if (c >= 0xE1 && c <= 0xEC) {
-            if (i + 1 >= len)
+            if (i + 1 >= s.len)
                 return 0;
-            if ((s[i] & 0xC0) != 0x80 || (s[i + 1] & 0xC0) != 0x80)
+            if ((s.ptr[i] & 0xC0) != 0x80 || (s.ptr[i + 1] & 0xC0) != 0x80)
                 return 0;
             i += 2;
             continue;
         }
 
         if (c == 0xED) {
-            if (i + 1 >= len)
+            if (i + 1 >= s.len)
                 return 0;
-            if (s[i] < 0x80 || s[i] > 0x9F || (s[i + 1] & 0xC0) != 0x80)
+            if (s.ptr[i] < 0x80 || s.ptr[i] > 0x9F || (s.ptr[i + 1] & 0xC0) != 0x80)
                 return 0;
             i += 2;
             continue;
         }
 
         if (c >= 0xEE && c <= 0xEF) {
-            if (i + 1 >= len)
+            if (i + 1 >= s.len)
                 return 0;
-            if ((s[i] & 0xC0) != 0x80 || (s[i + 1] & 0xC0) != 0x80)
+            if ((s.ptr[i] & 0xC0) != 0x80 || (s.ptr[i + 1] & 0xC0) != 0x80)
                 return 0;
             i += 2;
             continue;
         }
 
         if (c == 0xF0) {
-            if (i + 2 >= len)
+            if (i + 2 >= s.len)
                 return 0;
-            if (s[i] < 0x90 || s[i] > 0xBF ||
-                (s[i + 1] & 0xC0) != 0x80 || (s[i + 2] & 0xC0) != 0x80)
+            if (s.ptr[i] < 0x90 || s.ptr[i] > 0xBF ||
+                (s.ptr[i + 1] & 0xC0) != 0x80 || (s.ptr[i + 2] & 0xC0) != 0x80)
                 return 0;
             i += 3;
             continue;
         }
 
         if (c >= 0xF1 && c <= 0xF3) {
-            if (i + 2 >= len)
+            if (i + 2 >= s.len)
                 return 0;
-            if ((s[i] & 0xC0) != 0x80 || (s[i + 1] & 0xC0) != 0x80 ||
-                (s[i + 2] & 0xC0) != 0x80)
+            if ((s.ptr[i] & 0xC0) != 0x80 || (s.ptr[i + 1] & 0xC0) != 0x80 ||
+                (s.ptr[i + 2] & 0xC0) != 0x80)
                 return 0;
             i += 3;
             continue;
         }
 
         if (c == 0xF4) {
-            if (i + 2 >= len)
+            if (i + 2 >= s.len)
                 return 0;
-            if (s[i] < 0x80 || s[i] > 0x8F ||
-                (s[i + 1] & 0xC0) != 0x80 || (s[i + 2] & 0xC0) != 0x80)
+            if (s.ptr[i] < 0x80 || s.ptr[i] > 0x8F ||
+                (s.ptr[i + 1] & 0xC0) != 0x80 || (s.ptr[i + 2] & 0xC0) != 0x80)
                 return 0;
             i += 3;
             continue;
@@ -96,41 +96,41 @@ static int utf8_is_valid(const unsigned char *s, size_t len)
     return 1;
 }
 
-static size_t latin1_to_utf8(char *dst, size_t dst_size,
-                             const unsigned char *src, size_t src_len)
+static size_t latin1_to_utf8(xf_str_buf_t dst, xf_byte_slice_t src)
 {
     size_t out = 0;
 
-    if (dst_size == 0)
+    if (dst.cap == 0)
         return 0;
 
-    for (size_t i = 0; i < src_len; i++) {
-        unsigned char b = src[i];
+    for (size_t i = 0; i < src.len; i++) {
+        unsigned char b = src.ptr[i];
         if (b < 0x80) {
-            if (out + 1 >= dst_size)
+            if (out + 1 >= dst.cap)
                 break;
-            dst[out++] = (char)b;
+            dst.ptr[out++] = (char)b;
         } else {
-            if (out + 2 >= dst_size)
+            if (out + 2 >= dst.cap)
                 break;
-            dst[out++] = (char)(0xC0u | (b >> 6));
-            dst[out++] = (char)(0x80u | (b & 0x3Fu));
+            dst.ptr[out++] = (char)(0xC0u | (b >> 6));
+            dst.ptr[out++] = (char)(0x80u | (b & 0x3Fu));
         }
     }
 
-    dst[out] = '\0';
+    dst.ptr[out] = '\0';
     return out;
 }
 
 int xf_decode_str(xf_str_slice_t s, const char *path,
-                  char *dst, size_t dst_size, int patch)
+                  xf_str_buf_t dst, int patch)
 {
-    char tmp[512];
-    int  n;
+    char            tmp[512];
+    int             n;
+    xf_byte_slice_t raw;
 
     (void)patch;
 
-    if (dst_size == 0)
+    if (dst.cap == 0)
         return -1;
 
     n = mjson_get_string(s.ptr, s.len, path, tmp, (int)sizeof(tmp));
@@ -145,14 +145,15 @@ int xf_decode_str(xf_str_slice_t s, const char *path,
         return -1;   /* present but wrong type */
     }
 
-    if (utf8_is_valid((const unsigned char *)tmp, (size_t)n)) {
+    raw = XF_BYTE_SLICE(tmp, n);
+    if (utf8_is_valid(raw)) {
         /* Truncate gracefully. */
-        if ((size_t)n >= dst_size)
-            n = (int)(dst_size - 1);
-        memcpy(dst, tmp, (size_t)n);
-        dst[n] = '\0';
+        if ((size_t)n >= dst.cap)
+            n = (int)(dst.cap - 1);
+        memcpy(dst.ptr, tmp, (size_t)n);
+        dst.ptr[n] = '\0';
     } else {
-        latin1_to_utf8(dst, dst_size, (const unsigned char *)tmp, (size_t)n);
+        latin1_to_utf8(dst, raw);
         DEBUG_LOG("normalized non-UTF8 string at path '%s'", path);
     }
 
@@ -345,7 +346,7 @@ int xf_decode_object_array(xf_str_slice_t s, const char *path,
         if (vtype != MJSON_TOK_OBJECT)
             return -1;
         elem = (char *)array_base + (size_t)count * stride;
-        if (fn((xf_str_slice_t){arr + voff, vlen}, elem, patch) < 0)
+        if (fn(XF_STR_SLICE(arr + voff, vlen), elem, patch) < 0)
             return -1;
         count++;
     }

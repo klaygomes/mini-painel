@@ -3,7 +3,7 @@
 #include "comp_build_status.h"
 #include "mjson.h"
 
-int encode_build_status(const void *vdata, xf_out_buf_t out)
+int encode_build_status(const void *vdata, xf_str_buf_t out)
 {
     const comp_build_status_data_t *d = vdata;
     char sc[10], sf[10];

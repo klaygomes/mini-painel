@@ -51,9 +51,9 @@ typedef struct {
     int         dir;
 } xf_move_op_t;
 
-static int xf_cmd_get_id(const xf_cmd_env_t *env, char *id, size_t id_size)
+static int xf_cmd_get_id(const xf_cmd_env_t *env, xf_str_buf_t id)
 {
-    return mjson_get_string(env->cmd, env->cmdlen, "$.id", id, (int)id_size) > 0 ? 0 : -1;
+    return mjson_get_string(env->cmd, env->cmdlen, "$.id", id.ptr, (int)id.cap) > 0 ? 0 : -1;
 }
 
 static xf_str_slice_t xf_cmd_get_data_object(const xf_cmd_env_t *env)
@@ -127,58 +127,62 @@ int xf_json_page_count(const xf_json_ctx_t *ctx)
 static int handle_row_data_op(const xf_handler_ctx_t *hctx, const void *arg)
 {
     const xf_row_data_op_t *op = (const xf_row_data_op_t *)arg;
-    char            id[64];
+    char            id_buf[64];
+    xf_str_buf_t    id = {id_buf, sizeof id_buf};
     xf_str_slice_t  data_json;
     const char     *err_msg;
 
-    if (xf_cmd_get_id(hctx->env, id, sizeof(id)) < 0)
+    if (xf_cmd_get_id(hctx->env, id) < 0)
         return xf_handler_missing_id(hctx, op->op);
 
     data_json = xf_cmd_get_data_object(hctx->env);
 
     err_msg = op->op;
-    if (op->backend_fn(hctx->ctx->backend, id, data_json, &err_msg) < 0)
-        return xf_handler_error(hctx, op->op, id, err_msg);
+    if (op->backend_fn(hctx->ctx->backend, id.ptr, data_json, &err_msg) < 0)
+        return xf_handler_error(hctx, op->op, id.ptr, err_msg);
 
-    return xf_handler_result(hctx, op->op, id);
+    return xf_handler_result(hctx, op->op, id.ptr);
 }
 
 static int handle_row_remove(const xf_handler_ctx_t *hctx, const void *arg)
 {
     const char *op = (const char *)arg;
-    char        id[64];
+    char        id_buf[64];
+    xf_str_buf_t id = {id_buf, sizeof id_buf};
     const char *err_msg = "row.remove failed";
 
-    if (xf_cmd_get_id(hctx->env, id, sizeof(id)) < 0)
+    if (xf_cmd_get_id(hctx->env, id) < 0)
         return xf_handler_missing_id(hctx, op);
 
-    if (xf_json_backend_row_remove(hctx->ctx->backend, id, &err_msg) < 0)
-        return xf_handler_error(hctx, op, id, err_msg);
+    if (xf_json_backend_row_remove(hctx->ctx->backend, id.ptr, &err_msg) < 0)
+        return xf_handler_error(hctx, op, id.ptr, err_msg);
 
-    return xf_handler_result(hctx, op, id);
+    return xf_handler_result(hctx, op, id.ptr);
 }
 
 static int handle_row_move(const xf_handler_ctx_t *hctx, const void *arg)
 {
     const xf_move_op_t *op = (const xf_move_op_t *)arg;
-    char                id[64];
+    char                id_buf[64];
+    xf_str_buf_t        id = {id_buf, sizeof id_buf};
     const char         *err_msg = "row.move failed";
 
-    if (xf_cmd_get_id(hctx->env, id, sizeof(id)) < 0)
+    if (xf_cmd_get_id(hctx->env, id) < 0)
         return xf_handler_missing_id(hctx, op->op);
 
-    if (xf_json_backend_row_move(hctx->ctx->backend, id, op->dir, &err_msg) < 0)
-        return xf_handler_error(hctx, op->op, id, err_msg);
+    if (xf_json_backend_row_move(hctx->ctx->backend, id.ptr, op->dir, &err_msg) < 0)
+        return xf_handler_error(hctx, op->op, id.ptr, err_msg);
 
-    return xf_handler_result(hctx, op->op, id);
+    return xf_handler_result(hctx, op->op, id.ptr);
 }
 
 static int handle_row_list(const xf_handler_ctx_t *hctx, const void *arg)
 {
-    int  i;
-    int  count;
-    int  page_count;
-    char data_buf[2048];
+    int          i;
+    int          count;
+    int          page_count;
+    char         data_storage[2048];
+    xf_str_buf_t data_buf = {data_storage, sizeof data_storage};
 
     (void)arg;
 
@@ -195,20 +199,20 @@ static int handle_row_list(const xf_handler_ctx_t *hctx, const void *arg)
             continue;
 
         if (i > 0)
-            xf_encoder_raw(hctx->enc, (xf_str_slice_t){",", 1});
+            xf_encoder_raw(hctx->enc, XF_STR_SLICE(",", 1));
 
         n = mjson_snprintf(row_hdr, sizeof row_hdr,
             "{\"id\":%Q,\"kind\":%Q,\"page\":%d,\"index\":%d,\"dirty\":%d,\"data\":",
             row.id, row.kind, row.page, row.index, row.dirty);
         if (n > 0)
-            xf_encoder_raw(hctx->enc, (xf_str_slice_t){row_hdr, n});
+            xf_encoder_raw(hctx->enc, XF_STR_SLICE(row_hdr, n));
 
-        if (row.encode(row.data, (xf_out_buf_t){data_buf, sizeof data_buf}) == 0)
-            xf_encoder_raw(hctx->enc, (xf_str_slice_t){data_buf, (int)strlen(data_buf)});
+        if (row.encode(row.data, data_buf) == 0)
+            xf_encoder_raw(hctx->enc, XF_STR_SLICE(data_buf.ptr, (int)strlen(data_buf.ptr)));
         else
-            xf_encoder_raw(hctx->enc, (xf_str_slice_t){"{}", 2});
+            xf_encoder_raw(hctx->enc, XF_STR_SLICE("{}", 2));
 
-        xf_encoder_raw(hctx->enc, (xf_str_slice_t){"}", 1});
+        xf_encoder_raw(hctx->enc, XF_STR_SLICE("}", 1));
     }
 
     xf_encoder_list_end(hctx->enc);
@@ -229,8 +233,7 @@ static int handle_page_render(const xf_handler_ctx_t *hctx, const void *arg)
 
     if (xf_json_backend_page_render(hctx->ctx->backend,
                                     page,
-                                    (xf_byte_buf_t){(uint8_t *)hctx->env->req->canvas.buf,
-                                                    hctx->env->req->canvas.size},
+                                    XF_BYTE_BUF(hctx->env->req->canvas.buf, hctx->env->req->canvas.size),
                                     &page_count,
                                     &dx,
                                     &dy,
@@ -297,8 +300,7 @@ int xf_json_exec(const xf_json_exec_req_t *req)
     xf_json_ctx_t    *ctx;
     const char       *json;
     size_t            json_len;
-    char             *out_json;
-    size_t            out_json_cap;
+    xf_str_buf_t      out_json;
 
     if (!req)
         return -1;
@@ -306,15 +308,14 @@ int xf_json_exec(const xf_json_exec_req_t *req)
     ctx = req->ctx;
     json = (const char *)req->json.buf;
     json_len = req->json.size;
-    out_json = (char *)req->out_json.buf;
-    out_json_cap = req->out_json.size;
+    out_json = XF_STR_BUF(req->out_json.buf, req->out_json.size);
 
     if (!ctx || !json || json_len == 0 || json_len > (size_t)INT_MAX)
         return -1;
 
     json_len_i = (int)json_len;
 
-    xf_encoder_init(&enc, (xf_out_buf_t){out_json, out_json_cap});
+    xf_encoder_init(&enc, out_json);
     xf_encoder_begin(&enc);
 
     while ((off = mjson_next(json, json_len_i, off,
@@ -381,7 +382,7 @@ int xf_json_exec(const xf_json_exec_req_t *req)
         op_name[op_len] = '\0';
         DEBUG_LOG("op normalized=%.*s len=%d", op_len, op_name, op_len);
 
-        entry = find_handler((xf_str_slice_t){op_ptr, op_len});
+        entry = find_handler(XF_STR_SLICE(op_ptr, op_len));
         if (!entry) {
             xf_encoder_error(&enc, idx, op_name, NULL, "unknown op");
             ok = 0;

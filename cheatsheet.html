@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLI Tools Cheatsheet</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f8f9fa;
+    --border: #dee2e6;
+    --text: #212529;
+    --muted: #6c757d;
+    --code-bg: #1e1e2e;
+    --code-fg: #cdd6f4;
+    --accent-fzf:    #7c3aed;
+    --accent-fd:     #0369a1;
+    --accent-delta:  #b45309;
+    --accent-bat:    #0f766e;
+    --accent-gh:     #1d4ed8;
+    --accent-ag:     #be123c;
+    --accent-rg:     #15803d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 11px;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.4;
+  }
+
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+    text-align: center;
+    margin-bottom: 4px;
+    letter-spacing: -.5px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 10px;
+    margin-bottom: 16px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .tool {
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    break-inside: avoid;
+  }
+
+  .tool-header {
+    padding: 7px 10px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .tool-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .tool-cmd {
+    font-size: 10px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .tool-body { padding: 8px 10px; }
+
+  section { margin-bottom: 8px; }
+
+  .section-title {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2px;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  tr + tr td { border-top: 1px solid #f0f0f0; }
+
+  td {
+    padding: 2.5px 2px;
+    vertical-align: top;
+  }
+
+  td:first-child {
+    width: 52%;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 10px;
+    color: var(--code-bg);
+    white-space: nowrap;
+    padding-right: 6px;
+  }
+
+  td:last-child {
+    color: #444;
+    font-size: 10px;
+  }
+
+  .flag {
+    color: #555;
+    font-style: italic;
+  }
+
+  .note {
+    font-size: 9.5px;
+    color: var(--muted);
+    background: var(--surface);
+    border-left: 3px solid var(--border);
+    padding: 4px 6px;
+    border-radius: 0 3px 3px 0;
+    margin-top: 4px;
+  }
+
+  /* Tool accent colours */
+  .fzf    .tool-header { background: var(--accent-fzf); }
+  .fd     .tool-header { background: var(--accent-fd); }
+  .delta  .tool-header { background: var(--accent-delta); }
+  .bat    .tool-header { background: var(--accent-bat); }
+  .gh     .tool-header { background: var(--accent-gh); }
+  .ag     .tool-header { background: var(--accent-ag); }
+  .rg     .tool-header { background: var(--accent-rg); }
+
+  /* Span tools that need more width */
+  .span2 { grid-column: span 2; }
+
+  @media print {
+    body { font-size: 10px; }
+    .page { padding: 12px; max-width: 100%; }
+    .grid { gap: 8px; }
+    h1 { font-size: 18px; }
+    @page { margin: 12mm; size: A4 landscape; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>CLI Tools Cheatsheet</h1>
+  <p class="subtitle">fzf · fd · git-delta · bat · gh · ag (the_silver_searcher) · rg (ripgrep)</p>
+
+  <div class="grid">
+
+    <!-- ══════════════ FZF ══════════════ -->
+    <div class="tool fzf span2">
+      <div class="tool-header">
+        <span class="tool-name">fzf</span>
+        <span class="tool-cmd">fuzzy finder</span>
+      </div>
+      <div class="tool-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
+          <div>
+            <section>
+              <div class="section-title">Basic usage</div>
+              <table>
+                <tr><td>fzf</td><td>Interactive file picker from stdin</td></tr>
+                <tr><td>fzf --multi</td><td>Multi-select with Tab / Shift-Tab</td></tr>
+                <tr><td>fzf --preview 'cat {}'</td><td>Show file preview pane</td></tr>
+                <tr><td>fzf --preview-window=right:60%</td><td>Preview pane on right at 60%</td></tr>
+                <tr><td>fzf --height 40%</td><td>Use only 40% of terminal height</td></tr>
+                <tr><td>fzf --reverse</td><td>Input at top, list below</td></tr>
+                <tr><td>fzf --exact</td><td>Exact-match mode (no fuzzy)</td></tr>
+                <tr><td>fzf -q "query"</td><td>Start with initial query</td></tr>
+                <tr><td>fzf --filter "txt"</td><td>Non-interactive filter mode</td></tr>
+                <tr><td>fzf --select-1</td><td>Auto-select when only 1 match</td></tr>
+                <tr><td>fzf --exit-0</td><td>Exit immediately if no match</td></tr>
+              </table>
+            </section>
+            <section>
+              <div class="section-title">Key bindings (interactive)</div>
+              <table>
+                <tr><td>Ctrl-J / Ctrl-K</td><td>Move down / up</td></tr>
+                <tr><td>Tab / Shift-Tab</td><td>Toggle selection (--multi)</td></tr>
+                <tr><td>Ctrl-A</td><td>Select all (--multi)</td></tr>
+                <tr><td>Enter</td><td>Confirm selection</td></tr>
+                <tr><td>Ctrl-C / Esc</td><td>Cancel</td></tr>
+                <tr><td>Ctrl-/</td><td>Toggle preview</td></tr>
+                <tr><td>Ctrl-R</td><td>Shell history (built-in binding)</td></tr>
+                <tr><td>Alt-C</td><td>cd into selected dir (built-in)</td></tr>
+              </table>
+            </section>
+          </div>
+          <div>
+            <section>
+              <div class="section-title">Search syntax</div>
+              <table>
+                <tr><td>foo bar</td><td>AND match (both terms)</td></tr>
+                <tr><td>foo | bar</td><td>OR match</td></tr>
+                <tr><td>!foo</td><td>Negate — exclude lines with "foo"</td></tr>
+                <tr><td>^foo</td><td>Prefix match</td></tr>
+                <tr><td>foo$</td><td>Suffix match</td></tr>
+                <tr><td>'foo</td><td>Exact match for "foo"</td></tr>
+              </table>
+            </section>
+            <section>
+              <div class="section-title">Shell integration snippets</div>
+              <table>
+                <tr><td>vim $(fzf)</td><td>Open picked file in vim</td></tr>
+                <tr><td>cd $(fd -t d | fzf)</td><td>Jump to a directory</td></tr>
+                <tr><td>git log --oneline | fzf</td><td>Pick a commit interactively</td></tr>
+                <tr><td>kill -9 $(ps aux | fzf | awk '{print $2}')</td><td>Kill a process</td></tr>
+                <tr><td>fzf --bind 'ctrl-y:execute(echo {} | pbcopy)'</td><td>Copy selection to clipboard</td></tr>
+                <tr><td>export FZF_DEFAULT_COMMAND='fd --type f'</td><td>Use fd as fzf's source</td></tr>
+                <tr><td>export FZF_DEFAULT_OPTS='--height 40% --reverse'</td><td>Persist default options</td></tr>
+              </table>
+            </section>
+            <div class="note">Enable shell integration: <code>eval "$(fzf --zsh)"</code> (or --bash / --fish). Provides Ctrl-R history, Alt-C directory, and Ctrl-T file widget.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ FD ══════════════ -->
+    <div class="tool fd">
+      <div class="tool-header">
+        <span class="tool-name">fd</span>
+        <span class="tool-cmd">find alternative</span>
+      </div>
+      <div class="tool-body">
+        <section>
+          <div class="section-title">Basic usage</div>
+          <table>
+            <tr><td>fd pattern</td><td>Search current dir recursively</td></tr>
+            <tr><td>fd pattern /path</td><td>Search from given path</td></tr>
+            <tr><td>fd -e rs</td><td>By extension (.rs)</td></tr>
+            <tr><td>fd -t f</td><td>Files only</td></tr>
+            <tr><td>fd -t d</td><td>Directories only</td></tr>
+            <tr><td>fd -t l</td><td>Symlinks only</td></tr>
+            <tr><td>fd -H</td><td>Include hidden files</td></tr>
+            <tr><td>fd -I</td><td>No .gitignore — show all</td></tr>
+            <tr><td>fd -u</td><td>Unrestricted (hidden + ignored)</td></tr>
+            <tr><td>fd -d 2</td><td>Max depth 2</td></tr>
+            <tr><td>fd -s pattern</td><td>Case-sensitive search</td></tr>
+            <tr><td>fd -i pattern</td><td>Case-insensitive</td></tr>
+          </table>
+        </section>
+        <section>
+          <div class="section-title">Actions &amp; filters</div>
+          <table>
+            <tr><td>fd -x cmd</td><td>Execute cmd for each result</td></tr>
+            <tr><td>fd -X cmd</td><td>Execute cmd with all results</td></tr>
+            <tr><td>fd --size +1M</td><td>Files larger than 1 MB</td></tr>
+            <tr><td>fd --changed-within 1d</td><td>Modified in last 1 day</td></tr>
+            <tr><td>fd --changed-before 1w</td><td>Modified before 1 week ago</td></tr>
+            <tr><td>fd -o</td><td>Owner info in output</td></tr>
+            <tr><td>fd -l</td><td>Long listing (like ls -l)</td></tr>
+            <tr><td>fd --exclude dir</td><td>Exclude directory from results</td></tr>
+          </table>
+        </section>
+      </div>
+    </div>
+
+    <!-- ══════════════ BAT ══════════════ -->
+    <div class="tool bat">
+      <div class="tool-header">
+        <span class="tool-name">bat</span>
+        <span class="tool-cmd">cat with wings</span>
+      </div>
+      <div class="tool-body">
+        <section>
+          <div class="section-title">Basic usage</div>
+          <table>
+            <tr><td>bat file.rs</td><td>Display file with syntax highlighting</td></tr>
+            <tr><td>bat -n file</td><td>Show line numbers only</td></tr>
+            <tr><td>bat -A file</td><td>Show non-printable chars</td></tr>
+            <tr><td>bat -p file</td><td>Plain output (no decorations)</td></tr>
+            <tr><td>bat --pager=never</td><td>Disable pager, print directly</td></tr>
+            <tr><td>bat -r 10:20 file</td><td>Show lines 10–20 only</td></tr>
+            <tr><td>bat -H 42 file</td><td>Highlight line 42</td></tr>
+            <tr><td>bat --diff file</td><td>Show only changed lines (git diff)</td></tr>
+          </table>
+        </section>
+        <section>
+          <div class="section-title">Language &amp; theme</div>
+          <table>
+            <tr><td>bat -l json file</td><td>Force JSON syntax highlighting</td></tr>
+            <tr><td>bat --list-languages</td><td>All supported languages</td></tr>
+            <tr><td>bat --theme=TwoDark file</td><td>Use a specific theme</td></tr>
+            <tr><td>bat --list-themes</td><td>All available themes</td></tr>
+            <tr><td>bat --theme='Monokai Extended'</td><td>Theme with spaces</td></tr>
+          </table>
+        </section>
+        <div class="note">Set <code>BAT_THEME</code> or <code>BAT_PAGER</code> env vars for persistent config. Use <code>bat cache --build</code> after adding custom themes/syntaxes.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════ GIT-DELTA ══════════════ -->
+    <div class="tool delta">
+      <div class="tool-header">
+        <span class="tool-name">git-delta</span>
+        <span class="tool-cmd">delta — diff pager</span>
+      </div>
+      <div class="tool-body">
+        <section>
+          <div class="section-title">~/.gitconfig integration</div>
+          <table>
+            <tr><td>[core] pager = delta</td><td>Use delta as git pager</td></tr>
+            <tr><td>[interactive] diffFilter = delta --color-only</td><td>For git add -p</td></tr>
+            <tr><td>[delta] navigate = true</td><td>n/N to jump between hunks</td></tr>
+            <tr><td>[delta] side-by-side = true</td><td>Side-by-side diff view</td></tr>
+            <tr><td>[delta] line-numbers = true</td><td>Show line numbers</td></tr>
+            <tr><td>[delta] syntax-theme = Dracula</td><td>Set syntax highlight theme</td></tr>
+            <tr><td>[delta] hyperlinks = true</td><td>Clickable file links in terminal</td></tr>
+          </table>
+        </section>
+        <section>
+          <div class="section-title">CLI flags (override config)</div>
+          <table>
+            <tr><td>delta --side-by-side</td><td>Side-by-side for this invocation</td></tr>
+            <tr><td>delta --light</td><td>Light terminal theme</td></tr>
+            <tr><td>delta --dark</td><td>Dark terminal theme</td></tr>
+            <tr><td>delta --diff-highlight</td><td>diff-highlight style (simpler)</td></tr>
+            <tr><td>delta --word-diff-regex=\w+</td><td>Highlight word-level changes</td></tr>
+            <tr><td>delta --paging=never</td><td>Disable pager</td></tr>
+            <tr><td>git diff HEAD | delta</td><td>Pipe any diff to delta</td></tr>
+          </table>
+        </section>
+        <section>
+          <div class="section-title">Navigation (interactive)</div>
+          <table>
+            <tr><td>n / N</td><td>Next / previous file (navigate=true)</td></tr>
+            <tr><td>q</td><td>Quit pager</td></tr>
+          </table>
+        </section>
+      </div>
+    </div>
+
+    <!-- ══════════════ AG ══════════════ -->
+    <div class="tool ag">
+      <div class="tool-header">
+        <span class="tool-name">ag</span>
+        <span class="tool-cmd">the_silver_searcher</span>
+      </div>
+      <div class="tool-body">
+        <section>
+          <div class="section-title">Basic search</div>
+          <table>
+            <tr><td>ag pattern</td><td>Search current dir recursively</td></tr>
+            <tr><td>ag pattern /path</td><td>Search from given path</td></tr>
+            <tr><td>ag -i pattern</td><td>Case-insensitive</td></tr>
+            <tr><td>ag -v pattern</td><td>Invert — lines NOT matching</td></tr>
+            <tr><td>ag -w pattern</td><td>Whole word match</td></tr>
+            <tr><td>ag -Q pattern</td><td>Literal string (no regex)</td></tr>
+            <tr><td>ag -s pattern</td><td>Case-sensitive (default)</td></tr>
+            <tr><td>ag pattern -G '\.c$'</td><td>Restrict to .c files (regex)</td></tr>
+          </table>
+        </section>
+        <section>
+          <div class="section-title">Output control</div>
+          <table>
+            <tr><td>ag -l pattern</td><td>Files with matches only</td></tr>
+            <tr><td>ag -L pattern</td><td>Files without matches</td></tr>
+            <tr><td>ag -c pattern</td><td>Count matches per file</td></tr>
+            <tr><td>ag --nofilename</td><td>Omit filenames</td></tr>
+            <tr><td>ag -n pattern</td><td>Line numbers (on by default)</td></tr>
+            <tr><td>ag -A 3 pattern</td><td>3 lines after each match</td></tr>
+            <tr><td>ag -B 3 pattern</td><td>3 lines before each match</td></tr>
+            <tr><td>ag -C 3 pattern</td><td>3 lines context (before+after)</td></tr>
+            <tr><td>ag --column</td><td>Show column numbers</td></tr>
+          </table>
+        </section>
+        <section>
+          <div class="section-title">File filters</div>
+          <table>
+            <tr><td>ag -u pattern</td><td>Search all files (ignore .gitignore)</td></tr>
+            <tr><td>ag --hidden pattern</td><td>Include hidden files</td></tr>
+            <tr><td>ag --ignore "*.min.js"</td><td>Exclude glob pattern</td></tr>
+            <tr><td>ag --python pattern</td><td>Search Python files only</td></tr>
+            <tr><td>ag --list-file-types</td><td>All supported --type flags</td></tr>
+          </table>
+        </section>
+      </div>
+    </div>
+
+    <!-- ══════════════ RIPGREP ══════════════ -->
+    <div class="tool rg span2">
+      <div class="tool-header">
+        <span class="tool-name">rg</span>
+        <span class="tool-cmd">ripgrep — fast search</span>
+      </div>
+      <div class="tool-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
+          <div>
+            <section>
+              <div class="section-title">Basic search</div>
+              <table>
+                <tr><td>rg pattern</td><td>Search current dir recursively</td></tr>
+                <tr><td>rg pattern /path</td><td>Search from given path</td></tr>
+                <tr><td>rg -i pattern</td><td>Case-insensitive</td></tr>
+                <tr><td>rg -s pattern</td><td>Case-sensitive (force)</td></tr>
+                <tr><td>rg -w pattern</td><td>Whole word match</td></tr>
+                <tr><td>rg -v pattern</td><td>Invert match</td></tr>
+                <tr><td>rg -F pattern</td><td>Fixed string (no regex)</td></tr>
+                <tr><td>rg -e pat1 -e pat2</td><td>Multiple patterns (OR)</td></tr>
+                <tr><td>rg -f patterns.txt</td><td>Patterns from file</td></tr>
+                <tr><td>rg -U pattern</td><td>Multiline mode</td></tr>
+                <tr><td>rg -P pattern</td><td>PCRE2 regex engine</td></tr>
+              </table>
+            </section>
+            <section>
+              <div class="section-title">Output &amp; context</div>
+              <table>
+                <tr><td>rg -l pattern</td><td>Files with matches only</td></tr>
+                <tr><td>rg -L pattern</td><td>Files without matches</td></tr>
+                <tr><td>rg -c pattern</td><td>Count matches per file</td></tr>
+                <tr><td>rg -n pattern</td><td>Show line numbers (default)</td></tr>
+                <tr><td>rg -N pattern</td><td>Suppress line numbers</td></tr>
+                <tr><td>rg --column pattern</td><td>Show column of match</td></tr>
+                <tr><td>rg -A 3 pattern</td><td>3 lines after match</td></tr>
+                <tr><td>rg -B 3 pattern</td><td>3 lines before match</td></tr>
+                <tr><td>rg -C 3 pattern</td><td>3 lines context</td></tr>
+                <tr><td>rg -o pattern</td><td>Print only matching part</td></tr>
+                <tr><td>rg --no-heading</td><td>One result per line (grep-style)</td></tr>
+              </table>
+            </section>
+          </div>
+          <div>
+            <section>
+              <div class="section-title">File &amp; type filters</div>
+              <table>
+                <tr><td>rg -t py pattern</td><td>Python files only</td></tr>
+                <tr><td>rg -T py pattern</td><td>Exclude Python files</td></tr>
+                <tr><td>rg --type-list</td><td>All supported types</td></tr>
+                <tr><td>rg -g '*.rs' pattern</td><td>Glob include pattern</td></tr>
+                <tr><td>rg -g '!*.min.js'</td><td>Glob exclude pattern</td></tr>
+                <tr><td>rg -u pattern</td><td>Ignore .gitignore (add more -u to also show hidden)</td></tr>
+                <tr><td>rg --hidden pattern</td><td>Include hidden files</td></tr>
+                <tr><td>rg --no-ignore pattern</td><td>Disable all ignore rules</td></tr>
+                <tr><td>rg -d 3 pattern</td><td>Max directory depth 3</td></tr>
+                <tr><td>rg --max-filesize 1M</td><td>Skip files larger than 1 MB</td></tr>
+              </table>
+            </section>
+            <section>
+              <div class="section-title">Replace &amp; advanced</div>
+              <table>
+                <tr><td>rg -r 'new' pattern</td><td>Replace match in output (not in-place)</td></tr>
+                <tr><td>rg --json pattern</td><td>JSON output (for tooling)</td></tr>
+                <tr><td>rg -0 pattern | xargs -0</td><td>NUL-delimited for safe piping</td></tr>
+                <tr><td>rg --stats pattern</td><td>Print match statistics</td></tr>
+                <tr><td>rg -m 5 pattern</td><td>Max 5 matches per file</td></tr>
+                <tr><td>rg --sort path</td><td>Sort results by path</td></tr>
+                <tr><td>rg pattern -. </td><td>Search dotfiles in current dir</td></tr>
+              </table>
+            </section>
+            <div class="note">rg honours <code>.gitignore</code>, <code>.ignore</code>, and <code>.rgignore</code>. Create <code>~/.rgrc</code> or set <code>RIPGREP_CONFIG_PATH</code> for permanent options.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ GH ══════════════ -->
+    <div class="tool gh span2">
+      <div class="tool-header">
+        <span class="tool-name">gh</span>
+        <span class="tool-cmd">GitHub CLI</span>
+      </div>
+      <div class="tool-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px">
+          <div>
+            <section>
+              <div class="section-title">Auth &amp; config</div>
+              <table>
+                <tr><td>gh auth login</td><td>Authenticate with GitHub</td></tr>
+                <tr><td>gh auth status</td><td>Show auth status</td></tr>
+                <tr><td>gh auth logout</td><td>Remove credentials</td></tr>
+                <tr><td>gh config set editor vim</td><td>Set preferred editor</td></tr>
+                <tr><td>gh config set git_protocol ssh</td><td>Use SSH for git ops</td></tr>
+              </table>
+            </section>
+            <section>
+              <div class="section-title">Pull requests</div>
+              <table>
+                <tr><td>gh pr list</td><td>List open PRs</td></tr>
+                <tr><td>gh pr list -s merged</td><td>List merged PRs</td></tr>
+                <tr><td>gh pr create</td><td>Create PR interactively</td></tr>
+                <tr><td>gh pr create -t "title" -b "body"</td><td>Create PR non-interactively</td></tr>
+                <tr><td>gh pr view 123</td><td>View PR #123</td></tr>
+                <tr><td>gh pr view 123 --web</td><td>Open PR in browser</td></tr>
+                <tr><td>gh pr checkout 123</td><td>Checkout PR #123 locally</td></tr>
+                <tr><td>gh pr diff 123</td><td>Show PR diff</td></tr>
+                <tr><td>gh pr merge 123</td><td>Merge PR #123</td></tr>
+                <tr><td>gh pr merge --squash</td><td>Squash and merge</td></tr>
+                <tr><td>gh pr review 123 --approve</td><td>Approve PR</td></tr>
+                <tr><td>gh pr review --request-changes</td><td>Request changes</td></tr>
+                <tr><td>gh pr close 123</td><td>Close PR without merging</td></tr>
+                <tr><td>gh pr status</td><td>PRs relevant to you</td></tr>
+              </table>
+            </section>
+          </div>
+          <div>
+            <section>
+              <div class="section-title">Issues</div>
+              <table>
+                <tr><td>gh issue list</td><td>List open issues</td></tr>
+                <tr><td>gh issue list -l bug</td><td>Filter by label</td></tr>
+                <tr><td>gh issue create</td><td>Create issue interactively</td></tr>
+                <tr><td>gh issue create -t "title"</td><td>Create with title</td></tr>
+                <tr><td>gh issue view 42</td><td>View issue #42</td></tr>
+                <tr><td>gh issue close 42</td><td>Close issue #42</td></tr>
+                <tr><td>gh issue reopen 42</td><td>Reopen issue #42</td></tr>
+                <tr><td>gh issue comment 42 -b "text"</td><td>Add comment</td></tr>
+                <tr><td>gh issue edit 42 --add-label bug</td><td>Add label</td></tr>
+                <tr><td>gh issue status</td><td>Issues relevant to you</td></tr>
+              </table>
+            </section>
+            <section>
+              <div class="section-title">Repos &amp; gists</div>
+              <table>
+                <tr><td>gh repo clone owner/repo</td><td>Clone a repository</td></tr>
+                <tr><td>gh repo fork</td><td>Fork current repo</td></tr>
+                <tr><td>gh repo create name</td><td>Create new repo</td></tr>
+                <tr><td>gh repo view --web</td><td>Open repo in browser</td></tr>
+                <tr><td>gh gist create file.txt</td><td>Create gist from file</td></tr>
+                <tr><td>gh gist list</td><td>List your gists</td></tr>
+              </table>
+            </section>
+          </div>
+          <div>
+            <section>
+              <div class="section-title">Workflows &amp; CI</div>
+              <table>
+                <tr><td>gh run list</td><td>List recent workflow runs</td></tr>
+                <tr><td>gh run view 123</td><td>View run details</td></tr>
+                <tr><td>gh run watch 123</td><td>Watch run in real-time</td></tr>
+                <tr><td>gh run rerun 123</td><td>Re-run failed run</td></tr>
+                <tr><td>gh workflow list</td><td>List all workflows</td></tr>
+                <tr><td>gh workflow run ci.yml</td><td>Trigger workflow manually</td></tr>
+                <tr><td>gh run download 123</td><td>Download run artifacts</td></tr>
+              </table>
+            </section>
+            <section>
+              <div class="section-title">Releases</div>
+              <table>
+                <tr><td>gh release list</td><td>List releases</td></tr>
+                <tr><td>gh release create v1.0</td><td>Create a new release</td></tr>
+                <tr><td>gh release view v1.0</td><td>View release notes</td></tr>
+                <tr><td>gh release upload v1.0 file</td><td>Upload asset to release</td></tr>
+                <tr><td>gh release download v1.0</td><td>Download release assets</td></tr>
+              </table>
+            </section>
+            <section>
+              <div class="section-title">Useful flags &amp; tips</div>
+              <table>
+                <tr><td>gh ... --json fields</td><td>Output as JSON</td></tr>
+                <tr><td>gh ... --jq '.field'</td><td>Filter JSON with jq</td></tr>
+                <tr><td>gh ... -R owner/repo</td><td>Target a specific repo</td></tr>
+                <tr><td>gh api /repos/:owner/:repo</td><td>Raw API call</td></tr>
+                <tr><td>gh alias set co 'pr checkout'</td><td>Create custom alias</td></tr>
+                <tr><td>gh alias list</td><td>Show all aliases</td></tr>
+                <tr><td>gh extension install owner/ext</td><td>Install extension</td></tr>
+              </table>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+</div><!-- /page -->
+</body>
+</html>

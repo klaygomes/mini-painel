@@ -14,7 +14,7 @@ typedef struct {
     size_t ok_offset;      /* byte offset of the "true"/"false" bool in buf */
 } xf_encoder_t;
 
-void xf_encoder_init         (xf_encoder_t *e, xf_out_buf_t out);
+void xf_encoder_init         (xf_encoder_t *e, xf_str_buf_t out);
 void xf_encoder_begin        (xf_encoder_t *e);
 void xf_encoder_result       (xf_encoder_t *e, int idx, const char *op, const char *id);
 void xf_encoder_render_result(xf_encoder_t *e, int idx, int page, int page_count,

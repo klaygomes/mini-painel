@@ -30,7 +30,8 @@ void panel_close(xf_device_t *dev)
 
 xf_device_t *panel_open_auto(void)
 {
-    char port[256];
-    if (port_detect_auto(port, sizeof(port)) < 0) return NULL;
-    return panel_open(port);
+    char         port_buf[256];
+    xf_str_buf_t port = {port_buf, sizeof port_buf};
+    if (port_detect_auto(port) < 0) return NULL;
+    return panel_open(port.ptr);
 }

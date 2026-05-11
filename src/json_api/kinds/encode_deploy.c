@@ -2,7 +2,7 @@
 #include "comp_deploy.h"
 #include "mjson.h"
 
-int encode_deploy(const void *vdata, xf_out_buf_t out)
+int encode_deploy(const void *vdata, xf_str_buf_t out)
 {
     const comp_deploy_data_t *d = vdata;
     int n = mjson_snprintf(out.ptr, out.cap,

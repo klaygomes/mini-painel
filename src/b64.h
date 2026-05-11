@@ -13,6 +13,6 @@
  * Returns the number of characters written (not counting the NUL), or -1 if
  * out.ptr is NULL or out.cap < XF_B64_ENCODE_LEN(in.len).
  */
-int xf_b64_encode(xf_byte_slice_t in, xf_out_buf_t out);
+int xf_b64_encode(xf_byte_slice_t in, xf_str_buf_t out);
 
 #endif

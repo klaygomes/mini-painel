@@ -6,7 +6,7 @@
 #include "json_str_slice.h" /* xf_str_slice_t */
 
 typedef int            (*xf_decode_fn)(xf_str_slice_t json, void *data, int patch);
-typedef int            (*xf_encode_fn)(const void *data, xf_out_buf_t out);
+typedef int            (*xf_encode_fn)(const void *data, xf_str_buf_t out);
 typedef xf_component_t (*xf_create_fn)(void *data);
 
 typedef struct {

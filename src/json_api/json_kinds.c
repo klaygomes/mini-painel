@@ -24,7 +24,7 @@
 #define XF_KIND(name, dsz, h) \
     extern xf_component_t create_##name(void *);                       \
     extern int decode_##name(xf_str_slice_t, void *, int);             \
-    extern int encode_##name(const void *, xf_out_buf_t);
+    extern int encode_##name(const void *, xf_str_buf_t);
 #include "json_kinds.def"
 #undef XF_KIND
 

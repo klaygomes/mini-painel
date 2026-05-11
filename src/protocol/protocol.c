@@ -15,7 +15,7 @@ int proto_send_cmd(int fd, uint8_t cmd, const uint8_t payload[8])
     }
     frame[9] = cmd;
 
-    int r = serial_write(fd, (xf_byte_slice_t){frame, FRAME_SIZE});
+    int r = serial_write(fd, XF_BYTE_SLICE(frame, FRAME_SIZE));
     serial_drain(fd);
     return (r < 0) ? -1 : 0;
 }

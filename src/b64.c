@@ -3,7 +3,7 @@
 static const char ALPHABET[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-int xf_b64_encode(xf_byte_slice_t in, xf_out_buf_t out)
+int xf_b64_encode(xf_byte_slice_t in, xf_str_buf_t out)
 {
     size_t out_len = XF_B64_ENCODE_LEN(in.len);
     size_t i;

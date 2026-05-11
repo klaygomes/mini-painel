@@ -4,7 +4,7 @@
 #include "comp_header.h"
 #include "mjson.h"
 
-int encode_header(const void *vdata, xf_out_buf_t out)
+int encode_header(const void *vdata, xf_str_buf_t out)
 {
     const comp_header_data_t *d = vdata;
     char dot[10];

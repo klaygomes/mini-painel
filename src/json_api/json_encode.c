@@ -22,7 +22,7 @@ static void enc_append(xf_encoder_t *e, const char *s, int n)
     e->buf[e->len] = '\0';
 }
 
-void xf_encoder_init(xf_encoder_t *e, xf_out_buf_t out)
+void xf_encoder_init(xf_encoder_t *e, xf_str_buf_t out)
 {
     memset(e, 0, sizeof(*e));
     e->buf          = out.ptr;

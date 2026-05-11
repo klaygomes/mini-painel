@@ -5,8 +5,8 @@
 static int decode_metric_card(xf_str_slice_t s, void *elem, int patch)
 {
     comp_metric_card_t *c = elem;
-    if (xf_decode_str(s, "$.label", c->label, sizeof c->label, patch) < 0) return -1;
-    if (xf_decode_str(s, "$.value", c->value, sizeof c->value, patch) < 0) return -1;
+    if (xf_decode_str(s, "$.label", XF_STR_BUF(c->label, sizeof c->label), patch) < 0) return -1;
+    if (xf_decode_str(s, "$.value", XF_STR_BUF(c->value, sizeof c->value), patch) < 0) return -1;
     return 0;
 }
 

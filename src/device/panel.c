@@ -18,7 +18,7 @@ static int hello(xf_device_t *dev)
     if (proto_send_cmd(dev->base.fd, CMD_HELLO, payload) < 0) return -1;
 
     uint8_t resp[FRAME_SIZE];
-    int n = proto_read(dev->base.fd, (xf_byte_buf_t){resp, FRAME_SIZE});
+    int n = proto_read(dev->base.fd, XF_BYTE_BUF(resp, FRAME_SIZE));
     serial_flush_input(dev->base.fd);
 
     if (n != FRAME_SIZE) return -1;
@@ -222,7 +222,7 @@ int panel_display_bitmap(xf_device_t *dev,
     while (offset < total) {
         size_t chunk = CHUNK_SIZE;
         if (offset + chunk > total) chunk = total - offset;
-        proto_send_raw(dev->base.fd, (xf_byte_slice_t){rgb565 + offset, chunk});
+        proto_send_raw(dev->base.fd, XF_BYTE_SLICE(rgb565 + offset, chunk));
         offset += chunk;
     }
 

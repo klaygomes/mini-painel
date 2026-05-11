@@ -13,7 +13,7 @@ int turing_proto_send_cmd(int fd, uint8_t cmd, int x, int y, int ex, int ey)
     buf[4] = (uint8_t)(ey & 0xFF);
     buf[5] = cmd;
 
-    int r = serial_write(fd, (xf_byte_slice_t){buf, 6});
+    int r = serial_write(fd, XF_BYTE_SLICE(buf, 6));
     serial_drain(fd);
     return (r < 0) ? -1 : 0;
 }
@@ -29,7 +29,7 @@ int turing_proto_send_orient(int fd, int orientation, int width, int height)
     buf[9] = (uint8_t)(height >> 8);
     buf[10] = (uint8_t)(height & 0xFF);
 
-    int r = serial_write(fd, (xf_byte_slice_t){buf, 16});
+    int r = serial_write(fd, XF_BYTE_SLICE(buf, 16));
     serial_drain(fd);
     return (r < 0) ? -1 : 0;
 }
@@ -38,7 +38,7 @@ int turing_proto_send_hello(int fd)
 {
     uint8_t buf[TURING_HELLO_LEN];
     memset(buf, TURING_CMD_HELLO, TURING_HELLO_LEN);
-    int r = serial_write(fd, (xf_byte_slice_t){buf, TURING_HELLO_LEN});
+    int r = serial_write(fd, XF_BYTE_SLICE(buf, TURING_HELLO_LEN));
     serial_drain(fd);
     return (r < 0) ? -1 : 0;
 }

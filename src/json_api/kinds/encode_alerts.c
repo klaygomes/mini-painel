@@ -5,7 +5,7 @@
 #include "comp_alerts.h"
 #include "mjson.h"
 
-int encode_alerts(const void *vdata, xf_out_buf_t out)
+int encode_alerts(const void *vdata, xf_str_buf_t out)
 {
     const comp_alerts_data_t *d = vdata;
     char tmp[256];

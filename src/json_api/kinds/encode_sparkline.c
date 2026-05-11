@@ -5,7 +5,7 @@
 #include "comp_sparkline.h"
 #include "mjson.h"
 
-int encode_sparkline(const void *vdata, xf_out_buf_t out)
+int encode_sparkline(const void *vdata, xf_str_buf_t out)
 {
     const comp_sparkline_data_t *d = vdata;
     char tmp[64];

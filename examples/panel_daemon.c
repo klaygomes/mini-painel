@@ -113,17 +113,17 @@ static int payload_has_render(const char *json, size_t len)
  * 0 on success or -1 on error.  Callers handle comma separation.
  */
 
-static void result_ok(xf_out_buf_t out, const char *op)
+static void result_ok(xf_str_buf_t out, const char *op)
 {
     mjson_snprintf(out.ptr, (int)out.cap, "{\"op\":%Q,\"ok\":true}", op);
 }
 
-static void result_err(xf_out_buf_t out, const char *op, const char *msg)
+static void result_err(xf_str_buf_t out, const char *op, const char *msg)
 {
     mjson_snprintf(out.ptr, (int)out.cap, "{\"op\":%Q,\"ok\":false,\"error\":%Q}", op, msg);
 }
 
-static int do_device_open(xf_str_slice_t cmd, xf_out_buf_t out,
+static int do_device_open(xf_str_slice_t cmd, xf_str_buf_t out,
                           daemon_state_t *st)
 {
     char port[DAEMON_PORT_BUF];
@@ -151,7 +151,7 @@ static int do_device_open(xf_str_slice_t cmd, xf_out_buf_t out,
     return 0;
 }
 
-static int do_device_close(xf_out_buf_t out, daemon_state_t *st)
+static int do_device_close(xf_str_buf_t out, daemon_state_t *st)
 {
     if (st->dev) {
         panel_close(st->dev);
@@ -161,7 +161,7 @@ static int do_device_close(xf_out_buf_t out, daemon_state_t *st)
     return 0;
 }
 
-static int do_device_brightness(xf_str_slice_t cmd, xf_out_buf_t out,
+static int do_device_brightness(xf_str_slice_t cmd, xf_str_buf_t out,
                                 daemon_state_t *st)
 {
     double level_d = 0;
@@ -179,7 +179,7 @@ static int do_device_brightness(xf_str_slice_t cmd, xf_out_buf_t out,
     return 0;
 }
 
-static int do_device_orientation(xf_str_slice_t cmd, xf_out_buf_t out,
+static int do_device_orientation(xf_str_slice_t cmd, xf_str_buf_t out,
                                  daemon_state_t *st)
 {
     char             val[DAEMON_ORIENT_BUF];
@@ -212,7 +212,7 @@ static int do_device_orientation(xf_str_slice_t cmd, xf_out_buf_t out,
     return 0;
 }
 
-static int do_canvas_get(xf_out_buf_t out, daemon_state_t *st)
+static int do_canvas_get(xf_str_buf_t out, daemon_state_t *st)
 {
     size_t b64_cap = XF_B64_ENCODE_LEN(st->canvas_cap);
     char  *b64;
@@ -225,8 +225,8 @@ static int do_canvas_get(xf_out_buf_t out, daemon_state_t *st)
         return -1;
     }
 
-    b64_len = xf_b64_encode((xf_byte_slice_t){st->canvas, st->canvas_cap},
-                            (xf_out_buf_t){b64, b64_cap});
+    b64_len = xf_b64_encode(XF_BYTE_SLICE(st->canvas, st->canvas_cap),
+                            XF_STR_BUF(b64, b64_cap));
     if (b64_len < 0) {
         free(b64);
         result_err(out, "canvas.get", "encode failed");
@@ -251,7 +251,7 @@ static int is_daemon_op(const char *op)
 }
 
 static int dispatch_daemon_op(const char *op, xf_str_slice_t cmd,
-                               xf_out_buf_t out, daemon_state_t *st)
+                               xf_str_buf_t out, daemon_state_t *st)
 {
     if (!strcmp(op, "device.open"))
         return do_device_open(cmd, out, st);
@@ -327,8 +327,8 @@ static void handle_ws_message(struct mg_connection *c,
 
             {
                 int ok = dispatch_daemon_op(op,
-                                            (xf_str_slice_t){data + voff, vlen},
-                                            (xf_out_buf_t){one_result, one_cap},
+                                            XF_STR_SLICE(data + voff, vlen),
+                                            XF_STR_BUF(one_result, one_cap),
                                             st);
                 if (ok < 0)
                     dany_error = 1;
@@ -396,7 +396,7 @@ static void handle_ws_message(struct mg_connection *c,
     }
 
     if (has_canvas_get) {
-        int ok = do_canvas_get((xf_out_buf_t){one_result, one_cap}, st);
+        int ok = do_canvas_get(XF_STR_BUF(one_result, one_cap), st);
         if (ok < 0)
             dany_error = 1;
 

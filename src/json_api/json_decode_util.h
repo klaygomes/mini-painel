@@ -14,7 +14,7 @@
  */
 
 int xf_decode_str  (xf_str_slice_t s, const char *path,
-                    char *dst, size_t dst_size, int patch);
+                    xf_str_buf_t dst, int patch);
 
 /* "#RGB", "#RRGGBB", "#RRGGBBAA" — anything else returns -1. */
 int xf_decode_color(xf_str_slice_t s, const char *path,

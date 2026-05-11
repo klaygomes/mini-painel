@@ -10,8 +10,8 @@ int decode_sparkline(xf_str_slice_t s, void *vdata, int patch)
     int i;
     float max_val;
 
-    if (xf_decode_str        (s, "$.title",  d->title,  sizeof d->title,  patch) < 0) return -1;
-    if (xf_decode_str        (s, "$.value",  d->value,  sizeof d->value,  patch) < 0) return -1;
+    if (xf_decode_str        (s, "$.title",  XF_STR_BUF(d->title, sizeof d->title), patch) < 0) return -1;
+    if (xf_decode_str        (s, "$.value",  XF_STR_BUF(d->value, sizeof d->value), patch) < 0) return -1;
     if (xf_decode_float_array(s, "$.points", d->points,
                               COMP_SPARKLINE_MAX_POINTS, &d->count, patch) < 0) return -1;
 

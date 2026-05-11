@@ -26,7 +26,7 @@ static int try_hello(const char *path)
     }
 
     uint8_t resp[FRAME_SIZE];
-    int n = proto_read(fd, (xf_byte_buf_t){resp, FRAME_SIZE});
+    int n = proto_read(fd, XF_BYTE_BUF(resp, FRAME_SIZE));
     serial_flush_input(fd);
     close(fd);
 
@@ -39,7 +39,7 @@ static int try_hello(const char *path)
     return 0;
 }
 
-int port_detect_auto(char *buf, size_t max_len)
+int port_detect_auto(xf_str_buf_t buf)
 {
     glob_t gl;
     int found = -1;
@@ -51,7 +51,7 @@ int port_detect_auto(char *buf, size_t max_len)
     size_t i;
     for (i = 0; i < gl.gl_pathc; i++) {
         if (try_hello(gl.gl_pathv[i]) == 0) {
-            snprintf(buf, max_len, "%s", gl.gl_pathv[i]);
+            snprintf(buf.ptr, buf.cap, "%s", gl.gl_pathv[i]);
             found = 0;
             break;
         }

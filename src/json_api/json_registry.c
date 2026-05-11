@@ -72,5 +72,5 @@ const xf_kind_def_t *xf_registry_kind_from_id(const char *id)
     if (kind_len <= 0)
         return NULL;
 
-    return xf_kind_lookup((xf_str_slice_t){kind_start, kind_len});
+    return xf_kind_lookup(XF_STR_SLICE(kind_start, kind_len));
 }

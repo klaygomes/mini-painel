@@ -6,7 +6,7 @@
 
 /*
  * Buffer-append helper used by encode_*.c functions that build JSON manually.
- * Requires local variables in scope: xf_out_buf_t out, size_t pos.
+ * Requires local variables in scope: xf_str_buf_t out, size_t pos.
  * Returns -1 from the calling function on overflow.
  */
 #define XF_ENC_APPEND(s, len) do { \
