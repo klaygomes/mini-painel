@@ -36,4 +36,12 @@ typedef struct {
  */
 typedef struct xf_device xf_device_t;
 
+typedef struct {
+    int            x;
+    int            y;
+    int            width;
+    int            height;
+    const uint8_t *rgb888;
+} xf_bitmap_t;
+
 #endif /* PANEL_TYPES_H */

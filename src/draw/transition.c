@@ -17,7 +17,8 @@ static void blit(xf_device_t *dev, const uint8_t *frame, int fw,
         return;
 
     if (x == 0 && w == fw) {
-        panel_display_bitmap(dev, x, y, w, h, frame + (size_t)y * fw * 3);
+        xf_bitmap_t bm = {.x = x, .y = y, .width = w, .height = h, .rgb888 = frame + (size_t)y * fw * 3};
+        panel_display_bitmap(dev, bm);
         return;
     }
 
@@ -25,7 +26,8 @@ static void blit(xf_device_t *dev, const uint8_t *frame, int fw,
         const uint8_t *src = frame + ((size_t)(y + row) * fw + (size_t)x) * 3;
         memcpy(scratch + (size_t)(row * w * 3), src, (size_t)(w * 3));
     }
-    panel_display_bitmap(dev, x, y, w, h, scratch);
+    xf_bitmap_t bm = {.x = x, .y = y, .width = w, .height = h, .rgb888 = scratch};
+    panel_display_bitmap(dev, bm);
 }
 
 static void trans_wipe_top(xf_device_t *dev, const uint8_t *old_f,
@@ -103,24 +105,24 @@ static void trans_chess(xf_device_t *dev, const uint8_t *old_f,
                         const uint8_t *new_f, int w, int h, uint8_t *scratch)
 {
     make_checker(new_f, old_f, w, h, 40, 40, scratch);
-    if (dev) panel_display_bitmap(dev, 0, 0, w, h, scratch);
-    if (dev) panel_display_bitmap(dev, 0, 0, w, h, new_f);
+    if (dev) { xf_bitmap_t bm = {.x = 0, .y = 0, .width = w, .height = h, .rgb888 = scratch}; panel_display_bitmap(dev, bm); }
+    if (dev) { xf_bitmap_t bm = {.x = 0, .y = 0, .width = w, .height = h, .rgb888 = new_f};   panel_display_bitmap(dev, bm); }
 }
 
 static void trans_strips_h(xf_device_t *dev, const uint8_t *old_f,
                             const uint8_t *new_f, int w, int h, uint8_t *scratch)
 {
     make_checker(new_f, old_f, w, h, w, 40, scratch);
-    if (dev) panel_display_bitmap(dev, 0, 0, w, h, scratch);
-    if (dev) panel_display_bitmap(dev, 0, 0, w, h, new_f);
+    if (dev) { xf_bitmap_t bm = {.x = 0, .y = 0, .width = w, .height = h, .rgb888 = scratch}; panel_display_bitmap(dev, bm); }
+    if (dev) { xf_bitmap_t bm = {.x = 0, .y = 0, .width = w, .height = h, .rgb888 = new_f};   panel_display_bitmap(dev, bm); }
 }
 
 static void trans_strips_v(xf_device_t *dev, const uint8_t *old_f,
                             const uint8_t *new_f, int w, int h, uint8_t *scratch)
 {
     make_checker(new_f, old_f, w, h, 60, h, scratch);
-    if (dev) panel_display_bitmap(dev, 0, 0, w, h, scratch);
-    if (dev) panel_display_bitmap(dev, 0, 0, w, h, new_f);
+    if (dev) { xf_bitmap_t bm = {.x = 0, .y = 0, .width = w, .height = h, .rgb888 = scratch}; panel_display_bitmap(dev, bm); }
+    if (dev) { xf_bitmap_t bm = {.x = 0, .y = 0, .width = w, .height = h, .rgb888 = new_f};   panel_display_bitmap(dev, bm); }
 }
 
 typedef void (*effect_fn_t)(xf_device_t *, const uint8_t *, const uint8_t *,

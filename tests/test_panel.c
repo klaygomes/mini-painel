@@ -211,7 +211,8 @@ static void test_bitmap_portrait_sends_correct_region(void)
     xf_device_t *dev = open_as(SUB_REV_A01);
     uint8_t pixels[100 * 50 * 3];
     memset(pixels, 0, sizeof(pixels));
-    panel_display_bitmap(dev, 10, 20, 100, 50, pixels);
+    xf_bitmap_t bm = {.x = 10, .y = 20, .width = 100, .height = 50, .rgb888 = pixels};
+    panel_display_bitmap(dev, bm);
 
     const uint8_t *b = fake_serial_written_bytes();
     TEST_ASSERT_EQUAL_HEX8(DEVICE_CMD_DISPLAY_BITMAP, b[0]);
@@ -232,7 +233,8 @@ static void test_bitmap_reverse_portrait_flips_region(void)
 
     uint8_t pixels[100 * 50 * 3];
     memset(pixels, 0, sizeof(pixels));
-    panel_display_bitmap(dev, 10, 20, 100, 50, pixels);
+    xf_bitmap_t bm = {.x = 10, .y = 20, .width = 100, .height = 50, .rgb888 = pixels};
+    panel_display_bitmap(dev, bm);
 
     const uint8_t *b = fake_serial_written_bytes();
     TEST_ASSERT_EQUAL_HEX8(DEVICE_CMD_DISPLAY_BITMAP, b[0]);
@@ -248,7 +250,8 @@ static void test_bitmap_sends_pixel_in_rgb565_big_endian(void)
     /* A red pixel (255,0,0) encodes to RGB565 0xF800 in big-endian: {0xF8, 0x00}. */
     xf_device_t *dev = open_as(SUB_REV_A01);
     uint8_t red[3] = {255, 0, 0};
-    panel_display_bitmap(dev, 0, 0, 1, 1, red);
+    xf_bitmap_t bm = {.x = 0, .y = 0, .width = 1, .height = 1, .rgb888 = red};
+    panel_display_bitmap(dev, bm);
 
     const uint8_t *b = fake_serial_written_bytes();
     /* Pixel data follows the 10-byte command frame. */
@@ -266,7 +269,8 @@ static void test_bitmap_reverse_portrait_rotates_pixels(void)
     fake_serial_clear_writes();
 
     uint8_t pixels[6] = {255, 0, 0,   0, 0, 255}; /* red, blue */
-    panel_display_bitmap(dev, 0, 0, 2, 1, pixels);
+    xf_bitmap_t bm = {.x = 0, .y = 0, .width = 2, .height = 1, .rgb888 = pixels};
+    panel_display_bitmap(dev, bm);
 
     const uint8_t *b = fake_serial_written_bytes();
     /* blue = 0x001F, red = 0xF800 */

@@ -285,7 +285,8 @@ int main(void)
             break;
         }
 
-        if (dev && panel_display_bitmap(dev, 0, 0, DISPLAY_W, DISPLAY_H, frame) < 0)
+        xf_bitmap_t bm = {.x = 0, .y = 0, .width = DISPLAY_W, .height = DISPLAY_H, .rgb888 = frame};
+        if (dev && panel_display_bitmap(dev, bm) < 0)
             fprintf(stderr, "panel_display_bitmap failed\n");
 
         printf("Page %d / %d\n", page + 1, page_count);

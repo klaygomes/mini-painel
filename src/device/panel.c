@@ -158,9 +158,8 @@ int panel_clear(xf_device_t *dev)
     }
     memset(white, 0xFF, sz);
 
-    int r = panel_display_bitmap(dev, 0, 0,
-                                 dev->base.display_width, dev->base.display_height,
-                                 white);
+    xf_bitmap_t bm = {.x = 0, .y = 0, .width = dev->base.display_width, .height = dev->base.display_height, .rgb888 = white};
+    int r = panel_display_bitmap(dev, bm);
     free(white);
     panel_set_orientation(dev, saved);
     return r;
@@ -169,39 +168,36 @@ int panel_clear(xf_device_t *dev)
 int panel_screen_off(xf_device_t *dev) { return panel_set_brightness(dev, 0); }
 int panel_screen_on(xf_device_t *dev)  { return panel_set_brightness(dev, 25); }
 
-int panel_display_bitmap(xf_device_t *dev,
-                         int x, int y,
-                         int width, int height,
-                         const uint8_t *rgb888)
+int panel_display_bitmap(xf_device_t *dev, xf_bitmap_t bm)
 {
-    if (!dev || !rgb888) return -1;
-    if (width <= 0 || height <= 0) return -1;
+    if (!dev || !bm.rgb888) return -1;
+    if (bm.width <= 0 || bm.height <= 0) return -1;
 
     int disp_w = panel_base_effective_width(&dev->base);
     int disp_h = panel_base_effective_height(&dev->base);
-    if (width  > disp_w) width  = disp_w;
-    if (height > disp_h) height = disp_h;
+    if (bm.width  > disp_w) bm.width  = disp_w;
+    if (bm.height > disp_h) bm.height = disp_h;
 
     int x0, y0, x1, y1;
-    const uint8_t *pixels = rgb888;
+    const uint8_t *pixels = bm.rgb888;
     uint8_t *rotated = NULL;
 
     if (dev->base.orientation == XF_ORIENT_PORTRAIT ||
         dev->base.orientation == XF_ORIENT_LANDSCAPE) {
-        x0 = x;
-        y0 = y;
-        x1 = x + width  - 1;
-        y1 = y + height - 1;
+        x0 = bm.x;
+        y0 = bm.y;
+        x1 = bm.x + bm.width  - 1;
+        y1 = bm.y + bm.height - 1;
     } else {
         /* Reverse orientations flip the region and rotate pixels so the device
          * renders the image in the correct visual direction. */
-        x0 = dev->base.display_width  - x - width;
-        y0 = dev->base.display_height - y - height;
-        x1 = dev->base.display_width  - x - 1;
-        y1 = dev->base.display_height - y - 1;
+        x0 = dev->base.display_width  - bm.x - bm.width;
+        y0 = dev->base.display_height - bm.y - bm.height;
+        x1 = dev->base.display_width  - bm.x - 1;
+        y1 = dev->base.display_height - bm.y - 1;
 
         rotated = dev->img_scratch;
-        image_rotate_180(rgb888, width, height, rotated);
+        image_rotate_180(bm.rgb888, bm.width, bm.height, rotated);
         pixels = rotated;
     }
 
@@ -213,7 +209,7 @@ int panel_display_bitmap(xf_device_t *dev,
     };
     proto_send_cmd(dev->base.fd, CMD_DISPLAY_BITMAP, payload);
 
-    int pixel_count = width * height;
+    int pixel_count = bm.width * bm.height;
     uint8_t *rgb565 = dev->img_rgb565;
     image_rgb888_to_rgb565be(pixels, pixel_count, rgb565);
 

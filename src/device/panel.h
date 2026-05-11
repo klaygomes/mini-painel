@@ -28,11 +28,6 @@ int panel_clear(xf_device_t *dev);
 int panel_screen_off(xf_device_t *dev);
 int panel_screen_on(xf_device_t *dev);
 
-/* rgb888 is width*height*3 bytes in R,G,B order.
- * For REVERSE_* orientations, coordinates and pixels are automatically adjusted. */
-int panel_display_bitmap(xf_device_t *dev,
-                         int x, int y,
-                         int width, int height,
-                         const uint8_t *rgb888);
+int panel_display_bitmap(xf_device_t *dev, xf_bitmap_t bm);
 
 #endif /* PANEL_H */

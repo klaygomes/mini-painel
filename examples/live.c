@@ -48,8 +48,10 @@ static void send_rect(xf_device_t *dev, const uint8_t *frame,
         const uint8_t *src = frame + ((size_t)(y + row) * DISPLAY_W + (size_t)x) * bpp;
         memcpy(sub + (size_t)(row * w * bpp), src, (size_t)(w * bpp));
     }
-    if (dev)
-        panel_display_bitmap(dev, x, y, w, h, sub);
+    if (dev) {
+        xf_bitmap_t bm = {.x = x, .y = y, .width = w, .height = h, .rgb888 = sub};
+        panel_display_bitmap(dev, bm);
+    }
     free(sub);
 }
 

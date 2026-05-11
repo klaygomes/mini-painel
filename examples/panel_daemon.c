@@ -388,9 +388,8 @@ static void handle_ws_message(struct mg_connection *c,
     if (api_rc == 0 && has_render) {
         write_ppm(st);
         if (st->dev) {
-            if (panel_display_bitmap(st->dev, 0, 0,
-                                     st->width, st->height,
-                                     st->canvas) < 0)
+            xf_bitmap_t bm = {.x = 0, .y = 0, .width = st->width, .height = st->height, .rgb888 = st->canvas};
+            if (panel_display_bitmap(st->dev, bm) < 0)
                 fprintf(stderr, "[daemon] panel_display_bitmap failed\n");
         }
     }

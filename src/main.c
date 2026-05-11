@@ -94,7 +94,8 @@ int main(void)
     panel_set_orientation(dev, XF_ORIENT_PORTRAIT);
     panel_set_brightness(dev, 80);
 
-    if (panel_display_bitmap(dev, 0, 0, DISPLAY_W, DISPLAY_H, frame) < 0)
+    xf_bitmap_t bm = {.x = 0, .y = 0, .width = DISPLAY_W, .height = DISPLAY_H, .rgb888 = frame};
+    if (panel_display_bitmap(dev, bm) < 0)
         fprintf(stderr, "panel_display_bitmap failed\n");
     else
         printf("Frame sent.\n");
