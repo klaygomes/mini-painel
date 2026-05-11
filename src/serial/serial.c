@@ -54,9 +54,9 @@ int serial_configure(int fd)
     return 0;
 }
 
-int serial_write(int fd, const uint8_t *buf, size_t len)
+int serial_write(int fd, xf_byte_slice_t data)
 {
-    ssize_t written = write(fd, buf, len);
+    ssize_t written = write(fd, data.ptr, data.len);
     if (written < 0) {
         perror("serial_write");
         return -1;
@@ -64,11 +64,11 @@ int serial_write(int fd, const uint8_t *buf, size_t len)
     return (int)written;
 }
 
-int serial_read(int fd, uint8_t *buf, size_t len)
+int serial_read(int fd, xf_byte_buf_t buf)
 {
     size_t total = 0;
-    while (total < len) {
-        ssize_t n = read(fd, buf + total, len - total);
+    while (total < buf.len) {
+        ssize_t n = read(fd, buf.ptr + total, buf.len - total);
         if (n < 0) {
             perror("serial_read");
             break;

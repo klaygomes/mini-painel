@@ -5,7 +5,7 @@
 #include "comp_metrics.h"
 #include "mjson.h"
 
-int encode_metrics(const void *vdata, char *buf, size_t cap)
+int encode_metrics(const void *vdata, xf_out_buf_t out)
 {
     const comp_metrics_data_t *d = vdata;
     char tmp[64];

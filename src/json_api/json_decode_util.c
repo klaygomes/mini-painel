@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "json_decode_util.h"
+#include "json_str_slice.h"
 #include "mjson.h"
 #include "debug.h"
 
@@ -121,7 +122,7 @@ static size_t latin1_to_utf8(char *dst, size_t dst_size,
     return out;
 }
 
-int xf_decode_str(const char *s, int len, const char *path,
+int xf_decode_str(xf_str_slice_t s, const char *path,
                   char *dst, size_t dst_size, int patch)
 {
     char tmp[512];
@@ -132,13 +133,13 @@ int xf_decode_str(const char *s, int len, const char *path,
     if (dst_size == 0)
         return -1;
 
-    n = mjson_get_string(s, len, path, tmp, (int)sizeof(tmp));
+    n = mjson_get_string(s.ptr, s.len, path, tmp, (int)sizeof(tmp));
     if (n < 0) {
         /* Path not found returns -1 from mjson_get_string too,
          * but so does a type mismatch. We treat absence as success. */
         const char *tok;
         int         toklen;
-        int         tok_type = mjson_find(s, len, path, &tok, &toklen);
+        int         tok_type = mjson_find(s.ptr, s.len, path, &tok, &toklen);
         if (tok_type == MJSON_TOK_INVALID)
             return 0; /* absent */
         return -1;   /* present but wrong type */
@@ -175,7 +176,7 @@ static int parse_hex_byte(const char *s)
     return (hi << 4) | lo;
 }
 
-int xf_decode_color(const char *s, int len, const char *path,
+int xf_decode_color(xf_str_slice_t s, const char *path,
                     xf_rgba_t *out, int patch)
 {
     char buf[16];
@@ -185,11 +186,11 @@ int xf_decode_color(const char *s, int len, const char *path,
 
     (void)patch;
 
-    n = mjson_get_string(s, len, path, buf, (int)sizeof(buf));
+    n = mjson_get_string(s.ptr, s.len, path, buf, (int)sizeof(buf));
     if (n < 0) {
         const char *tok;
         int         toklen;
-        int         tok_type = mjson_find(s, len, path, &tok, &toklen);
+        int         tok_type = mjson_find(s.ptr, s.len, path, &tok, &toklen);
         if (tok_type == MJSON_TOK_INVALID)
             return 0;
         return -1;
@@ -236,15 +237,15 @@ int xf_decode_color(const char *s, int len, const char *path,
     return 0;
 }
 
-int xf_decode_float(const char *s, int len, const char *path,
+int xf_decode_float(xf_str_slice_t s, const char *path,
                     float *out, int patch)
 {
     double v;
     (void)patch;
-    if (!mjson_get_number(s, len, path, &v)) {
+    if (!mjson_get_number(s.ptr, s.len, path, &v)) {
         const char *tok;
         int         toklen;
-        if (mjson_find(s, len, path, &tok, &toklen) == MJSON_TOK_INVALID)
+        if (mjson_find(s.ptr, s.len, path, &tok, &toklen) == MJSON_TOK_INVALID)
             return 0;
         return -1;
     }
@@ -252,15 +253,15 @@ int xf_decode_float(const char *s, int len, const char *path,
     return 0;
 }
 
-int xf_decode_int(const char *s, int len, const char *path,
+int xf_decode_int(xf_str_slice_t s, const char *path,
                   int *out, int patch)
 {
     double v;
     (void)patch;
-    if (!mjson_get_number(s, len, path, &v)) {
+    if (!mjson_get_number(s.ptr, s.len, path, &v)) {
         const char *tok;
         int         toklen;
-        if (mjson_find(s, len, path, &tok, &toklen) == MJSON_TOK_INVALID)
+        if (mjson_find(s.ptr, s.len, path, &tok, &toklen) == MJSON_TOK_INVALID)
             return 0;
         return -1;
     }
@@ -268,21 +269,21 @@ int xf_decode_int(const char *s, int len, const char *path,
     return 0;
 }
 
-int xf_decode_bool(const char *s, int len, const char *path,
+int xf_decode_bool(xf_str_slice_t s, const char *path,
                    int *out, int patch)
 {
     (void)patch;
-    if (!mjson_get_bool(s, len, path, out)) {
+    if (!mjson_get_bool(s.ptr, s.len, path, out)) {
         const char *tok;
         int         toklen;
-        if (mjson_find(s, len, path, &tok, &toklen) == MJSON_TOK_INVALID)
+        if (mjson_find(s.ptr, s.len, path, &tok, &toklen) == MJSON_TOK_INVALID)
             return 0;
         return -1;
     }
     return 0;
 }
 
-int xf_decode_float_array(const char *s, int len, const char *path,
+int xf_decode_float_array(xf_str_slice_t s, const char *path,
                           float *dst, int max_count, int *out_count,
                           int patch)
 {
@@ -294,7 +295,7 @@ int xf_decode_float_array(const char *s, int len, const char *path,
 
     (void)patch;
 
-    tok_type = mjson_find(s, len, path, &arr, &arr_len);
+    tok_type = mjson_find(s.ptr, s.len, path, &arr, &arr_len);
     if (tok_type == MJSON_TOK_INVALID)
         return 0;
     if (tok_type != MJSON_TOK_ARRAY)
@@ -317,7 +318,7 @@ int xf_decode_float_array(const char *s, int len, const char *path,
     return 0;
 }
 
-int xf_decode_object_array(const char *s, int len, const char *path,
+int xf_decode_object_array(xf_str_slice_t s, const char *path,
                            void *array_base, size_t stride, int max_count,
                            int *out_count, xf_elem_decode_fn fn, int patch)
 {
@@ -329,7 +330,7 @@ int xf_decode_object_array(const char *s, int len, const char *path,
 
     (void)patch;
 
-    tok_type = mjson_find(s, len, path, &arr, &arr_len);
+    tok_type = mjson_find(s.ptr, s.len, path, &arr, &arr_len);
     if (tok_type == MJSON_TOK_INVALID)
         return 0;
     if (tok_type != MJSON_TOK_ARRAY)
@@ -344,7 +345,7 @@ int xf_decode_object_array(const char *s, int len, const char *path,
         if (vtype != MJSON_TOK_OBJECT)
             return -1;
         elem = (char *)array_base + (size_t)count * stride;
-        if (fn(arr + voff, vlen, elem, patch) < 0)
+        if (fn((xf_str_slice_t){arr + voff, vlen}, elem, patch) < 0)
             return -1;
         count++;
     }

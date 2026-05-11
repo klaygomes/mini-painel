@@ -3,9 +3,10 @@
 
 #include <stddef.h>
 #include "comp_base.h"
+#include "json_str_slice.h" /* xf_str_slice_t */
 
-typedef int            (*xf_decode_fn)(const char *json, int len, void *data, int patch);
-typedef int            (*xf_encode_fn)(const void *data, char *buf, size_t cap);
+typedef int            (*xf_decode_fn)(xf_str_slice_t json, void *data, int patch);
+typedef int            (*xf_encode_fn)(const void *data, xf_out_buf_t out);
 typedef xf_component_t (*xf_create_fn)(void *data);
 
 typedef struct {
@@ -18,7 +19,7 @@ typedef struct {
     int          stateless;  /* 1 -> dispatcher allocates no data block   */
 } xf_kind_def_t;
 
-const xf_kind_def_t *xf_kind_lookup(const char *name, int name_len);
+const xf_kind_def_t *xf_kind_lookup(xf_str_slice_t name);
 int                  xf_kind_count(void);
 const xf_kind_def_t *xf_kind_at(int i);
 

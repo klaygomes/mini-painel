@@ -5,7 +5,7 @@
 #include "comp_sla_gauge.h"
 #include "mjson.h"
 
-int encode_sla_gauge(const void *vdata, char *buf, size_t cap)
+int encode_sla_gauge(const void *vdata, xf_out_buf_t out)
 {
     const comp_sla_gauge_data_t *d = vdata;
     char tmp[256];

@@ -5,7 +5,7 @@
 #include "comp_team_status.h"
 #include "mjson.h"
 
-int encode_team_status(const void *vdata, char *buf, size_t cap)
+int encode_team_status(const void *vdata, xf_out_buf_t out)
 {
     const comp_team_status_data_t *d = vdata;
     char tmp[256];

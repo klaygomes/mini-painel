@@ -10,13 +10,11 @@ typedef struct {
     int  (*page_count)(const xf_json_backend_t *backend);
     int  (*row_add)(xf_json_backend_t *backend,
                     const char *id,
-                    const char *data_json,
-                    int data_json_len,
+                    xf_str_slice_t data_json,
                     const char **err_msg);
     int  (*row_update)(xf_json_backend_t *backend,
                        const char *id,
-                       const char *data_json,
-                       int data_json_len,
+                       xf_str_slice_t data_json,
                        const char **err_msg);
     int  (*row_remove)(xf_json_backend_t *backend,
                        const char *id,
@@ -27,8 +25,7 @@ typedef struct {
                      const char **err_msg);
     int  (*page_render)(xf_json_backend_t *backend,
                         int page,
-                        uint8_t *canvas,
-                        size_t canvas_cap,
+                        xf_byte_buf_t canvas,
                         int *page_count,
                         int *dx,
                         int *dy,
@@ -74,8 +71,7 @@ static int dashboard_backend_page_count(const xf_json_backend_t *backend)
 
 static int dashboard_row_add(xf_json_backend_t *backend,
                              const char *id,
-                             const char *data_json,
-                             int data_json_len,
+                             xf_str_slice_t data_json,
                              const char **err_msg)
 {
     const xf_kind_def_t *def;
@@ -108,8 +104,8 @@ static int dashboard_row_add(xf_json_backend_t *backend,
                 *err_msg = "out of memory";
             return -1;
         }
-        if (data_json && data_json_len > 0) {
-            if (def->decode(data_json, data_json_len, data, 0) < 0) {
+        if (data_json.ptr && data_json.len > 0) {
+            if (def->decode(data_json, data, 0) < 0) {
                 free(data);
                 xf_registry_remove(&backend->reg, id);
                 if (err_msg)
@@ -147,8 +143,7 @@ static int dashboard_row_add(xf_json_backend_t *backend,
 
 static int dashboard_row_update(xf_json_backend_t *backend,
                                 const char *id,
-                                const char *data_json,
-                                int data_json_len,
+                                xf_str_slice_t data_json,
                                 const char **err_msg)
 {
     xf_reg_entry_t *entry;
@@ -160,8 +155,8 @@ static int dashboard_row_update(xf_json_backend_t *backend,
     if (!entry)
         return -1;
 
-    if (!entry->def->stateless && entry->data && data_json && data_json_len > 0) {
-        if (entry->def->decode(data_json, data_json_len, entry->data, 1) < 0) {
+    if (!entry->def->stateless && entry->data && data_json.ptr && data_json.len > 0) {
+        if (entry->def->decode(data_json, entry->data, 1) < 0) {
             if (err_msg)
                 *err_msg = "decode error";
             return -1;
@@ -241,8 +236,7 @@ static int dashboard_row_move(xf_json_backend_t *backend,
 
 static int dashboard_page_render_op(xf_json_backend_t *backend,
                                     int page,
-                                    uint8_t *canvas,
-                                    size_t canvas_cap,
+                                    xf_byte_buf_t canvas,
                                     int *page_count,
                                     int *dx,
                                     int *dy,
@@ -258,7 +252,7 @@ static int dashboard_page_render_op(xf_json_backend_t *backend,
         *err_msg = "render failed";
 
     needed = (size_t)backend->width * (size_t)backend->height * 3u;
-    if (!canvas || canvas_cap < needed) {
+    if (!canvas.ptr || canvas.len < needed) {
         if (err_msg)
             *err_msg = "canvas too small or NULL";
         return -1;
@@ -273,7 +267,7 @@ static int dashboard_page_render_op(xf_json_backend_t *backend,
     if (page_count)
         *page_count = dashboard_page_count(backend->dash);
 
-    memcpy(canvas, frame, needed);
+    memcpy(canvas.ptr, frame, needed);
     return 0;
 }
 
@@ -363,20 +357,18 @@ int xf_json_backend_page_count(const xf_json_backend_t *backend)
 
 int xf_json_backend_row_add(xf_json_backend_t *backend,
                             const char *id,
-                            const char *data_json,
-                            int data_json_len,
+                            xf_str_slice_t data_json,
                             const char **err_msg)
 {
-    return backend->ops->row_add(backend, id, data_json, data_json_len, err_msg);
+    return backend->ops->row_add(backend, id, data_json, err_msg);
 }
 
 int xf_json_backend_row_update(xf_json_backend_t *backend,
                                const char *id,
-                               const char *data_json,
-                               int data_json_len,
+                               xf_str_slice_t data_json,
                                const char **err_msg)
 {
-    return backend->ops->row_update(backend, id, data_json, data_json_len, err_msg);
+    return backend->ops->row_update(backend, id, data_json, err_msg);
 }
 
 int xf_json_backend_row_remove(xf_json_backend_t *backend,
@@ -396,8 +388,7 @@ int xf_json_backend_row_move(xf_json_backend_t *backend,
 
 int xf_json_backend_page_render(xf_json_backend_t *backend,
                                 int page,
-                                uint8_t *canvas,
-                                size_t canvas_cap,
+                                xf_byte_buf_t canvas,
                                 int *page_count,
                                 int *dx,
                                 int *dy,
@@ -405,7 +396,7 @@ int xf_json_backend_page_render(xf_json_backend_t *backend,
                                 int *dh,
                                 const char **err_msg)
 {
-    return backend->ops->page_render(backend, page, canvas, canvas_cap,
+    return backend->ops->page_render(backend, page, canvas,
                                      page_count, dx, dy, dw, dh, err_msg);
 }
 

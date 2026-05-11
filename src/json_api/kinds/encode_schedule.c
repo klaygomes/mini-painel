@@ -5,7 +5,7 @@
 #include "comp_schedule.h"
 #include "mjson.h"
 
-int encode_schedule(const void *vdata, char *buf, size_t cap)
+int encode_schedule(const void *vdata, xf_out_buf_t out)
 {
     const comp_schedule_data_t *d = vdata;
     char tmp[256];

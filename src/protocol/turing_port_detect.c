@@ -22,7 +22,7 @@ static int try_hello(const char *path)
     int r = turing_proto_send_hello(fd);
 
     uint8_t resp[TURING_RESP_LEN];
-    turing_proto_read(fd, resp, TURING_RESP_LEN);
+    turing_proto_read(fd, (xf_byte_buf_t){resp, TURING_RESP_LEN});
     serial_flush_input(fd);
     close(fd);
 

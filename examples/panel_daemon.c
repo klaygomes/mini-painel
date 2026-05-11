@@ -13,6 +13,7 @@ const struct mg_mem_file mg_packed_files[] = {{NULL, NULL, 0, 0}};
 #include "json_api.h"
 #include "panel.h"
 #include "b64.h"
+#include "buf.h"
 
 #define DAEMON_DEFAULT_PORT       "8765"
 #define DAEMON_DEFAULT_WIDTH      480
@@ -112,18 +113,18 @@ static int payload_has_render(const char *json, size_t len)
  * 0 on success or -1 on error.  Callers handle comma separation.
  */
 
-static void result_ok(char *out, size_t cap, const char *op)
+static void result_ok(xf_out_buf_t out, const char *op)
 {
-    mjson_snprintf(out, (int)cap, "{\"op\":%Q,\"ok\":true}", op);
+    mjson_snprintf(out.ptr, (int)out.cap, "{\"op\":%Q,\"ok\":true}", op);
 }
 
-static void result_err(char *out, size_t cap, const char *op, const char *msg)
+static void result_err(xf_out_buf_t out, const char *op, const char *msg)
 {
-    mjson_snprintf(out, (int)cap, "{\"op\":%Q,\"ok\":false,\"error\":%Q}", op, msg);
+    mjson_snprintf(out.ptr, (int)out.cap, "{\"op\":%Q,\"ok\":false,\"error\":%Q}", op, msg);
 }
 
-static int do_device_open(const char *cmd, int cmdlen, char *out, size_t cap,
-                           daemon_state_t *st)
+static int do_device_open(xf_str_slice_t cmd, xf_out_buf_t out,
+                          daemon_state_t *st)
 {
     char port[DAEMON_PORT_BUF];
     int  has_port;
@@ -133,64 +134,64 @@ static int do_device_open(const char *cmd, int cmdlen, char *out, size_t cap,
         st->dev = NULL;
     }
 
-    has_port = mjson_get_string(cmd, cmdlen, "$.port", port, (int)sizeof(port)) > 0;
+    has_port = mjson_get_string(cmd.ptr, cmd.len, "$.port", port, (int)sizeof(port)) > 0;
     st->dev  = has_port ? panel_open(port) : panel_open_auto();
 
     if (!st->dev) {
-        result_err(out, cap, "device.open", "device not found");
+        result_err(out, "device.open", "device not found");
         return -1;
     }
     if (configure_device(st->dev) < 0) {
         panel_close(st->dev);
         st->dev = NULL;
-        result_err(out, cap, "device.open", "configure failed");
+        result_err(out, "device.open", "configure failed");
         return -1;
     }
-    result_ok(out, cap, "device.open");
+    result_ok(out, "device.open");
     return 0;
 }
 
-static int do_device_close(char *out, size_t cap, daemon_state_t *st)
+static int do_device_close(xf_out_buf_t out, daemon_state_t *st)
 {
     if (st->dev) {
         panel_close(st->dev);
         st->dev = NULL;
     }
-    result_ok(out, cap, "device.close");
+    result_ok(out, "device.close");
     return 0;
 }
 
-static int do_device_brightness(const char *cmd, int cmdlen, char *out, size_t cap,
-                                 daemon_state_t *st)
+static int do_device_brightness(xf_str_slice_t cmd, xf_out_buf_t out,
+                                daemon_state_t *st)
 {
     double level_d = 0;
 
     if (!st->dev) {
-        result_err(out, cap, "device.brightness", "no device");
+        result_err(out, "device.brightness", "no device");
         return -1;
     }
-    mjson_get_number(cmd, cmdlen, "$.level", &level_d);
+    mjson_get_number(cmd.ptr, cmd.len, "$.level", &level_d);
     if (panel_set_brightness(st->dev, (int)level_d) < 0) {
-        result_err(out, cap, "device.brightness", "set failed");
+        result_err(out, "device.brightness", "set failed");
         return -1;
     }
-    result_ok(out, cap, "device.brightness");
+    result_ok(out, "device.brightness");
     return 0;
 }
 
-static int do_device_orientation(const char *cmd, int cmdlen, char *out, size_t cap,
-                                  daemon_state_t *st)
+static int do_device_orientation(xf_str_slice_t cmd, xf_out_buf_t out,
+                                 daemon_state_t *st)
 {
     char             val[DAEMON_ORIENT_BUF];
     xf_orientation_t orient;
 
     if (!st->dev) {
-        result_err(out, cap, "device.orientation", "no device");
+        result_err(out, "device.orientation", "no device");
         return -1;
     }
 
-    if (mjson_get_string(cmd, cmdlen, "$.value", val, (int)sizeof(val)) <= 0) {
-        result_err(out, cap, "device.orientation", "missing value");
+    if (mjson_get_string(cmd.ptr, cmd.len, "$.value", val, (int)sizeof(val)) <= 0) {
+        result_err(out, "device.orientation", "missing value");
         return -1;
     }
 
@@ -199,19 +200,19 @@ static int do_device_orientation(const char *cmd, int cmdlen, char *out, size_t 
     else if (!strcmp(val, "reverse_landscape")) orient = XF_ORIENT_REVERSE_LANDSCAPE;
     else if (!strcmp(val, "reverse_portrait"))  orient = XF_ORIENT_REVERSE_PORTRAIT;
     else {
-        result_err(out, cap, "device.orientation", "unknown value");
+        result_err(out, "device.orientation", "unknown value");
         return -1;
     }
 
     if (panel_set_orientation(st->dev, orient) < 0) {
-        result_err(out, cap, "device.orientation", "set failed");
+        result_err(out, "device.orientation", "set failed");
         return -1;
     }
-    result_ok(out, cap, "device.orientation");
+    result_ok(out, "device.orientation");
     return 0;
 }
 
-static int do_canvas_get(char *out, size_t cap, daemon_state_t *st)
+static int do_canvas_get(xf_out_buf_t out, daemon_state_t *st)
 {
     size_t b64_cap = XF_B64_ENCODE_LEN(st->canvas_cap);
     char  *b64;
@@ -220,23 +221,24 @@ static int do_canvas_get(char *out, size_t cap, daemon_state_t *st)
 
     b64 = malloc(b64_cap);
     if (!b64) {
-        result_err(out, cap, "canvas.get", "alloc failed");
+        result_err(out, "canvas.get", "alloc failed");
         return -1;
     }
 
-    b64_len = xf_b64_encode(st->canvas, st->canvas_cap, b64, b64_cap);
+    b64_len = xf_b64_encode((xf_byte_slice_t){st->canvas, st->canvas_cap},
+                            (xf_out_buf_t){b64, b64_cap});
     if (b64_len < 0) {
         free(b64);
-        result_err(out, cap, "canvas.get", "encode failed");
+        result_err(out, "canvas.get", "encode failed");
         return -1;
     }
 
-    n = mjson_snprintf(out, (int)cap,
+    n = mjson_snprintf(out.ptr, (int)out.cap,
                        "{\"op\":%Q,\"ok\":true,\"width\":%d,\"height\":%d,"
                        "\"encoding\":%Q,\"data\":%Q}",
                        "canvas.get", st->width, st->height, "base64", b64);
     free(b64);
-    return (n > 0 && (size_t)n < cap) ? 0 : -1;
+    return (n > 0 && (size_t)n < out.cap) ? 0 : -1;
 }
 
 static int is_daemon_op(const char *op)
@@ -248,20 +250,20 @@ static int is_daemon_op(const char *op)
         || !strcmp(op, "canvas.get");
 }
 
-static int dispatch_daemon_op(const char *op, const char *cmd, int cmdlen,
-                               char *out, size_t out_cap, daemon_state_t *st)
+static int dispatch_daemon_op(const char *op, xf_str_slice_t cmd,
+                               xf_out_buf_t out, daemon_state_t *st)
 {
     if (!strcmp(op, "device.open"))
-        return do_device_open(cmd, cmdlen, out, out_cap, st);
+        return do_device_open(cmd, out, st);
     if (!strcmp(op, "device.close"))
-        return do_device_close(out, out_cap, st);
+        return do_device_close(out, st);
     if (!strcmp(op, "device.brightness"))
-        return do_device_brightness(cmd, cmdlen, out, out_cap, st);
+        return do_device_brightness(cmd, out, st);
     if (!strcmp(op, "device.orientation"))
-        return do_device_orientation(cmd, cmdlen, out, out_cap, st);
+        return do_device_orientation(cmd, out, st);
     if (!strcmp(op, "canvas.get"))
-        return do_canvas_get(out, out_cap, st);
-    result_err(out, out_cap, op, "unknown op");
+        return do_canvas_get(out, st);
+    result_err(out, op, "unknown op");
     return -1;
 }
 
@@ -324,8 +326,10 @@ static void handle_ws_message(struct mg_connection *c,
             }
 
             {
-                int ok = dispatch_daemon_op(op, data + voff, vlen,
-                                            one_result, one_cap, st);
+                int ok = dispatch_daemon_op(op,
+                                            (xf_str_slice_t){data + voff, vlen},
+                                            (xf_out_buf_t){one_result, one_cap},
+                                            st);
                 if (ok < 0)
                     dany_error = 1;
 
@@ -392,7 +396,7 @@ static void handle_ws_message(struct mg_connection *c,
     }
 
     if (has_canvas_get) {
-        int ok = do_canvas_get(one_result, one_cap, st);
+        int ok = do_canvas_get((xf_out_buf_t){one_result, one_cap}, st);
         if (ok < 0)
             dany_error = 1;
 

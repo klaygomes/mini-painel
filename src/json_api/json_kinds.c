@@ -22,9 +22,9 @@
 
 /* Forward-declare every create, decode, and encode function. */
 #define XF_KIND(name, dsz, h) \
-    extern xf_component_t create_##name(void *);                  \
-    extern int decode_##name(const char *, int, void *, int);     \
-    extern int encode_##name(const void *, char *, size_t);
+    extern xf_component_t create_##name(void *);                       \
+    extern int decode_##name(xf_str_slice_t, void *, int);             \
+    extern int encode_##name(const void *, xf_out_buf_t);
 #include "json_kinds.def"
 #undef XF_KIND
 
@@ -37,14 +37,14 @@ static const xf_kind_def_t TABLE[] = {
 
 #define TABLE_COUNT ((int)(sizeof(TABLE) / sizeof(TABLE[0])))
 
-const xf_kind_def_t *xf_kind_lookup(const char *name, int name_len)
+const xf_kind_def_t *xf_kind_lookup(xf_str_slice_t name)
 {
     int i;
-    if (!name || name_len <= 0)
+    if (!name.ptr || name.len <= 0)
         return NULL;
     for (i = 0; i < TABLE_COUNT; i++) {
-        if ((int)strlen(TABLE[i].name) == name_len &&
-            memcmp(TABLE[i].name, name, (size_t)name_len) == 0)
+        if ((int)strlen(TABLE[i].name) == name.len &&
+            memcmp(TABLE[i].name, name.ptr, (size_t)name.len) == 0)
             return &TABLE[i];
     }
     return NULL;

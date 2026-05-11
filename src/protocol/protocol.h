@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "buf.h"
 
 #define CMD_HELLO           ((uint8_t)0xCA)
 #define CMD_SET_ORIENT      ((uint8_t)0xCB)
@@ -25,7 +26,7 @@
 
 /* Frame format: [cmd][payload[0..7]][cmd]. Pass NULL for payload to send 8 zero bytes. */
 int proto_send_cmd(int fd, uint8_t cmd, const uint8_t payload[8]);
-int proto_send_raw(int fd, const uint8_t *data, size_t len);
-int proto_read(int fd, uint8_t *buf, size_t n);
+int proto_send_raw(int fd, xf_byte_slice_t data);
+int proto_read(int fd, xf_byte_buf_t buf);
 
 #endif /* PROTOCOL_H */

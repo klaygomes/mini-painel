@@ -5,7 +5,7 @@
 #include "comp_pr_review.h"
 #include "mjson.h"
 
-int encode_pr_review(const void *vdata, char *buf, size_t cap)
+int encode_pr_review(const void *vdata, xf_out_buf_t out)
 {
     const comp_pr_review_data_t *d = vdata;
     char tmp[256];

@@ -15,19 +15,19 @@ int proto_send_cmd(int fd, uint8_t cmd, const uint8_t payload[8])
     }
     frame[9] = cmd;
 
-    int r = serial_write(fd, frame, FRAME_SIZE);
+    int r = serial_write(fd, (xf_byte_slice_t){frame, FRAME_SIZE});
     serial_drain(fd);
     return (r < 0) ? -1 : 0;
 }
 
-int proto_send_raw(int fd, const uint8_t *data, size_t len)
+int proto_send_raw(int fd, xf_byte_slice_t data)
 {
-    int r = serial_write(fd, data, len);
+    int r = serial_write(fd, data);
     serial_drain(fd);
     return (r < 0) ? -1 : 0;
 }
 
-int proto_read(int fd, uint8_t *buf, size_t n)
+int proto_read(int fd, xf_byte_buf_t buf)
 {
-    return serial_read(fd, buf, n);
+    return serial_read(fd, buf);
 }
