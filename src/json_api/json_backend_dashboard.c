@@ -25,8 +25,7 @@ typedef struct {
                      const char **err_msg);
     int  (*page_render)(xf_json_backend_t *backend,
                         int page,
-                        uint8_t *canvas,
-                        size_t canvas_cap,
+                        xf_byte_buf_t canvas,
                         int *page_count,
                         int *dx,
                         int *dy,
@@ -237,8 +236,7 @@ static int dashboard_row_move(xf_json_backend_t *backend,
 
 static int dashboard_page_render_op(xf_json_backend_t *backend,
                                     int page,
-                                    uint8_t *canvas,
-                                    size_t canvas_cap,
+                                    xf_byte_buf_t canvas,
                                     int *page_count,
                                     int *dx,
                                     int *dy,
@@ -254,7 +252,7 @@ static int dashboard_page_render_op(xf_json_backend_t *backend,
         *err_msg = "render failed";
 
     needed = (size_t)backend->width * (size_t)backend->height * 3u;
-    if (!canvas || canvas_cap < needed) {
+    if (!canvas.ptr || canvas.len < needed) {
         if (err_msg)
             *err_msg = "canvas too small or NULL";
         return -1;
@@ -269,7 +267,7 @@ static int dashboard_page_render_op(xf_json_backend_t *backend,
     if (page_count)
         *page_count = dashboard_page_count(backend->dash);
 
-    memcpy(canvas, frame, needed);
+    memcpy(canvas.ptr, frame, needed);
     return 0;
 }
 
@@ -390,8 +388,7 @@ int xf_json_backend_row_move(xf_json_backend_t *backend,
 
 int xf_json_backend_page_render(xf_json_backend_t *backend,
                                 int page,
-                                uint8_t *canvas,
-                                size_t canvas_cap,
+                                xf_byte_buf_t canvas,
                                 int *page_count,
                                 int *dx,
                                 int *dy,
@@ -399,7 +396,7 @@ int xf_json_backend_page_render(xf_json_backend_t *backend,
                                 int *dh,
                                 const char **err_msg)
 {
-    return backend->ops->page_render(backend, page, canvas, canvas_cap,
+    return backend->ops->page_render(backend, page, canvas,
                                      page_count, dx, dy, dw, dh, err_msg);
 }
 

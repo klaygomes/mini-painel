@@ -22,14 +22,14 @@ static void enc_append(xf_encoder_t *e, const char *s, int n)
     e->buf[e->len] = '\0';
 }
 
-void xf_encoder_init(xf_encoder_t *e, char *buf, size_t cap)
+void xf_encoder_init(xf_encoder_t *e, xf_out_buf_t out)
 {
     memset(e, 0, sizeof(*e));
-    e->buf          = buf;
-    e->cap          = cap;
+    e->buf          = out.ptr;
+    e->cap          = out.cap;
     e->first_result = 1;
-    if (cap > 0)
-        buf[0] = '\0';
+    if (out.cap > 0)
+        out.ptr[0] = '\0';
 }
 
 void xf_encoder_begin(xf_encoder_t *e)
@@ -150,7 +150,7 @@ void xf_encoder_list_end(xf_encoder_t *e)
     enc_append(e, "]}", 2);
 }
 
-void xf_encoder_raw(xf_encoder_t *e, const char *s, int n)
+void xf_encoder_raw(xf_encoder_t *e, xf_str_slice_t s)
 {
-    enc_append(e, s, n);
+    enc_append(e, s.ptr, s.len);
 }

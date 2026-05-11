@@ -47,23 +47,23 @@ int serial_configure(int fd)
     return 0;
 }
 
-int serial_write(int fd, const uint8_t *buf, size_t len)
+int serial_write(int fd, xf_byte_slice_t data)
 {
     (void)fd;
-    if (g_write_len + len > FAKE_BUF_SIZE) {
+    if (g_write_len + data.len > FAKE_BUF_SIZE) {
         fprintf(stderr, "fake_serial: write buffer overflow\n");
         return -1;
     }
-    memcpy(g_write_buf + g_write_len, buf, len);
-    g_write_len += len;
-    return (int)len;
+    memcpy(g_write_buf + g_write_len, data.ptr, data.len);
+    g_write_len += data.len;
+    return (int)data.len;
 }
 
-int serial_read(int fd, uint8_t *buf, size_t len)
+int serial_read(int fd, xf_byte_buf_t buf)
 {
     (void)fd;
-    size_t to_copy = (len < g_read_len) ? len : g_read_len;
-    memcpy(buf, g_read_buf, to_copy);
+    size_t to_copy = (buf.len < g_read_len) ? buf.len : g_read_len;
+    memcpy(buf.ptr, g_read_buf, to_copy);
     /* Shift remaining bytes forward so subsequent reads get the right data. */
     memmove(g_read_buf, g_read_buf + to_copy, g_read_len - to_copy);
     g_read_len -= to_copy;

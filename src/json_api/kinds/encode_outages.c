@@ -5,9 +5,11 @@
 #include "comp_outages.h"
 #include "mjson.h"
 
-int encode_outages(const void *vdata, char *buf, size_t cap)
+int encode_outages(const void *vdata, xf_out_buf_t out)
 {
     const comp_outages_data_t *d = vdata;
+    char  *buf = out.ptr;
+    size_t cap = out.cap;
     char tmp[512];
     int i, n;
     size_t pos = 0;

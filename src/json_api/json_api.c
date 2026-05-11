@@ -195,20 +195,20 @@ static int handle_row_list(const xf_handler_ctx_t *hctx, const void *arg)
             continue;
 
         if (i > 0)
-            xf_encoder_raw(hctx->enc, ",", 1);
+            xf_encoder_raw(hctx->enc, (xf_str_slice_t){",", 1});
 
         n = mjson_snprintf(row_hdr, sizeof row_hdr,
             "{\"id\":%Q,\"kind\":%Q,\"page\":%d,\"index\":%d,\"dirty\":%d,\"data\":",
             row.id, row.kind, row.page, row.index, row.dirty);
         if (n > 0)
-            xf_encoder_raw(hctx->enc, row_hdr, n);
+            xf_encoder_raw(hctx->enc, (xf_str_slice_t){row_hdr, n});
 
-        if (row.encode(row.data, data_buf, sizeof data_buf) == 0)
-            xf_encoder_raw(hctx->enc, data_buf, (int)strlen(data_buf));
+        if (row.encode(row.data, (xf_out_buf_t){data_buf, sizeof data_buf}) == 0)
+            xf_encoder_raw(hctx->enc, (xf_str_slice_t){data_buf, (int)strlen(data_buf)});
         else
-            xf_encoder_raw(hctx->enc, "{}", 2);
+            xf_encoder_raw(hctx->enc, (xf_str_slice_t){"{}", 2});
 
-        xf_encoder_raw(hctx->enc, "}", 1);
+        xf_encoder_raw(hctx->enc, (xf_str_slice_t){"}", 1});
     }
 
     xf_encoder_list_end(hctx->enc);
@@ -229,8 +229,8 @@ static int handle_page_render(const xf_handler_ctx_t *hctx, const void *arg)
 
     if (xf_json_backend_page_render(hctx->ctx->backend,
                                     page,
-                                    (uint8_t *)hctx->env->req->canvas.buf,
-                                    hctx->env->req->canvas.size,
+                                    (xf_byte_buf_t){(uint8_t *)hctx->env->req->canvas.buf,
+                                                    hctx->env->req->canvas.size},
                                     &page_count,
                                     &dx,
                                     &dy,
@@ -276,13 +276,13 @@ static const xf_dispatch_t g_handlers[] = {
     { "page.render", handle_page_render, "page.render" },
 };
 
-static const xf_dispatch_t *find_handler(const char *op, int op_len)
+static const xf_dispatch_t *find_handler(xf_str_slice_t op)
 {
     size_t i;
 
     for (i = 0; i < sizeof(g_handlers) / sizeof(g_handlers[0]); i++) {
         const size_t key_len = strlen(g_handlers[i].op);
-        if ((int)key_len == op_len && strncmp(g_handlers[i].op, op, (size_t)op_len) == 0)
+        if ((int)key_len == op.len && strncmp(g_handlers[i].op, op.ptr, (size_t)op.len) == 0)
             return &g_handlers[i];
     }
     return NULL;
@@ -314,7 +314,7 @@ int xf_json_exec(const xf_json_exec_req_t *req)
 
     json_len_i = (int)json_len;
 
-    xf_encoder_init(&enc, out_json, out_json_cap);
+    xf_encoder_init(&enc, (xf_out_buf_t){out_json, out_json_cap});
     xf_encoder_begin(&enc);
 
     while ((off = mjson_next(json, json_len_i, off,
@@ -381,7 +381,7 @@ int xf_json_exec(const xf_json_exec_req_t *req)
         op_name[op_len] = '\0';
         DEBUG_LOG("op normalized=%.*s len=%d", op_len, op_name, op_len);
 
-        entry = find_handler(op_ptr, op_len);
+        entry = find_handler((xf_str_slice_t){op_ptr, op_len});
         if (!entry) {
             xf_encoder_error(&enc, idx, op_name, NULL, "unknown op");
             ok = 0;

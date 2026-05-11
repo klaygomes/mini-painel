@@ -4,13 +4,13 @@
 #include "comp_header.h"
 #include "mjson.h"
 
-int encode_header(const void *vdata, char *buf, size_t cap)
+int encode_header(const void *vdata, xf_out_buf_t out)
 {
     const comp_header_data_t *d = vdata;
     char dot[10];
     rgba_to_hex(d->status_dot, dot);
-    int n = mjson_snprintf(buf, cap,
+    int n = mjson_snprintf(out.ptr, out.cap,
         "{\"date\":%Q,\"status_text\":%Q,\"status_dot\":%Q}",
         d->date, d->status_text, dot);
-    return (n > 0 && (size_t)n < cap) ? 0 : -1;
+    return (n > 0 && (size_t)n < out.cap) ? 0 : -1;
 }

@@ -26,7 +26,7 @@ static int try_hello(const char *path)
     }
 
     uint8_t resp[FRAME_SIZE];
-    int n = proto_read(fd, resp, FRAME_SIZE);
+    int n = proto_read(fd, (xf_byte_buf_t){resp, FRAME_SIZE});
     serial_flush_input(fd);
     close(fd);
 

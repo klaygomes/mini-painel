@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "buf.h"
 
 #define TURING_CMD_RESET          101
 #define TURING_CMD_CLEAR          102
@@ -26,7 +27,7 @@ int turing_proto_send_cmd(int fd, uint8_t cmd, int x, int y, int ex, int ey);
 int turing_proto_send_orient(int fd, int orientation, int width, int height);
 
 int turing_proto_send_hello(int fd);
-int turing_proto_send_raw(int fd, const uint8_t *data, size_t len);
-int turing_proto_read(int fd, uint8_t *buf, size_t n);
+int turing_proto_send_raw(int fd, xf_byte_slice_t data);
+int turing_proto_read(int fd, xf_byte_buf_t buf);
 
 #endif /* TURING_PROTOCOL_H */

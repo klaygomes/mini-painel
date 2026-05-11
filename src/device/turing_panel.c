@@ -16,7 +16,7 @@ static int hello(xf_device_t *dev)
     if (turing_proto_send_hello(dev->base.fd) < 0) return -1;
 
     uint8_t resp[TURING_RESP_LEN];
-    int n = turing_proto_read(dev->base.fd, resp, TURING_RESP_LEN);
+    int n = turing_proto_read(dev->base.fd, (xf_byte_buf_t){resp, TURING_RESP_LEN});
     serial_flush_input(dev->base.fd);
 
     if (n == TURING_RESP_LEN &&
@@ -217,7 +217,7 @@ int panel_display_bitmap(xf_device_t *dev,
     while (offset < total) {
         size_t chunk = TURING_CHUNK_SIZE;
         if (offset + chunk > total) chunk = total - offset;
-        turing_proto_send_raw(dev->base.fd, rgb565 + offset, chunk);
+        turing_proto_send_raw(dev->base.fd, (xf_byte_slice_t){rgb565 + offset, chunk});
         offset += chunk;
     }
 
