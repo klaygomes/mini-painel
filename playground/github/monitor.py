@@ -19,6 +19,9 @@ ERROR = "ERROR"
 NONE = "NONE"
 NOT_AVAILABLE = "N/A"
 GH_TIMEOUT_SECONDS = 20.0
+CACHE_TTL_SECONDS = 120.0
+
+_cache: dict[tuple[str, str], tuple[str, float]] = {}
 
 FAIL_CONCLUSIONS = {
     "failure",
@@ -318,7 +321,7 @@ def _build_ops_from_metrics(
     }
     deploy_payload = {
         "branch": f"{branch}@latest",
-        "time_ago": datetime.now(timezone.utc).strftime("%H:%M UTC"),
+        "time_ago": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "label": build_status.lower(),
         "status": _deploy_status_code(build_status),
     }
@@ -342,28 +345,30 @@ def _build_ops_from_metrics(
     ]
 
 
+def _cached_metric(repo: str, key: str, fn: Callable, *args: object) -> str:
+    cache_key = (repo, key)
+    entry = _cache.get(cache_key)
+    if entry is not None and time.monotonic() - entry[1] < CACHE_TTL_SECONDS:
+        return entry[0]
+    value = safe_metric(key, fn, *args)
+    _cache[cache_key] = (value, time.monotonic())
+    return value
+
+
 def build_json_api_ops(
     repo: str,
     branch: str,
     ignored_jobs: list[str],
     created_ids: set[str],
 ) -> list[dict[str, Any]]:
-    open_author = safe_metric(
-        "open_pr_author",
-        get_latest_open_pr_author,
-        repo,
+    open_author = _cached_metric(
+        repo, "open_pr_author", get_latest_open_pr_author, repo,
     )
-    merged_author = safe_metric(
-        "merged_pr_author",
-        get_latest_merged_pr_author,
-        repo,
-        branch,
+    merged_author = _cached_metric(
+        repo, "merged_pr_author", get_latest_merged_pr_author, repo, branch,
     )
-    build_status = safe_metric(
-        "build_status",
-        get_build_status,
-        repo,
-        ignored_jobs,
+    build_status = _cached_metric(
+        repo, "build_status", get_build_status, repo, ignored_jobs,
     )
 
     return _build_ops_from_metrics(
