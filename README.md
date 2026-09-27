@@ -63,3 +63,7 @@ A compact JSON-driven interface for building and updating dashboards without wri
 ```sh
 ./bin/json_demo   # writes bin/json_demo.ppm and prints reply to stderr
 ```
+
+---
+
+Made by Cleiton at [Esta couve flor](https://www.estacouveflor.com), a blog about the whole stack, from React on the screen down to the clock tree of an STM32.
